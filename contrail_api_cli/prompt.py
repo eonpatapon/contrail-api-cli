@@ -3,7 +3,10 @@ import pprint
 from prompt_toolkit import prompt
 from prompt_toolkit.history import InMemoryHistory
 
-from contrail_api_cli.client import APIClient, APIError
+from pygments.token import Token
+
+from contrail_api_cli.client import APIClient, APIError, BASE_URL
+from contrail_api_cli.style import PromptStyle
 from contrail_api_cli import utils, commands
 
 current_path = utils.Path()
@@ -12,15 +15,28 @@ completer = utils.PathCompleter(match_middle=True, current_path=current_path)
 utils.PathCompletionFiller(completer).start()
 
 
+def get_bottom_toolbar_tokens(cli):
+    return [(Token.Toolbar, ' ' + BASE_URL)]
+
+
+def get_prompt_tokens(cli):
+    return [
+        (Token.Path, str(current_path)),
+        (Token.Pound, '> ')
+    ]
+
+
 def main():
     for p in APIClient().list(current_path):
         utils.COMPLETION_QUEUE.put(p)
 
     while True:
         try:
-            action = prompt(message=u"%s> " % current_path,
+            action = prompt(get_prompt_tokens=get_prompt_tokens,
+                            get_bottom_toolbar_tokens=get_bottom_toolbar_tokens,
                             history=history,
-                            completer=completer)
+                            completer=completer,
+                            style=PromptStyle)
         except (EOFError, KeyboardInterrupt):
             break
         try:
