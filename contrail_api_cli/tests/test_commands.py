@@ -6,7 +6,7 @@ except ImportError:
 
 import contrail_api_cli.commands as cmds
 from contrail_api_cli.utils import Path
-from contrail_api_cli.client import BASE_URL
+from contrail_api_cli.client import APIClient
 
 
 class TestCommands(unittest.TestCase):
@@ -19,12 +19,12 @@ class TestCommands(unittest.TestCase):
         ]
 
         mock_request.return_value = {
-            "href": BASE_URL,
+            "href": APIClient.base_url,
             "links": [
-                {"link": {"href": BASE_URL + "/instance-ips",
+                {"link": {"href": APIClient.base_url + "/instance-ips",
                           "name": "instance-ip",
                           "rel": "collection"}},
-                {"link": {"href": BASE_URL + "/instance-ip",
+                {"link": {"href": APIClient.base_url + "/instance-ip",
                           "name": "instance-ip",
                           "rel": "resource-base"}}
             ]
@@ -37,9 +37,9 @@ class TestCommands(unittest.TestCase):
         p = Path("instance-ip")
         mock_request.return_value = {
             "instance-ips": [
-                {"href": BASE_URL + "/instance-ip/ec1afeaa-8930-43b0-a60a-939f23a50724",
+                {"href": APIClient.base_url + "/instance-ip/ec1afeaa-8930-43b0-a60a-939f23a50724",
                  "uuid": "ec1afeaa-8930-43b0-a60a-939f23a50724"},
-                {"href": BASE_URL + "/instance-ip/c2588045-d6fb-4f37-9f46-9451f653fb6a",
+                {"href": APIClient.base_url + "/instance-ip/c2588045-d6fb-4f37-9f46-9451f653fb6a",
                  "uuid": "c2588045-d6fb-4f37-9f46-9451f653fb6a"}
             ]
         }
@@ -49,6 +49,43 @@ class TestCommands(unittest.TestCase):
         ]
         result = cmds.ls(p)
         self.assertEqual(result, expected_resources)
+
+    @mock.patch('contrail_api_cli.commands.APIClient.request')
+    @mock.patch('contrail_api_cli.commands.Ls.colorize')
+    def test_resource_ls(self, mock_colorize, mock_request):
+        p = Path('foo')
+        mock_request.return_value = {
+            "foo": {
+                "href": APIClient.base_url + "/foo/ec1afeaa-8930-43b0-a60a-939f23a50724",
+                "attr": None,
+                "fq_name": [
+                    "foo",
+                    "ec1afeaa-8930-43b0-a60a-939f23a50724"
+                ],
+                "bar_refs": [
+                    {
+                        "href": APIClient.base_url + "/bar/ec1afeaa-8930-43b0-a60a-939f23a50724",
+                        "to": [
+                            "bar",
+                            "ec1afeaa-8930-43b0-a60a-939f23a50724"
+                        ]
+                    }
+                ]
+            }
+        }
+        mock_colorize.side_effect = lambda d: d
+        expected_resource = {
+            "href": "ec1afeaa-8930-43b0-a60a-939f23a50724",
+            "fq_name": "foo:ec1afeaa-8930-43b0-a60a-939f23a50724",
+            "bar_refs": [
+                {
+                    "href": "/bar/ec1afeaa-8930-43b0-a60a-939f23a50724",
+                    "to": "bar:ec1afeaa-8930-43b0-a60a-939f23a50724"
+                }
+            ]
+        }
+        result = cmds.ls(p, 'ec1afeaa-8930-43b0-a60a-939f23a50724')
+        self.assertEqual(result, expected_resource)
 
 if __name__ == "__main__":
     unittest.main()

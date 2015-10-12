@@ -47,9 +47,18 @@ class Ls(Command):
     description = "List resource objects"
     resource = Arg(nargs="?", help="Resource path")
 
+    def walk_resource(self, data, current_path):
+        data = self.find_resources(data, current_path)
+        data = self.transform_resource(data)
+        for attr, value in data.items():
+            if attr.endswith('refs'):
+                for idx, r in enumerate(data[attr]):
+                    data[attr][idx] = self.walk_resource(data[attr][idx], current_path)
+            if type(data[attr]) is dict:
+                data[attr] = self.walk_resource(data[attr], current_path)
+        return data
+
     def find_resources(self, data, current_path):
-        if not type(data) == dict:
-            return
         for attr, value in data.items():
             if attr in ("href", "parent_href"):
                 path = utils.Path(value[len(APIClient.base_url):])
@@ -59,25 +68,31 @@ class Ls(Command):
                     path.meta["fq_name"] = ":".join(data['fq_name'])
                 data[attr] = str(path.relative(current_path))
                 utils.COMPLETION_QUEUE.put(path)
-            if type(value) == dict:
-                self.find_resources(value, current_path)
-            if type(value) == list:
-                for r in value:
-                    self.find_resources(r, current_path)
+        return data
+
+    def transform_resource(self, data):
+        for attr, value in data.items():
+            if value is None:
+                del data[attr]
+            if attr in ("to", "fq_name"):
+                data[attr] = ":".join(value)
+        return data
+
+    def colorize(self, data):
+        json_data = json.dumps(data, sort_keys=True, indent=2,
+                               separators=(',', ': '))
+        return highlight(json_data,
+                         JsonLexer(indent=2),
+                         Terminal256Formatter(bg="dark"))
 
     def run(self, path, resource=None):
         target = utils.Path(str(path))
         if resource is not None:
             target.cd(resource)
-        client = APIClient()
-        data = client.list(target)
+        data = APIClient().list(target)
         if target.is_resource:
-            self.find_resources(data, path)
-            json_data = json.dumps(data, sort_keys=True, indent=2,
-                                   separators=(',', ': '))
-            return highlight(json_data,
-                             JsonLexer(indent=2),
-                             Terminal256Formatter(bg="dark"))
+            data = self.walk_resource(data, path)
+            return self.colorize(data)
         else:
             return data
 
