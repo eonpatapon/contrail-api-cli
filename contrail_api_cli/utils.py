@@ -142,3 +142,18 @@ class Path(UserList):
         if self.absolute:
             return "/" + path_str
         return path_str
+
+
+class classproperty(object):
+
+    def __init__(self, f):
+        self.f = f
+
+    def __get__(self, instance, klass):
+        if instance:
+            try:
+                return self.f(instance)
+            except AttributeError:
+                pass
+        return self.f(klass)
+

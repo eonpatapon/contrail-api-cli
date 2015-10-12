@@ -7,7 +7,7 @@ from pygments.lexers import JsonLexer
 from pygments.formatters import Terminal256Formatter
 
 from contrail_api_cli import utils
-from contrail_api_cli.client import APIClient, BASE_URL
+from contrail_api_cli.client import APIClient
 
 
 class CommandError(Exception):
@@ -52,7 +52,7 @@ class Ls(Command):
             return
         for attr, value in data.items():
             if attr in ("href", "parent_href"):
-                path = utils.Path(value[len(BASE_URL):])
+                path = utils.Path(value[len(APIClient.base_url):])
                 if data.get('to'):
                     path.meta["fq_name"] = ":".join(data['to'])
                 if data.get('fq_name'):

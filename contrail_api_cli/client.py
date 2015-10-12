@@ -1,9 +1,7 @@
 import requests
 from requests.exceptions import ConnectionError
 
-from contrail_api_cli.utils import Path
-
-BASE_URL = "http://localhost:8082"
+from contrail_api_cli.utils import Path, classproperty
 
 
 class APIError(Exception):
@@ -11,15 +9,28 @@ class APIError(Exception):
 
 
 class APIClient:
+    PROTOCOL = "http"
+    HOST = "localhost:8082"
+    USER = ""
+    PASSWORD = ""
+
+    @classproperty
+    def base_url(cls):
+        return cls.PROTOCOL + "://" + cls.HOST
+
+    @property
+    def _auth_token(self):
+        if self.USER and self.PASSWORD:
+            return (self.USER, self.PASSWORD)
 
     def request(self, path):
-        url = BASE_URL + str(path)
+        url = APIClient.base_url + str(path)
         if not path.is_resource and not path.is_root:
             url += 's'
         try:
-            r = requests.get(url)
+            r = requests.get(url, auth=self._auth_token)
         except ConnectionError:
-            raise APIError("Failed to connect to API server")
+            raise APIError("Failed to connect to API serveri at %s" % APIClient.base_url)
         if r.status_code == 200:
             return r.json()
         raise APIError(r.text)
