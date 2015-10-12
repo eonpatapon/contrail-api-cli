@@ -32,8 +32,15 @@ class APIClient:
         except ConnectionError:
             raise APIError("Failed to connect to API serveri at %s" % APIClient.base_url)
         if r.status_code == 200:
-            return r.json()
+            return r.json(object_hook=self._decode_paths)
         raise APIError(r.text)
+
+    def _decode_paths(self, obj):
+        for attr, value in obj.items():
+            if attr in ('href', 'parent_href'):
+                obj[attr] = Path(value[len(self.base_url):])
+                obj[attr].meta["fq_name"] = ":".join(obj.get('to', obj.get('fq_name', '')))
+        return obj
 
     def list(self, path):
         data = self.request(path)
@@ -48,17 +55,12 @@ class APIClient:
         resources = []
         for resource_name, resource_list in data.items():
             for resource in resource_list:
-                resource_path = Path(str(path))
-                resource_path.cd(resource["uuid"])
-                resource_path.meta["fq_name"] = ":".join(resource.get("fq_name", []))
-                resources.append(resource_path)
+                resources.append(resource["href"])
         return resources
 
     def _get_home_resources(self, path, data):
         resources = []
         for resource in data['links']:
             if resource["link"]["rel"] == "resource-base":
-                resource_path = Path(str(path))
-                resource_path.cd(resource["link"]["name"])
-                resources.append(resource_path)
+                resources.append(resource["link"]["href"])
         return resources

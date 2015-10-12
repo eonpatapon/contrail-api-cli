@@ -1,3 +1,4 @@
+import json
 from uuid import UUID
 from UserList import UserList
 from Queue import Queue
@@ -7,6 +8,14 @@ from prompt_toolkit.completion import Completer, Completion
 
 
 COMPLETION_QUEUE = Queue()
+
+
+class PathEncoder(json.JSONEncoder):
+
+    def default(self, obj):
+        if isinstance(obj, Path):
+            return str(obj)
+        return super(self, PathEncoder).default(obj)
 
 
 class PathCompletionFiller(Thread):
@@ -65,7 +74,7 @@ class PathCompleter(Completer):
 
         for p in sorted(self.paths, key=path_sort):
             rel_path = p.relative(self.current_path)
-            if ((rel_path and path_matches(str(rel_path).lower())) or
+            if ((str(rel_path) and path_matches(str(rel_path).lower())) or
                     path_matches(p.meta.get('fq_name', ''))):
                 display_meta = p.meta.get('fq_name', '')
                 yield Completion(str(p.relative(self.current_path)),

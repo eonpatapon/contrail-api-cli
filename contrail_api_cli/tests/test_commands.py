@@ -21,10 +21,10 @@ class TestCommands(unittest.TestCase):
         mock_request.return_value = {
             "href": APIClient.base_url,
             "links": [
-                {"link": {"href": APIClient.base_url + "/instance-ips",
+                {"link": {"href": Path("instance-ip"),
                           "name": "instance-ip",
                           "rel": "collection"}},
-                {"link": {"href": APIClient.base_url + "/instance-ip",
+                {"link": {"href": Path("instance-ip"),
                           "name": "instance-ip",
                           "rel": "resource-base"}}
             ]
@@ -37,9 +37,9 @@ class TestCommands(unittest.TestCase):
         p = Path("instance-ip")
         mock_request.return_value = {
             "instance-ips": [
-                {"href": APIClient.base_url + "/instance-ip/ec1afeaa-8930-43b0-a60a-939f23a50724",
+                {"href": Path("instance-ip/ec1afeaa-8930-43b0-a60a-939f23a50724"),
                  "uuid": "ec1afeaa-8930-43b0-a60a-939f23a50724"},
-                {"href": APIClient.base_url + "/instance-ip/c2588045-d6fb-4f37-9f46-9451f653fb6a",
+                {"href": Path("instance-ip/c2588045-d6fb-4f37-9f46-9451f653fb6a"),
                  "uuid": "c2588045-d6fb-4f37-9f46-9451f653fb6a"}
             ]
         }
@@ -56,7 +56,7 @@ class TestCommands(unittest.TestCase):
         p = Path('foo')
         mock_request.return_value = {
             "foo": {
-                "href": APIClient.base_url + "/foo/ec1afeaa-8930-43b0-a60a-939f23a50724",
+                "href": Path("/foo/ec1afeaa-8930-43b0-a60a-939f23a50724"),
                 "attr": None,
                 "fq_name": [
                     "foo",
@@ -64,7 +64,7 @@ class TestCommands(unittest.TestCase):
                 ],
                 "bar_refs": [
                     {
-                        "href": APIClient.base_url + "/bar/ec1afeaa-8930-43b0-a60a-939f23a50724",
+                        "href": Path("/bar/ec1afeaa-8930-43b0-a60a-939f23a50724"),
                         "to": [
                             "bar",
                             "ec1afeaa-8930-43b0-a60a-939f23a50724"
@@ -75,11 +75,11 @@ class TestCommands(unittest.TestCase):
         }
         mock_colorize.side_effect = lambda d: d
         expected_resource = {
-            "href": "ec1afeaa-8930-43b0-a60a-939f23a50724",
+            "href": Path("ec1afeaa-8930-43b0-a60a-939f23a50724"),
             "fq_name": "foo:ec1afeaa-8930-43b0-a60a-939f23a50724",
             "bar_refs": [
                 {
-                    "href": "/bar/ec1afeaa-8930-43b0-a60a-939f23a50724",
+                    "href": Path("bar/ec1afeaa-8930-43b0-a60a-939f23a50724"),
                     "to": "bar:ec1afeaa-8930-43b0-a60a-939f23a50724"
                 }
             ]

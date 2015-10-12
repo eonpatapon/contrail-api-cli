@@ -48,8 +48,7 @@ class Ls(Command):
     resource = Arg(nargs="?", help="Resource path")
 
     def walk_resource(self, data, current_path):
-        data = self.find_resources(data, current_path)
-        data = self.transform_resource(data)
+        data = self.transform_resource(data, current_path)
         for attr, value in data.items():
             if attr.endswith('refs'):
                 for idx, r in enumerate(data[attr]):
@@ -58,28 +57,20 @@ class Ls(Command):
                 data[attr] = self.walk_resource(data[attr], current_path)
         return data
 
-    def find_resources(self, data, current_path):
-        for attr, value in data.items():
-            if attr in ("href", "parent_href"):
-                path = utils.Path(value[len(APIClient.base_url):])
-                if data.get('to'):
-                    path.meta["fq_name"] = ":".join(data['to'])
-                if data.get('fq_name'):
-                    path.meta["fq_name"] = ":".join(data['fq_name'])
-                data[attr] = str(path.relative(current_path))
-                utils.COMPLETION_QUEUE.put(path)
-        return data
-
-    def transform_resource(self, data):
+    def transform_resource(self, data, current_path):
         for attr, value in data.items():
             if value is None:
                 del data[attr]
             if attr in ("to", "fq_name"):
                 data[attr] = ":".join(value)
+            if attr in ("href", "parent_href"):
+                data[attr] = value.relative(current_path)
+                utils.COMPLETION_QUEUE.put(value)
         return data
 
     def colorize(self, data):
         json_data = json.dumps(data, sort_keys=True, indent=2,
+                               cls=utils.PathEncoder,
                                separators=(',', ': '))
         return highlight(json_data,
                          JsonLexer(indent=2),
