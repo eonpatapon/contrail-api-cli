@@ -2,14 +2,16 @@ from setuptools import setup, find_packages
 
 install_requires = [
     'prompt_toolkit',
-    'requests',
-    'nose',
+    'requests'
+]
+
+test_requires = [
     'mock'
 ]
 
 setup(
     name='Contrail API Cli',
-    version='0.1',
+    version='0.1a1',
     description="Simple CLI program to browse Contrail API server",
     author="Jean-Philippe Braun",
     author_email="eon@patapon.info",
@@ -25,5 +27,15 @@ setup(
         'console_scripts': [
             'contrail-api-cli = contrail_api_cli.prompt:main',
         ],
-    }
+    },
+    classifiers=[
+        'Development Status :: 3 - Alpha',
+        'Intended Audience :: Developers',
+        'Topic :: Software Development :: User Interfaces',
+        'License :: OSI Approved :: MIT License',
+        'Programming Language :: Python :: 2.7'
+    ],
+    keywords='contrail api cli',
+    tests_require=test_requires,
+    test_suite="contrail_api_cli.tests"
 )
