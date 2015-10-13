@@ -9,6 +9,7 @@ try:
 except ImportError:
     from queue import Queue
 from threading import Thread
+from six import string_types
 
 from prompt_toolkit.completion import Completer, Completion
 
@@ -94,7 +95,7 @@ class Path(UserList):
 
     def __init__(self, *args):
         def _split_component(component):
-            if isinstance(component, str):
+            if isinstance(component, string_types):
                 return [c for c in component.strip('/').split('/') if c]
             if component is None:
                 return []
