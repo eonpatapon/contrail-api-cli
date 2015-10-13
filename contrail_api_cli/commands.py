@@ -77,15 +77,24 @@ class Ls(Command):
                          Terminal256Formatter(bg="dark"))
 
     def run(self, path, resource=None):
-        target = utils.Path(str(path))
-        if resource is not None:
-            target.cd(resource)
+        target = utils.Path(str(path), resource)
         data = APIClient().list(target)
         if target.is_resource:
             data = self.walk_resource(data, path)
             return self.colorize(data)
         else:
             return data
+
+
+class Count(Command):
+    description = "Count number of resources"
+    resource = Arg(nargs="?", help="Resource path")
+
+    def run(self, path, resource=None):
+        target = utils.Path(str(path), resource)
+        if target.resource_name and not target.is_resource:
+            data = APIClient().request(target, count=True)
+            return data[target.resource_name + "s"]["count"]
 
 
 class Cd(Command):
@@ -105,3 +114,4 @@ class Help(Command):
 ls = ll = Ls()
 cd = Cd()
 help = Help()
+count = Count()

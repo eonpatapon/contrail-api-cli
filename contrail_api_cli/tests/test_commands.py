@@ -1,4 +1,5 @@
 import unittest
+import uuid
 try:
     import mock
 except ImportError:
@@ -86,6 +87,26 @@ class TestCommands(unittest.TestCase):
         }
         result = cmds.ls(p, 'ec1afeaa-8930-43b0-a60a-939f23a50724')
         self.assertEqual(result, expected_resource)
+
+    @mock.patch('contrail_api_cli.commands.APIClient.request')
+    def test_count(self, mock_request):
+        p = Path('foo')
+        mock_request.return_value = {
+            'foos': {
+                'count': 3
+            }
+        }
+        result = cmds.count(p)
+        self.assertEqual(result, 3)
+
+        p = Path()
+        result = cmds.count(p, 'foo')
+        self.assertEqual(result, 3)
+
+        p = Path('foo/%s' % uuid.uuid4())
+        result = cmds.count(p)
+        self.assertEqual(result, None)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -74,10 +74,12 @@ class PathCompleter(Completer):
 
         for p in sorted(self.paths, key=path_sort):
             rel_path = p.relative(self.current_path)
-            if ((str(rel_path) and path_matches(str(rel_path).lower())) or
+            if not rel_path:
+                continue
+            if (path_matches(str(rel_path).lower()) or
                     path_matches(p.meta.get('fq_name', ''))):
                 display_meta = p.meta.get('fq_name', '')
-                yield Completion(str(p.relative(self.current_path)),
+                yield Completion(str(rel_path),
                                  -len(path_before_cursor),
                                  display_meta=display_meta)
 
@@ -88,6 +90,8 @@ class Path(UserList):
         def _split_component(component):
             if isinstance(component, basestring):
                 return [c for c in component.strip('/').split('/') if c]
+            if component is None:
+                return []
             return component
 
         self.data = []

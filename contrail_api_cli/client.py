@@ -23,12 +23,12 @@ class APIClient:
         if self.USER and self.PASSWORD:
             return (self.USER, self.PASSWORD)
 
-    def request(self, path):
+    def request(self, path, **kwargs):
         url = APIClient.base_url + str(path)
         if not path.is_resource and not path.is_root:
             url += 's'
         try:
-            r = requests.get(url, auth=self._auth_token)
+            r = requests.get(url, auth=self._auth_token, params=kwargs)
         except ConnectionError:
             raise APIError("Failed to connect to API serveri at %s" % APIClient.base_url)
         if r.status_code == 200:
