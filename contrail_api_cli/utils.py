@@ -1,7 +1,13 @@
 import json
 from uuid import UUID
-from UserList import UserList
-from Queue import Queue
+try:
+    from UserList import UserList
+except ImportError:
+    from collections import UserList
+try:
+    from Queue import Queue
+except ImportError:
+    from queue import Queue
 from threading import Thread
 
 from prompt_toolkit.completion import Completer, Completion
@@ -88,7 +94,7 @@ class Path(UserList):
 
     def __init__(self, *args):
         def _split_component(component):
-            if isinstance(component, basestring):
+            if isinstance(component, str):
                 return [c for c in component.strip('/').split('/') if c]
             if component is None:
                 return []

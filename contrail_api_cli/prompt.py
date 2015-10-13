@@ -82,7 +82,7 @@ def main():
                 for p in result:
                     output_paths.append(str(p.relative(current_path)))
                     utils.COMPLETION_QUEUE.put(p)
-                print "\n".join(output_paths)
+                print("\n".join(output_paths))
             elif type(result) == dict:
                 print(pprint.pformat(result, indent=2))
             else:

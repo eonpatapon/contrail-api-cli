@@ -49,7 +49,7 @@ class Ls(Command):
 
     def walk_resource(self, data, current_path):
         data = self.transform_resource(data, current_path)
-        for attr, value in data.items():
+        for attr, value in list(data.items()):
             if attr.endswith('refs'):
                 for idx, r in enumerate(data[attr]):
                     data[attr][idx] = self.walk_resource(data[attr][idx], current_path)
@@ -58,7 +58,7 @@ class Ls(Command):
         return data
 
     def transform_resource(self, data, current_path):
-        for attr, value in data.items():
+        for attr, value in list(data.items()):
             if value is None:
                 del data[attr]
             if attr in ("to", "fq_name"):
