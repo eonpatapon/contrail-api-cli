@@ -1,0 +1,10 @@
+language: python
+python:
+    - "2.7"
+script: nosetests
+branches:
+    only:
+        - master
+virtualenv:
+    system_site_packages: false
+install: "pip install ."
