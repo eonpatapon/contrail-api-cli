@@ -108,7 +108,12 @@ class Cd(Command):
 class Help(Command):
 
     def run(self, path):
-        return "You are so lost buddy."
+        commands = {}
+        for name, obj in globals().items():
+            if isinstance(obj, Command):
+                if name != "help":
+                    commands[obj] = name
+        return "Available commands: %s" % " ".join(commands.values())
 
 
 ls = ll = Ls()
