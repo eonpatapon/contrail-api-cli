@@ -11,6 +11,7 @@ except ImportError:
 from threading import Thread
 from six import string_types
 
+from prompt_toolkit import prompt
 from prompt_toolkit.completion import Completer, Completion
 
 
@@ -177,3 +178,15 @@ class classproperty(object):
                 pass
         return self.f(klass)
 
+
+def continue_prompt():
+    answer = False
+    while answer not in ('Yes', 'No'):
+        answer = prompt(u"'Yes' or 'No' to continue: ")
+        if answer == "Yes":
+            answer = True
+            break
+        if answer == "No":
+            answer = False
+            break
+    return answer

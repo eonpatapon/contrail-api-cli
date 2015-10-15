@@ -69,11 +69,14 @@ def main():
 
         try:
             result = cmd(current_path, *args)
-        except commands.CommandError:
+        except commands.CommandError as e:
+            print (e)
             continue
         except APIError as e:
             print (e)
             continue
+        except (EOFError, KeyboardInterrupt):
+            pass
         else:
             if result is None:
                 continue

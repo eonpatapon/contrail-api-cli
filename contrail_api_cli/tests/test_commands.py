@@ -107,6 +107,67 @@ class TestCommands(unittest.TestCase):
         result = cmds.count(p)
         self.assertEqual(result, None)
 
+    @mock.patch('contrail_api_cli.commands.APIClient.delete')
+    @mock.patch('contrail_api_cli.commands.utils.continue_prompt')
+    def test_rm(self, mock_continue_prompt, mock_delete):
+        p = Path()
+        t = Path("foo/6b6a7f47-807e-4c39-8ac6-3adcf2f5498f")
+        mock_continue_prompt.return_value = True
+        mock_delete.return_value = True
+        cmds.rm(p, t)
+        mock_delete.assert_has_calls([mock.call(Path("foo/6b6a7f47-807e-4c39-8ac6-3adcf2f5498f"))])
+
+    @mock.patch('contrail_api_cli.commands.APIClient.request')
+    @mock.patch('contrail_api_cli.commands.APIClient.delete')
+    @mock.patch('contrail_api_cli.commands.utils.continue_prompt')
+    def test_rm_recursive(self, mock_continue_prompt, mock_delete, mock_request):
+        p = Path()
+        t = Path("foo/6b6a7f47-807e-4c39-8ac6-3adcf2f5498f")
+        mock_continue_prompt.return_value = True
+        mock_request.side_effect = [
+            {
+                'foo': {
+                    'href': Path("foo/6b6a7f47-807e-4c39-8ac6-3adcf2f5498f"),
+                    'bar_back_refs': [
+                        {
+                            "href": Path("bar/22916187-5b6f-40f1-b7b6-fc6fe9f23bce")
+                        },
+                        {
+                            "href": Path("bar/776bdf88-6283-4c4b-9392-93a857807307")
+                        }
+                    ]
+                }
+            },
+            {
+                'bar': {
+                    'href': Path("bar/22916187-5b6f-40f1-b7b6-fc6fe9f23bce"),
+                    'foobar_back_refs': [
+                        {
+                            'href': Path("foobar/1050223f-a230-4ed6-96f1-c332700c5e01")
+                        }
+                    ]
+                }
+            },
+            {
+                'foobar': {
+                    'href': Path("foobar/1050223f-a230-4ed6-96f1-c332700c5e01")
+                }
+            },
+            {
+                'bar': {
+                    'href': Path("bar/776bdf88-6283-4c4b-9392-93a857807307")
+                }
+            }
+        ]
+        mock_delete.return_value = True
+        cmds.rm(p, t, "-r")
+        mock_delete.assert_has_calls([
+            mock.call(Path("bar/776bdf88-6283-4c4b-9392-93a857807307")),
+            mock.call(Path("foobar/1050223f-a230-4ed6-96f1-c332700c5e01")),
+            mock.call(Path("bar/22916187-5b6f-40f1-b7b6-fc6fe9f23bce")),
+            mock.call(Path("foo/6b6a7f47-807e-4c39-8ac6-3adcf2f5498f"))
+        ])
+
 
 if __name__ == "__main__":
     unittest.main()

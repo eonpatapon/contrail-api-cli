@@ -35,6 +35,13 @@ class APIClient:
             return r.json(object_hook=self._decode_paths)
         raise APIError(r.text)
 
+    def delete(self, path):
+        url = APIClient.base_url + str(path)
+        r = requests.delete(url)
+        if r.status_code == 200:
+            return True
+        raise APIError(r.text)
+
     def _decode_paths(self, obj):
         for attr, value in obj.items():
             if attr in ('href', 'parent_href'):
