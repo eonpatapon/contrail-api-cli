@@ -158,6 +158,13 @@ class Cd(Command):
         path.cd(resource)
 
 
+class Exit(Command):
+    description = "Exit from cli"
+
+    def run(self, path):
+        raise EOFError
+
+
 class Help(Command):
 
     def run(self, path):
@@ -174,3 +181,4 @@ cd = Cd()
 help = Help()
 count = Count()
 rm = Rm()
+exit = Exit()

@@ -75,8 +75,10 @@ def main():
         except APIError as e:
             print (e)
             continue
-        except (EOFError, KeyboardInterrupt):
-            pass
+        except KeyboardInterrupt:
+            continue
+        except EOFError:
+            break
         else:
             if result is None:
                 continue
