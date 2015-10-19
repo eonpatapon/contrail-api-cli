@@ -12,14 +12,14 @@ from contrail_api_cli.client import APIClient
 
 class TestCommands(unittest.TestCase):
 
-    @mock.patch('contrail_api_cli.commands.APIClient.request')
-    def test_home_ls(self, mock_request):
+    @mock.patch('contrail_api_cli.commands.APIClient.get')
+    def test_home_ls(self, mock_get):
         p = Path()
         expected_home_resources = [
             Path("instance-ip"),
         ]
 
-        mock_request.return_value = {
+        mock_get.return_value = {
             "href": APIClient.base_url,
             "links": [
                 {"link": {"href": Path("instance-ip"),
@@ -33,10 +33,10 @@ class TestCommands(unittest.TestCase):
         result = cmds.ls(p)
         self.assertEqual(result, expected_home_resources)
 
-    @mock.patch('contrail_api_cli.commands.APIClient.request')
-    def test_resources_ls(self, mock_request):
+    @mock.patch('contrail_api_cli.commands.APIClient.get')
+    def test_resources_ls(self, mock_get):
         p = Path("instance-ip")
-        mock_request.return_value = {
+        mock_get.return_value = {
             "instance-ips": [
                 {"href": Path("instance-ip/ec1afeaa-8930-43b0-a60a-939f23a50724"),
                  "uuid": "ec1afeaa-8930-43b0-a60a-939f23a50724"},
@@ -51,11 +51,11 @@ class TestCommands(unittest.TestCase):
         result = cmds.ls(p)
         self.assertEqual(result, expected_resources)
 
-    @mock.patch('contrail_api_cli.commands.APIClient.request')
+    @mock.patch('contrail_api_cli.commands.APIClient.get')
     @mock.patch('contrail_api_cli.commands.Ls.colorize')
-    def test_resource_ls(self, mock_colorize, mock_request):
+    def test_resource_ls(self, mock_colorize, mock_get):
         p = Path('foo')
-        mock_request.return_value = {
+        mock_get.return_value = {
             "foo": {
                 "href": Path("/foo/ec1afeaa-8930-43b0-a60a-939f23a50724"),
                 "attr": None,
@@ -88,10 +88,10 @@ class TestCommands(unittest.TestCase):
         result = cmds.ls(p, 'ec1afeaa-8930-43b0-a60a-939f23a50724')
         self.assertEqual(result, expected_resource)
 
-    @mock.patch('contrail_api_cli.commands.APIClient.request')
-    def test_count(self, mock_request):
+    @mock.patch('contrail_api_cli.commands.APIClient.get')
+    def test_count(self, mock_get):
         p = Path('foo')
-        mock_request.return_value = {
+        mock_get.return_value = {
             'foos': {
                 'count': 3
             }
@@ -117,14 +117,14 @@ class TestCommands(unittest.TestCase):
         cmds.rm(p, t)
         mock_delete.assert_has_calls([mock.call(Path("foo/6b6a7f47-807e-4c39-8ac6-3adcf2f5498f"))])
 
-    @mock.patch('contrail_api_cli.commands.APIClient.request')
+    @mock.patch('contrail_api_cli.commands.APIClient.get')
     @mock.patch('contrail_api_cli.commands.APIClient.delete')
     @mock.patch('contrail_api_cli.commands.utils.continue_prompt')
-    def test_rm_recursive(self, mock_continue_prompt, mock_delete, mock_request):
+    def test_rm_recursive(self, mock_continue_prompt, mock_delete, mock_get):
         p = Path()
         t = Path("foo/6b6a7f47-807e-4c39-8ac6-3adcf2f5498f")
         mock_continue_prompt.return_value = True
-        mock_request.side_effect = [
+        mock_get.side_effect = [
             {
                 'foo': {
                     'href': Path("foo/6b6a7f47-807e-4c39-8ac6-3adcf2f5498f"),

@@ -23,14 +23,14 @@ class APIClient:
         if self.USER and self.PASSWORD:
             return (self.USER, self.PASSWORD)
 
-    def request(self, path, **kwargs):
+    def get(self, path, **kwargs):
         url = APIClient.base_url + str(path)
         if not path.is_resource and not path.is_root:
             url += 's'
         try:
             r = requests.get(url, auth=self._auth_token, params=kwargs)
         except ConnectionError:
-            raise APIError("Failed to connect to API serveri at %s" % APIClient.base_url)
+            raise APIError("Failed to connect to API server at %s" % APIClient.base_url)
         if r.status_code == 200:
             return r.json(object_hook=self._decode_paths)
         raise APIError(r.text)
@@ -50,7 +50,7 @@ class APIClient:
         return obj
 
     def list(self, path):
-        data = self.request(path)
+        data = self.get(path)
         if path.is_root:
             return self._get_home_resources(path, data)
         elif not path.is_resource:

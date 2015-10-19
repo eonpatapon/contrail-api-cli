@@ -105,7 +105,7 @@ class Count(Command):
     def run(self, path, resource=None):
         target = utils.Path(str(path), resource)
         if target.resource_name and not target.is_resource:
-            data = APIClient().request(target, count=True)
+            data = APIClient().get(target, count=True)
             return data[target.resource_name + "s"]["count"]
 
 
@@ -117,7 +117,7 @@ class Rm(ExperimentalCommand):
                     help="Recursive delete of back_refs resources")
 
     def _get_back_refs(self, path, back_refs=[]):
-        resource = APIClient().request(path)[path.resource_name]
+        resource = APIClient().get(path)[path.resource_name]
         if resource["href"] not in back_refs:
             back_refs.append(resource["href"])
         for attr, values in resource.items():
