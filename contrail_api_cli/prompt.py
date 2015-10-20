@@ -64,16 +64,16 @@ def main():
         except IndexError:
             continue
         except AttributeError:
-            print ("Command not found. Type help for all commands.")
+            print("Command not found. Type help for all commands.")
             continue
 
         try:
             result = cmd(current_path, *args)
         except commands.CommandError as e:
-            print (e)
+            print(e)
             continue
         except APIError as e:
-            print (e)
+            print(e)
             continue
         except KeyboardInterrupt:
             continue

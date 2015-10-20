@@ -141,7 +141,7 @@ class Rm(ExperimentalCommand):
                   "\n - ".join([str(p.relative(path)) for p in back_refs]))
             if utils.continue_prompt():
                 for ref in reversed(back_refs):
-                    print ("Deleting %s" % str(ref))
+                    print("Deleting %s" % str(ref))
                     try:
                         APIClient().delete(ref)
                     except APIError as e:
