@@ -10,9 +10,10 @@ test_requires = [
 ]
 
 setup(
-    name='Contrail API Cli',
+    name='contrail-api-cli',
     version='0.1a1',
     description="Simple CLI program to browse Contrail API server",
+    long_description=open('README.md').read(),
     author="Jean-Philippe Braun",
     author_email="eon@patapon.info",
     maintainer="Jean-Philippe Braun",
