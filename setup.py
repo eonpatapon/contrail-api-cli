@@ -33,7 +33,9 @@ setup(
         'Intended Audience :: Developers',
         'Topic :: Software Development :: User Interfaces',
         'License :: OSI Approved :: MIT License',
-        'Programming Language :: Python :: 2.7'
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3.5'
     ],
     keywords='contrail api cli',
     tests_require=test_requires,
