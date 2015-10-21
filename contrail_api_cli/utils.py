@@ -26,6 +26,14 @@ class PathEncoder(json.JSONEncoder):
         return super(self, PathEncoder).default(obj)
 
 
+class FullPathEncoder(json.JSONEncoder):
+
+    def default(self, obj):
+        if isinstance(obj, Path):
+            return obj.url
+        return super(self, FullPathEncoder).default(obj)
+
+
 class PathCompletionFiller(Thread):
 
     def __init__(self, completer):
@@ -190,3 +198,24 @@ def continue_prompt():
             answer = False
             break
     return answer
+
+
+def to_json(resource_dict):
+    return json.dumps(resource_dict,
+                      sort_keys=True,
+                      indent=2,
+                      separators=(',', ': '),
+                      cls=FullPathEncoder)
+
+
+def from_json(resource_json):
+    return json.loads(resource_json, object_hook=decode_paths)
+
+
+def decode_paths(obj):
+    from contrail_api_cli.client import APIClient
+    for attr, value in obj.items():
+        if attr in ('href', 'parent_href'):
+            obj[attr] = Path(value[len(APIClient.base_url):])
+            obj[attr].meta["fq_name"] = ":".join(obj.get('to', obj.get('fq_name', '')))
+    return obj

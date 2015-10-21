@@ -1,7 +1,7 @@
 import requests
 from requests.exceptions import ConnectionError
 
-from contrail_api_cli.utils import Path, classproperty
+from contrail_api_cli import utils
 
 
 class APIError(Exception):
@@ -14,7 +14,7 @@ class APIClient:
     USER = ""
     PASSWORD = ""
 
-    @classproperty
+    @utils.classproperty
     def base_url(cls):
         return cls.PROTOCOL + "://" + cls.HOST
 
@@ -32,7 +32,7 @@ class APIClient:
         except ConnectionError:
             raise APIError("Failed to connect to API server at %s" % APIClient.base_url)
         if r.status_code == 200:
-            return r.json(object_hook=self._decode_paths)
+            return r.json(object_hook=utils.decode_paths)
         raise APIError(r.text)
 
     def delete(self, path):
@@ -41,13 +41,6 @@ class APIClient:
         if r.status_code == 200:
             return True
         raise APIError(r.text)
-
-    def _decode_paths(self, obj):
-        for attr, value in obj.items():
-            if attr in ('href', 'parent_href'):
-                obj[attr] = Path(value[len(self.base_url):])
-                obj[attr].meta["fq_name"] = ":".join(obj.get('to', obj.get('fq_name', '')))
-        return obj
 
     def list(self, path):
         data = self.get(path)
