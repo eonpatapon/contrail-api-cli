@@ -89,7 +89,15 @@ class Ls(Command):
                          Terminal256Formatter(bg="dark"))
 
     def run(self, path, resource=None):
-        target = utils.Path(str(path), resource)
+        # Find Path from fq_name
+        if resource is not None and ":" in resource:
+            path = APIClient().fqname_to_id(path, resource)
+            if path is None:
+                print("Can't find %s" % resource)
+                return
+            target = path
+        else:
+            target = utils.Path(path, resource)
         data = APIClient().list(target)
         if target.is_resource:
             data = self.walk_resource(data, path)
@@ -103,8 +111,8 @@ class Count(Command):
     resource = Arg(nargs="?", help="Resource path")
 
     def run(self, path, resource=None):
-        target = utils.Path(str(path), resource)
-        if target.resource_name and not target.is_resource:
+        target = utils.Path(path, resource)
+        if target.is_collection:
             data = APIClient().get(target, count=True)
             return data[target.resource_name + "s"]["count"]
 
@@ -129,7 +137,7 @@ class Rm(ExperimentalCommand):
         return back_refs
 
     def run(self, path, resource=None, recursive=False):
-        target = utils.Path(str(path), resource)
+        target = utils.Path(path, resource)
         if not target.is_resource:
             raise CommandError('"%s" is not a resource.' % target.relative(path))
 

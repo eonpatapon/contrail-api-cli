@@ -88,6 +88,35 @@ class TestCommands(unittest.TestCase):
         result = cmds.ls(p, 'ec1afeaa-8930-43b0-a60a-939f23a50724')
         self.assertEqual(result, expected_resource)
 
+    @mock.patch('contrail_api_cli.commands.APIClient.fqname_to_id')
+    @mock.patch('contrail_api_cli.commands.APIClient.get')
+    @mock.patch('contrail_api_cli.commands.Ls.colorize')
+    def test_fqname_ls(self, mock_colorize, mock_get, mock_fqname_to_id):
+        p = Path('foo')
+        fq_name = "default-domain:foo:b25f5a6b-292f-4d0c-b5c6-22ad7209abe5"
+        excpected_path = Path("foo/b25f5a6b-292f-4d0c-b5c6-22ad7209abe5")
+
+        mock_colorize.side_effect = lambda d: d
+        mock_fqname_to_id.return_value = excpected_path
+
+        cmds.ls(p, fq_name)
+
+        mock_fqname_to_id.assert_has_calls([
+            mock.call(p, fq_name)
+        ])
+        mock_get.assert_has_calls([
+            mock.call(excpected_path)
+        ])
+
+    @mock.patch('contrail_api_cli.commands.APIClient.fqname_to_id')
+    @mock.patch('contrail_api_cli.commands.APIClient.get')
+    def test_notfound_fqname_ls(self, mock_get, mock_fqname_to_id):
+        p = Path('foo')
+        mock_fqname_to_id.return_value = None
+        result = cmds.ls(p, "default-domain:foo")
+        self.assertIsNone(result)
+        self.assertFalse(mock_get.called)
+
     @mock.patch('contrail_api_cli.commands.APIClient.get')
     def test_count(self, mock_get):
         p = Path('foo')

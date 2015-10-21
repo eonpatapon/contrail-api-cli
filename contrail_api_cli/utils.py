@@ -137,6 +137,10 @@ class Path(UserList):
             return False
         return True
 
+    @property
+    def is_collection(self):
+        return not self.is_resource and self.resource_name
+
     def cd(self, path_str=None):
         path = self.data
         if path_str is None:
