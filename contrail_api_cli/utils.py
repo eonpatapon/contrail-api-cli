@@ -152,6 +152,11 @@ class Path(UserList):
         self.data = path
         return self.data
 
+    @property
+    def url(self):
+        from contrail_api_cli.client import APIClient
+        return APIClient().base_url + str(self)
+
     def relative(self, path):
         rel_path = Path()
         for index, component in enumerate(self):

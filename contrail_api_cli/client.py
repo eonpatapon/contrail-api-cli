@@ -24,7 +24,7 @@ class APIClient:
             return (self.USER, self.PASSWORD)
 
     def get(self, path, **kwargs):
-        url = APIClient.base_url + str(path)
+        url = path.url
         if not path.is_resource and not path.is_root:
             url += 's'
         try:
@@ -36,8 +36,7 @@ class APIClient:
         raise APIError(r.text)
 
     def delete(self, path):
-        url = APIClient.base_url + str(path)
-        r = requests.delete(url)
+        r = requests.delete(path.url)
         if r.status_code == 200:
             return True
         raise APIError(r.text)
