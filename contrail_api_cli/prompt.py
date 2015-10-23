@@ -10,7 +10,7 @@ from contrail_api_cli.client import APIClient, APIError
 from contrail_api_cli.style import PromptStyle
 from contrail_api_cli import utils, commands
 
-current_path = utils.Path()
+current_path = utils.Path('/')
 history = InMemoryHistory()
 completer = utils.PathCompleter(match_middle=True, current_path=current_path)
 utils.PathCompletionFiller(completer).start()
@@ -28,6 +28,8 @@ def get_prompt_tokens(cli):
 
 
 def main():
+    global current_path
+
     parser = argparse.ArgumentParser()
     parser.add_argument('--host', default='localhost:8082',
                         help="host:port to connect to (default='%(default)s')")
@@ -85,11 +87,15 @@ def main():
             elif type(result) == list:
                 output_paths = []
                 for p in result:
-                    output_paths.append(str(p.relative(current_path)))
+                    output_paths.append(str(p.relative_to(current_path)))
                     utils.COMPLETION_QUEUE.put(p)
                 print("\n".join(output_paths))
             elif type(result) == dict:
                 print(pprint.pformat(result, indent=2))
+            # FIXME
+            elif type(result) == utils.Path:
+                current_path = result
+                completer.current_path = current_path
             else:
                 print(result)
 

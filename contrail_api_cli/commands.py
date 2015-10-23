@@ -43,21 +43,21 @@ class Command:
                     value.args = value.args[1:]
                 self.parser.add_argument(attr, *value.args, **value.kwargs)
 
-    def __call__(self, path, *args):
+    def __call__(self, current_path, *args):
         args = self.parser.parse_args(args=args)
-        return self.run(path, **args.__dict__)
+        return self.run(current_path, **args.__dict__)
 
 
 class ExperimentalCommand(Command):
 
-    def __call__(self, path, *args):
+    def __call__(self, *args):
         print("This command is experimental. Use at your own risk.")
-        Command.__call__(self, path, *args)
+        return Command.__call__(self, *args)
 
 
 class Ls(Command):
     description = "List resource objects"
-    resource = Arg(nargs="?", help="Resource path")
+    resource = Arg(nargs="?", help="Resource path", default="")
 
     def walk_resource(self, data, current_path):
         data = self.transform_resource(data, current_path)
@@ -76,7 +76,7 @@ class Ls(Command):
             if attr in ("to", "fq_name"):
                 data[attr] = ":".join(value)
             if attr in ("href", "parent_href"):
-                data[attr] = value.relative(current_path)
+                data[attr] = value.relative_to(current_path)
                 utils.COMPLETION_QUEUE.put(value)
         return data
 
@@ -88,19 +88,18 @@ class Ls(Command):
                          JsonLexer(indent=2),
                          Terminal256Formatter(bg="dark"))
 
-    def run(self, path, resource=None):
+    def run(self, current_path, resource=''):
         # Find Path from fq_name
-        if resource is not None and ":" in resource:
-            path = APIClient().fqname_to_id(path, resource)
-            if path is None:
+        if ":" in resource:
+            target = APIClient().fqname_to_id(current_path, resource)
+            if target is None:
                 print("Can't find %s" % resource)
                 return
-            target = path
         else:
-            target = utils.Path(path, resource)
+            target = current_path / resource
         data = APIClient().list(target)
         if target.is_resource:
-            data = self.walk_resource(data, path)
+            data = self.walk_resource(data, current_path)
             return self.colorize(data)
         else:
             return data
@@ -108,10 +107,10 @@ class Ls(Command):
 
 class Count(Command):
     description = "Count number of resources"
-    resource = Arg(nargs="?", help="Resource path")
+    resource = Arg(nargs="?", help="Resource path", default='')
 
-    def run(self, path, resource=None):
-        target = utils.Path(path, resource)
+    def run(self, current_path, resource=''):
+        target = current_path / resource
         if target.is_collection:
             data = APIClient().get(target, count=True)
             return data[target.resource_name + "s"]["count"]
@@ -119,7 +118,7 @@ class Count(Command):
 
 class Rm(ExperimentalCommand):
     description = "Delete a resource"
-    resource = Arg(nargs="?", help="Resource path")
+    resource = Arg(nargs="?", help="Resource path", default='')
     recursive = Arg("-r", "--recursive", dest="recursive",
                     action="store_true", default=False,
                     help="Recursive delete of back_refs resources")
@@ -136,17 +135,17 @@ class Rm(ExperimentalCommand):
                                                 back_refs=back_refs)
         return back_refs
 
-    def run(self, path, resource=None, recursive=False):
-        target = utils.Path(path, resource)
+    def run(self, current_path, resource='', recursive=False):
+        target = current_path / resource
         if not target.is_resource:
-            raise CommandError('"%s" is not a resource.' % target.relative(path))
+            raise CommandError('"%s" is not a resource.' % target.relative_to(current_path))
 
         back_refs = [target]
         if recursive:
             back_refs = self._get_back_refs(target)
         if back_refs:
             print("About to delete:\n - %s" %
-                  "\n - ".join([str(p.relative(path)) for p in back_refs]))
+                  "\n - ".join([str(p.relative_to(current_path)) for p in back_refs]))
             if utils.continue_prompt():
                 for ref in reversed(back_refs):
                     print("Deleting %s" % str(ref))
@@ -160,22 +159,22 @@ class Rm(ExperimentalCommand):
 
 class Cd(Command):
     description = "Change resource context"
-    resource = Arg(nargs="?", help="Resource path")
+    resource = Arg(nargs="?", help="Resource path", default='')
 
-    def run(self, path, resource=None):
-        path.cd(resource)
+    def run(self, current_path, resource=''):
+        return current_path / resource
 
 
 class Exit(Command):
     description = "Exit from cli"
 
-    def run(self, path):
+    def run(self, current_path):
         raise EOFError
 
 
 class Help(Command):
 
-    def run(self, path):
+    def run(self, current_path):
         commands = {}
         for name, obj in globals().items():
             if isinstance(obj, Command):

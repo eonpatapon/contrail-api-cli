@@ -1,3 +1,4 @@
+import os.path
 import json
 from uuid import UUID
 try:
@@ -9,7 +10,7 @@ try:
 except ImportError:
     from queue import Queue
 from threading import Thread
-from six import string_types
+from pathlib import PurePosixPath
 
 from prompt_toolkit import prompt
 from prompt_toolkit.completion import Completer, Completion
@@ -89,7 +90,7 @@ class PathCompleter(Completer):
             return path.resource_name
 
         for p in sorted(self.paths, key=path_sort):
-            rel_path = p.relative(self.current_path)
+            rel_path = p.relative_to(self.current_path)
             if not rel_path:
                 continue
             if (path_matches(str(rel_path).lower()) or
@@ -100,39 +101,33 @@ class PathCompleter(Completer):
                                  display_meta=display_meta)
 
 
-class Path(UserList):
+class Path(PurePosixPath):
+
+    @classmethod
+    def _from_parsed_parts(cls, drv, root, parts, init=True):
+        if parts:
+            parts = [root] + os.path.relpath(os.path.join(*parts), start=root).split(os.path.sep)
+            parts = [p for p in parts if p not in (".", "")]
+        return super(cls, Path)._from_parsed_parts(drv, root, parts, init)
 
     def __init__(self, *args):
-        def _split_component(component):
-            if isinstance(component, string_types):
-                return [c for c in component.strip('/').split('/') if c]
-            if component is None:
-                return []
-            return component
-
-        self.data = []
-
-        for arg in args:
-            self.data += _split_component(arg)
-
         self.meta = {}
-        self.absolute = True
 
     @property
     def resource_name(self):
         try:
-            return self.data[0]
+            return self.parts[1]
         except IndexError:
             pass
 
     @property
     def is_root(self):
-        return not self.data
+        return len(self.parts) == 1 and self.root == "/"
 
     @property
     def is_resource(self):
         try:
-            UUID(self.data[-1], version=4)
+            UUID(self.name, version=4)
         except (ValueError, IndexError):
             return False
         return True
@@ -141,45 +136,11 @@ class Path(UserList):
     def is_collection(self):
         return not self.is_resource and self.resource_name
 
-    def cd(self, path_str=None):
-        path = self.data
-        if path_str is None:
-            path = []
-        elif path_str == "..":
-            path = path[:-1]
-        elif path_str == ".":
-            pass
-        elif path_str.startswith("/"):
-            path = path_str[1:].split("/")
-        else:
-            path += path_str.split("/")
-        self.data = path
-        return self.data
-
-    @property
-    def url(self):
-        from contrail_api_cli.client import APIClient
-        return APIClient().base_url + str(self)
-
-    def relative(self, path):
-        rel_path = Path()
-        for index, component in enumerate(self):
-            try:
-                if not component == path[index]:
-                    rel_path.append(component)
-            except IndexError:
-                rel_path.append(component)
-        if not path:
-            rel_path.absolute = False
-        elif path.resource_name == self.resource_name:
-            rel_path.absolute = False
-        return rel_path
-
-    def __str__(self):
-        path_str = "/".join(self.data)
-        if self.absolute:
-            return "/" + path_str
-        return path_str
+    def relative_to(self, path):
+        try:
+            return PurePosixPath.relative_to(self, path)
+        except ValueError:
+            return self
 
 
 class classproperty(object):

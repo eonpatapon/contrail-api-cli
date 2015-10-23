@@ -23,8 +23,13 @@ class APIClient:
         if self.USER and self.PASSWORD:
             return (self.USER, self.PASSWORD)
 
+    def _get_url(self, path):
+        if path.is_absolute():
+            return self.base_url + str(path)
+        raise ValueError("Path must be absolute")
+
     def get(self, path, **kwargs):
-        url = path.url
+        url = self._get_url(path)
         if path.is_collection:
             url += 's'
         try:
@@ -36,7 +41,7 @@ class APIClient:
         raise APIError(r.text)
 
     def delete(self, path):
-        r = requests.delete(path.url)
+        r = requests.delete(self._get_url(path))
         if r.status_code == 200:
             return True
         raise APIError(r.text)
@@ -50,7 +55,7 @@ class APIClient:
         @rtype: dict
         """
         headers = {"content-type": "application/json"}
-        r = requests.post(path.url, data=utils.to_json(data), headers=headers)
+        r = requests.post(self._get_url(path), data=utils.to_json(data), headers=headers)
         if r.status_code == 200:
             return r.json(object_hook=utils.decode_paths)
         raise APIError(r.text)
