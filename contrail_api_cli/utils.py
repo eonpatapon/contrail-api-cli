@@ -57,15 +57,15 @@ class PathCompleter(Completer):
     :param match_middle: When True, match not only the start, but also in the
                          middle of the path.
     """
-    def __init__(self, ignore_case=False, WORD=True, match_middle=True,
-                 current_path=None):
+    def __init__(self, ignore_case=False, WORD=True, match_middle=True):
         self.paths = []
         self.ignore_case = ignore_case
         self.WORD = WORD
         self.match_middle = match_middle
-        self.current_path = current_path
 
     def get_completions(self, document, complete_event):
+        from contrail_api_cli.prompt import CURRENT_PATH
+
         path_before_cursor = document.get_word_before_cursor(WORD=self.WORD)
 
         if self.ignore_case:
@@ -81,12 +81,12 @@ class PathCompleter(Completer):
         def path_sort(path):
             # Make the relative paths of the resource appear first in
             # the list
-            if path.resource_name == self.current_path.resource_name:
+            if path.resource_name == CURRENT_PATH.resource_name:
                 return "_"
             return path.resource_name
 
         for p in sorted(self.paths, key=path_sort):
-            rel_path = p.relative_to(self.current_path)
+            rel_path = p.relative_to(CURRENT_PATH)
             if not rel_path:
                 continue
             if (path_matches(str(rel_path).lower()) or

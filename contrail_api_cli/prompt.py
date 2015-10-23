@@ -13,9 +13,10 @@ from contrail_api_cli.client import APIClient, APIError
 from contrail_api_cli.style import PromptStyle
 from contrail_api_cli import utils, commands
 
-current_path = utils.Path('/')
+CURRENT_PATH = utils.Path('/')
+
 history = InMemoryHistory()
-completer = utils.PathCompleter(match_middle=True, current_path=current_path)
+completer = utils.PathCompleter(match_middle=True)
 utils.PathCompletionFiller(completer).start()
 
 
@@ -25,13 +26,13 @@ def get_prompt_tokens(cli):
         (Token.At, '@' if APIClient.user else ''),
         (Token.Host, APIClient.HOST),
         (Token.Colon, ':'),
-        (Token.Path, str(current_path)),
+        (Token.Path, str(CURRENT_PATH)),
         (Token.Pound, '> ')
     ]
 
 
 def main():
-    global current_path
+    global CURRENT_PATH
     argv = sys.argv[1:]
 
     parser = argparse.ArgumentParser()
@@ -52,7 +53,7 @@ def main():
     auth_plugin = auth.load_from_argparse_arguments(options)
     APIClient.SESSION = session.Session.load_from_cli_options(options, auth=auth_plugin)
 
-    for p in APIClient().list(current_path):
+    for p in APIClient().list(CURRENT_PATH):
         utils.COMPLETION_QUEUE.put(p)
 
     while True:
@@ -74,7 +75,7 @@ def main():
             continue
 
         try:
-            result = cmd(current_path, *args)
+            CURRENT_PATH, result = cmd(CURRENT_PATH, *args)
         except commands.CommandError as e:
             print(e)
             continue
@@ -91,15 +92,11 @@ def main():
             elif type(result) == list:
                 output_paths = []
                 for p in result:
-                    output_paths.append(str(p.relative_to(current_path)))
+                    output_paths.append(str(p.relative_to(CURRENT_PATH)))
                     utils.COMPLETION_QUEUE.put(p)
                 print("\n".join(output_paths))
             elif type(result) == dict:
                 print(pprint.pformat(result, indent=2))
-            # FIXME
-            elif type(result) == utils.Path:
-                current_path = result
-                completer.current_path = current_path
             else:
                 print(result)
 

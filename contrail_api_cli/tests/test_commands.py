@@ -12,6 +12,19 @@ from contrail_api_cli.client import APIClient
 
 class TestCommands(unittest.TestCase):
 
+    def test_cd(self):
+        p = Path("/")
+        p, _ = cmds.cd(p, "foo")
+        self.assertEqual(p, Path("/foo"))
+        p, _ = cmds.cd(p, "bar")
+        self.assertEqual(p, Path("/foo/bar"))
+        p, _ = cmds.cd(p, "..")
+        self.assertEqual(p, Path("/foo"))
+        p, _ = cmds.cd(p, '')
+        self.assertEqual(p, Path("/foo"))
+        p, _ = cmds.cd(p, '/')
+        self.assertEqual(p, Path("/"))
+
     @mock.patch('contrail_api_cli.commands.APIClient.get')
     def test_home_ls(self, mock_get):
         p = Path("/")
@@ -30,7 +43,7 @@ class TestCommands(unittest.TestCase):
                           "rel": "resource-base"}}
             ]
         }
-        result = cmds.ls(p)
+        _, result = cmds.ls(p)
         self.assertEqual(result, expected_home_resources)
 
     @mock.patch('contrail_api_cli.commands.APIClient.get')
@@ -48,7 +61,7 @@ class TestCommands(unittest.TestCase):
             Path("/instance-ip/ec1afeaa-8930-43b0-a60a-939f23a50724"),
             Path("/instance-ip/c2588045-d6fb-4f37-9f46-9451f653fb6a"),
         ]
-        result = cmds.ls(p)
+        _, result = cmds.ls(p)
         self.assertEqual(result, expected_resources)
 
     @mock.patch('contrail_api_cli.commands.APIClient.get')
@@ -85,7 +98,7 @@ class TestCommands(unittest.TestCase):
                 }
             ]
         }
-        result = cmds.ls(p, 'ec1afeaa-8930-43b0-a60a-939f23a50724')
+        _, result = cmds.ls(p, 'ec1afeaa-8930-43b0-a60a-939f23a50724')
         self.assertEqual(result, expected_resource)
 
     @mock.patch('contrail_api_cli.commands.APIClient.fqname_to_id')
@@ -113,7 +126,7 @@ class TestCommands(unittest.TestCase):
     def test_notfound_fqname_ls(self, mock_get, mock_fqname_to_id):
         p = Path('foo')
         mock_fqname_to_id.return_value = None
-        result = cmds.ls(p, "default-domain:foo")
+        _, result = cmds.ls(p, "default-domain:foo")
         self.assertIsNone(result)
         self.assertFalse(mock_get.called)
 
@@ -125,15 +138,15 @@ class TestCommands(unittest.TestCase):
                 'count': 3
             }
         }
-        result = cmds.count(p)
+        _, result = cmds.count(p)
         self.assertEqual(result, 3)
 
         p = Path('/')
-        result = cmds.count(p, 'foo')
+        _, result = cmds.count(p, 'foo')
         self.assertEqual(result, 3)
 
         p = Path('/foo/%s' % uuid.uuid4())
-        result = cmds.count(p)
+        _, result = cmds.count(p)
         self.assertEqual(result, None)
 
     @mock.patch('contrail_api_cli.commands.APIClient.delete')
