@@ -58,26 +58,3 @@ class APIClient:
         }
         uuid = self.post(utils.Path("/fqname-to-id"), data)['uuid']
         return utils.Path(path, uuid)
-
-    def list(self, path):
-        data = self.get(path)
-        if path.is_root:
-            return self._get_home_resources(data)
-        elif path.is_collection:
-            return self._get_resources(data)
-        elif path.is_resource:
-            return data[path.resource_name]
-
-    def _get_resources(self, data):
-        resources = []
-        for resource_name, resource_list in data.items():
-            for resource in resource_list:
-                resources.append(resource["href"])
-        return resources
-
-    def _get_home_resources(self, data):
-        resources = []
-        for resource in data['links']:
-            if resource["link"]["rel"] == "resource-base":
-                resources.append(resource["link"]["href"])
-        return resources
