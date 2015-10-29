@@ -123,7 +123,7 @@ class Rm(ExperimentalCommand):
                     action="store_true", default=False,
                     help="Recursive delete of back_refs resources")
 
-    def _get_back_refs(self, path, back_refs=[]):
+    def _get_back_refs(self, path, back_refs):
         resource = APIClient().get(path)[path.resource_name]
         if resource["href"] not in back_refs:
             back_refs.append(resource["href"])
@@ -132,7 +132,7 @@ class Rm(ExperimentalCommand):
                 continue
             for back_ref in values:
                 back_refs = self._get_back_refs(back_ref["href"],
-                                                back_refs=back_refs)
+                                                back_refs)
         return back_refs
 
     def run(self, current_path, resource='', recursive=False):
@@ -142,7 +142,7 @@ class Rm(ExperimentalCommand):
 
         back_refs = [target]
         if recursive:
-            back_refs = self._get_back_refs(target)
+            back_refs = self._get_back_refs(target, [])
         if back_refs:
             print("About to delete:\n - %s" %
                   "\n - ".join([str(p.relative_to(current_path)) for p in back_refs]))
