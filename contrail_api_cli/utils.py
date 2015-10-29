@@ -2,10 +2,6 @@ import os.path
 import json
 from uuid import UUID
 try:
-    from UserList import UserList
-except ImportError:
-    from collections import UserList
-try:
     from Queue import Queue
 except ImportError:
     from queue import Queue
