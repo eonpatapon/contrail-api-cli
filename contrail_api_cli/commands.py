@@ -125,8 +125,9 @@ class Rm(ExperimentalCommand):
 
     def _get_back_refs(self, path, back_refs):
         resource = APIClient().get(path)[path.resource_name]
-        if resource["href"] not in back_refs:
-            back_refs.append(resource["href"])
+        if resource["href"] in back_refs:
+            back_refs.remove(resource["href"])
+        back_refs.append(resource["href"])
         for attr, values in resource.items():
             if not attr.endswith("back_refs"):
                 continue
