@@ -23,6 +23,28 @@ Here is a screenshot of an example session:
 
 ![Example session](http://i.imgur.com/X83FVTJ.png)
 
+## Authentication
+
+``contrail-api-cli`` supports keystone (v2, v3) and Basic HTTP authentication mechanisms.
+
+When running the contrail API server with ``--auth keystone`` you can login on port 8082 with keystone auth and on port 8095 with basic http auth.
+
+### Basic HTTP auth
+
+    contrail-api-cli --host localhost:8095 --os-auth-plugin http --os-username admin --os-password contrail123
+
+The username and password can be sourced from the environment variables ``OS_USERNAME``, ``OS_PASSWORD``.
+
+The auth plugin default to ``http`` unless ``OS_AUTH_PLUGIN`` is set.
+
+### Kerberos auth
+
+The easiest way is to source your openstack openrc file and run
+
+    contrail-api-cli --os-auth-plugin [v2password|v3password]
+
+See ``contrail-api-cli --os-auth-plugin [v2password|v3password] --help`` for all options.
+
 ## What if
 
 ### virtualenv is missing
