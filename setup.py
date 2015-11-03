@@ -2,8 +2,8 @@ from setuptools import setup, find_packages
 
 install_requires = [
     'prompt_toolkit',
-    'requests',
-    'pathlib'
+    'pathlib',
+    'python-keystoneclient'
 ]
 
 test_requires = [
@@ -27,8 +27,11 @@ setup(
     license="MIT",
     entry_points={
         'console_scripts': [
-            'contrail-api-cli = contrail_api_cli.prompt:main',
+            'contrail-api-cli = contrail_api_cli.prompt:main'
         ],
+        'keystoneclient.auth.plugin': [
+            'http = contrail_api_cli.auth:HTTPAuth'
+        ]
     },
     classifiers=[
         'Development Status :: 3 - Alpha',

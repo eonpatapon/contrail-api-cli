@@ -1,5 +1,4 @@
-import requests
-from requests.exceptions import ConnectionError
+from keystoneclient.exceptions import ConnectionError
 
 from contrail_api_cli import utils
 
@@ -9,19 +8,18 @@ class APIError(Exception):
 
 
 class APIClient:
+    USER_AGENT = "contrail-api-cli"
     PROTOCOL = "http"
     HOST = "localhost:8082"
-    USER = ""
-    PASSWORD = ""
+    SESSION = None
 
     @utils.classproperty
     def base_url(cls):
         return cls.PROTOCOL + "://" + cls.HOST
 
-    @property
-    def _auth_token(self):
-        if self.USER and self.PASSWORD:
-            return (self.USER, self.PASSWORD)
+    @utils.classproperty
+    def user(cls):
+        return cls.SESSION.auth.username
 
     def _get_url(self, path):
         if path.is_absolute():
@@ -33,7 +31,7 @@ class APIClient:
         if path.is_collection:
             url += 's'
         try:
-            r = requests.get(url, auth=self._auth_token, params=kwargs)
+            r = self.SESSION.get(url, user_agent=self.USER_AGENT, **kwargs)
         except ConnectionError:
             raise APIError("Failed to connect to API server at %s" % APIClient.base_url)
         if r.status_code == 200:
@@ -41,7 +39,7 @@ class APIClient:
         raise APIError(r.text)
 
     def delete(self, path):
-        r = requests.delete(self._get_url(path))
+        r = self.SESSION.delete(self._get_url(path), user_agent=self.USER_AGENT)
         if r.status_code == 200:
             return True
         raise APIError(r.text)
@@ -55,7 +53,8 @@ class APIClient:
         @rtype: dict
         """
         headers = {"content-type": "application/json"}
-        r = requests.post(self._get_url(path), data=utils.to_json(data), headers=headers)
+        r = self.SESSION.post(self._get_url(path), data=utils.to_json(data),
+                              headers=headers, user_agent=self.USER_AGENT)
         if r.status_code == 200:
             return r.json(object_hook=utils.decode_paths)
         raise APIError(r.text)

@@ -1,3 +1,4 @@
+import sys
 import pprint
 import argparse
 
@@ -5,6 +6,8 @@ from prompt_toolkit import prompt
 from prompt_toolkit.history import InMemoryHistory
 
 from pygments.token import Token
+
+from keystoneclient import session, auth
 
 from contrail_api_cli.client import APIClient, APIError
 from contrail_api_cli.style import PromptStyle
@@ -18,8 +21,8 @@ utils.PathCompletionFiller(completer).start()
 
 def get_prompt_tokens(cli):
     return [
-        (Token.Username, APIClient.USER),
-        (Token.At, '@' if APIClient.USER else ''),
+        (Token.Username, APIClient.user),
+        (Token.At, '@' if APIClient.user else ''),
         (Token.Host, APIClient.HOST),
         (Token.Colon, ':'),
         (Token.Path, str(current_path)),
@@ -29,24 +32,25 @@ def get_prompt_tokens(cli):
 
 def main():
     global current_path
+    argv = sys.argv[1:]
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--host', default='localhost:8082',
                         help="host:port to connect to (default='%(default)s')")
     parser.add_argument('--ssl', action="store_true", default=False,
                         help="connect with SSL (default=%(default)s)")
-    parser.add_argument('--user', default='',
-                        help="authenticate with user (default='%(default)s')")
-    parser.add_argument('--password', default='',
-                        help="authenticate with password (default='%(default)s')")
+    session.Session.register_cli_options(parser)
+    # Default auth plugin will be http unless OS_AUTH_PLUGIN envvar is set
+    auth.register_argparse_arguments(parser, argv, default="http")
     options = parser.parse_args()
+
     if options.ssl:
         APIClient.PROTOCOL = 'https'
     if options.host:
         APIClient.HOST = options.host
-    if options.user and options.password:
-        APIClient.USER = options.user
-        APIClient.PASSWORD = options.password
+
+    auth_plugin = auth.load_from_argparse_arguments(options)
+    APIClient.SESSION = session.Session.load_from_cli_options(options, auth=auth_plugin)
 
     for p in APIClient().list(current_path):
         utils.COMPLETION_QUEUE.put(p)
