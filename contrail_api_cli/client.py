@@ -71,7 +71,7 @@ class APIClient:
             "type": path.resource_name,
             "fq_name": fq_name.split(":")
         }
-        uuid = self.post(utils.Path("fqname-to-id"), data)['uuid']
+        uuid = self.post(utils.Path("/fqname-to-id"), data)['uuid']
         return utils.Path(path, uuid)
 
     def list(self, path):
