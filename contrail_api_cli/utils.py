@@ -12,9 +12,6 @@ from prompt_toolkit import prompt
 from prompt_toolkit.completion import Completer, Completion
 
 
-COMPLETION_QUEUE = Queue()
-
-
 class PathEncoder(json.JSONEncoder):
 
     def default(self, obj):
@@ -40,10 +37,10 @@ class PathCompletionFiller(Thread):
 
     def run(self):
         while True:
-            p = COMPLETION_QUEUE.get()
+            p = ShellContext.completion_queue.get()
             if p not in self.completer.paths:
                 self.completer.paths.append(p)
-            COMPLETION_QUEUE.task_done()
+            ShellContext.completion_queue.task_done()
 
 
 class PathCompleter(Completer):
@@ -64,8 +61,6 @@ class PathCompleter(Completer):
         self.match_middle = match_middle
 
     def get_completions(self, document, complete_event):
-        from contrail_api_cli.prompt import CURRENT_PATH
-
         path_before_cursor = document.get_word_before_cursor(WORD=self.WORD)
 
         if self.ignore_case:
@@ -81,12 +76,12 @@ class PathCompleter(Completer):
         def path_sort(path):
             # Make the relative paths of the resource appear first in
             # the list
-            if path.resource_name == CURRENT_PATH.resource_name:
+            if path.resource_name == ShellContext.current_path.resource_name:
                 return "_"
             return path.resource_name
 
         for p in sorted(self.paths, key=path_sort):
-            rel_path = p.relative_to(CURRENT_PATH)
+            rel_path = p.relative_to(ShellContext.current_path)
             if not rel_path:
                 continue
             if (path_matches(str(rel_path).lower()) or
@@ -137,6 +132,11 @@ class Path(PurePosixPath):
             return PurePosixPath.relative_to(self, path)
         except ValueError:
             return self
+
+
+class ShellContext(object):
+    current_path = Path("/")
+    completion_queue = Queue()
 
 
 class classproperty(object):

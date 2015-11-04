@@ -6,28 +6,27 @@ except ImportError:
     import unittest.mock as mock
 
 import contrail_api_cli.commands as cmds
-from contrail_api_cli.utils import Path
+from contrail_api_cli.utils import Path, ShellContext
 from contrail_api_cli.client import APIClient
 
 
 class TestCommands(unittest.TestCase):
 
     def test_cd(self):
-        p = Path("/")
-        p, _ = cmds.cd(p, "foo")
-        self.assertEqual(p, Path("/foo"))
-        p, _ = cmds.cd(p, "bar")
-        self.assertEqual(p, Path("/foo/bar"))
-        p, _ = cmds.cd(p, "..")
-        self.assertEqual(p, Path("/foo"))
-        p, _ = cmds.cd(p, '')
-        self.assertEqual(p, Path("/foo"))
-        p, _ = cmds.cd(p, '/')
-        self.assertEqual(p, Path("/"))
+        cmds.cd("foo")
+        self.assertEqual(ShellContext.current_path, Path("/foo"))
+        cmds.cd("bar")
+        self.assertEqual(ShellContext.current_path, Path("/foo/bar"))
+        cmds.cd("..")
+        self.assertEqual(ShellContext.current_path, Path("/foo"))
+        cmds.cd('')
+        self.assertEqual(ShellContext.current_path, Path("/foo"))
+        cmds.cd('/')
+        self.assertEqual(ShellContext.current_path, Path("/"))
 
     @mock.patch('contrail_api_cli.commands.APIClient.get')
     def test_home_ls(self, mock_get):
-        p = Path("/")
+        ShellContext.current_path = Path("/")
         expected_home_resources = [
             Path("/instance-ip"),
         ]
@@ -43,12 +42,12 @@ class TestCommands(unittest.TestCase):
                           "rel": "resource-base"}}
             ]
         }
-        _, result = cmds.ls(p)
+        result = cmds.ls()
         self.assertEqual(result, expected_home_resources)
 
     @mock.patch('contrail_api_cli.commands.APIClient.get')
     def test_resources_ls(self, mock_get):
-        p = Path("/instance-ip")
+        ShellContext.current_path = Path("/instance-ip")
         mock_get.return_value = {
             "instance-ips": [
                 {"href": Path("/instance-ip/ec1afeaa-8930-43b0-a60a-939f23a50724"),
@@ -61,13 +60,13 @@ class TestCommands(unittest.TestCase):
             Path("/instance-ip/ec1afeaa-8930-43b0-a60a-939f23a50724"),
             Path("/instance-ip/c2588045-d6fb-4f37-9f46-9451f653fb6a"),
         ]
-        _, result = cmds.ls(p)
+        result = cmds.ls()
         self.assertEqual(result, expected_resources)
 
     @mock.patch('contrail_api_cli.commands.APIClient.get')
     @mock.patch('contrail_api_cli.commands.Ls.colorize')
     def test_resource_ls(self, mock_colorize, mock_get):
-        p = Path('/foo')
+        ShellContext.current_path = Path('/foo')
         mock_get.return_value = {
             "foo": {
                 "href": Path("/foo/ec1afeaa-8930-43b0-a60a-939f23a50724"),
@@ -98,72 +97,72 @@ class TestCommands(unittest.TestCase):
                 }
             ]
         }
-        _, result = cmds.ls(p, 'ec1afeaa-8930-43b0-a60a-939f23a50724')
+        result = cmds.ls('ec1afeaa-8930-43b0-a60a-939f23a50724')
         self.assertEqual(result, expected_resource)
 
     @mock.patch('contrail_api_cli.commands.APIClient.fqname_to_id')
     @mock.patch('contrail_api_cli.commands.APIClient.get')
     @mock.patch('contrail_api_cli.commands.Ls.colorize')
     def test_fqname_ls(self, mock_colorize, mock_get, mock_fqname_to_id):
-        p = Path('/foo')
+        ShellContext.current_path = Path('/foo')
         fq_name = "default-domain:foo:b25f5a6b-292f-4d0c-b5c6-22ad7209abe5"
-        excpected_path = Path("/foo/b25f5a6b-292f-4d0c-b5c6-22ad7209abe5")
+        expected_path = Path("/foo/b25f5a6b-292f-4d0c-b5c6-22ad7209abe5")
 
         mock_colorize.side_effect = lambda d: d
-        mock_fqname_to_id.return_value = excpected_path
+        mock_fqname_to_id.return_value = expected_path
 
-        cmds.ls(p, fq_name)
+        cmds.ls(fq_name)
 
         mock_fqname_to_id.assert_has_calls([
-            mock.call(p, fq_name)
+            mock.call(ShellContext.current_path, fq_name)
         ])
         mock_get.assert_has_calls([
-            mock.call(excpected_path)
+            mock.call(expected_path)
         ])
 
     @mock.patch('contrail_api_cli.commands.APIClient.fqname_to_id')
     @mock.patch('contrail_api_cli.commands.APIClient.get')
     def test_notfound_fqname_ls(self, mock_get, mock_fqname_to_id):
-        p = Path('foo')
+        ShellContext.current_path = Path('foo')
         mock_fqname_to_id.return_value = None
-        _, result = cmds.ls(p, "default-domain:foo")
+        result = cmds.ls("default-domain:foo")
         self.assertIsNone(result)
         self.assertFalse(mock_get.called)
 
     @mock.patch('contrail_api_cli.commands.APIClient.get')
     def test_count(self, mock_get):
-        p = Path('/foo')
+        ShellContext.current_path = Path('/foo')
         mock_get.return_value = {
             'foos': {
                 'count': 3
             }
         }
-        _, result = cmds.count(p)
+        result = cmds.count()
         self.assertEqual(result, 3)
 
-        p = Path('/')
-        _, result = cmds.count(p, 'foo')
+        ShellContext.current_path = Path('/')
+        result = cmds.count('foo')
         self.assertEqual(result, 3)
 
-        p = Path('/foo/%s' % uuid.uuid4())
-        _, result = cmds.count(p)
+        ShellContext.current_path = Path('/foo/%s' % uuid.uuid4())
+        result = cmds.count()
         self.assertEqual(result, None)
 
     @mock.patch('contrail_api_cli.commands.APIClient.delete')
     @mock.patch('contrail_api_cli.commands.utils.continue_prompt')
     def test_rm(self, mock_continue_prompt, mock_delete):
-        p = Path("/")
+        ShellContext.current_path = Path("/")
         t = "foo/6b6a7f47-807e-4c39-8ac6-3adcf2f5498f"
         mock_continue_prompt.return_value = True
         mock_delete.return_value = True
-        cmds.rm(p, t)
+        cmds.rm(t)
         mock_delete.assert_has_calls([mock.call(Path("/foo/6b6a7f47-807e-4c39-8ac6-3adcf2f5498f"))])
 
     @mock.patch('contrail_api_cli.commands.APIClient.get')
     @mock.patch('contrail_api_cli.commands.APIClient.delete')
     @mock.patch('contrail_api_cli.commands.utils.continue_prompt')
     def test_rm_recursive(self, mock_continue_prompt, mock_delete, mock_get):
-        p = Path("/")
+        ShellContext.current_path = Path("/")
         t = "foo/6b6a7f47-807e-4c39-8ac6-3adcf2f5498f"
         mock_continue_prompt.return_value = True
         mock_get.side_effect = [
@@ -202,7 +201,7 @@ class TestCommands(unittest.TestCase):
             }
         ]
         mock_delete.return_value = True
-        cmds.rm(p, t, "-r")
+        cmds.rm(t, "-r")
         mock_delete.assert_has_calls([
             mock.call(Path("/bar/776bdf88-6283-4c4b-9392-93a857807307")),
             mock.call(Path("/foobar/1050223f-a230-4ed6-96f1-c332700c5e01")),

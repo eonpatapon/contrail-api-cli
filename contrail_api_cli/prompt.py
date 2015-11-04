@@ -12,8 +12,7 @@ from keystoneclient import session, auth
 from contrail_api_cli.client import APIClient, APIError
 from contrail_api_cli.style import PromptStyle
 from contrail_api_cli import utils, commands
-
-CURRENT_PATH = utils.Path('/')
+from contrail_api_cli.utils import ShellContext
 
 history = InMemoryHistory()
 completer = utils.PathCompleter(match_middle=True)
@@ -26,13 +25,12 @@ def get_prompt_tokens(cli):
         (Token.At, '@' if APIClient.user else ''),
         (Token.Host, APIClient.HOST),
         (Token.Colon, ':'),
-        (Token.Path, str(CURRENT_PATH)),
+        (Token.Path, str(ShellContext.current_path)),
         (Token.Pound, '> ')
     ]
 
 
 def main():
-    global CURRENT_PATH
     argv = sys.argv[1:]
 
     parser = argparse.ArgumentParser()
@@ -53,8 +51,8 @@ def main():
     auth_plugin = auth.load_from_argparse_arguments(options)
     APIClient.SESSION = session.Session.load_from_cli_options(options, auth=auth_plugin)
 
-    for p in APIClient().list(CURRENT_PATH):
-        utils.COMPLETION_QUEUE.put(p)
+    for p in APIClient().list(ShellContext.current_path):
+        ShellContext.completion_queue.put(p)
 
     while True:
         try:
@@ -75,7 +73,7 @@ def main():
             continue
 
         try:
-            CURRENT_PATH, result = cmd(CURRENT_PATH, *args)
+            result = cmd(*args)
         except commands.CommandError as e:
             print(e)
             continue
@@ -92,8 +90,8 @@ def main():
             elif type(result) == list:
                 output_paths = []
                 for p in result:
-                    output_paths.append(str(p.relative_to(CURRENT_PATH)))
-                    utils.COMPLETION_QUEUE.put(p)
+                    output_paths.append(str(p.relative_to(ShellContext.current_path)))
+                    ShellContext.completion_queue.put(p)
                 print("\n".join(output_paths))
             elif type(result) == dict:
                 print(pprint.pformat(result, indent=2))

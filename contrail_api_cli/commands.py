@@ -7,6 +7,7 @@ from pygments.lexers import JsonLexer
 from pygments.formatters import Terminal256Formatter
 
 from contrail_api_cli import utils
+from contrail_api_cli.utils import ShellContext
 from contrail_api_cli.client import APIClient, APIError
 
 
@@ -43,11 +44,9 @@ class Command:
                     value.args = value.args[1:]
                 self.parser.add_argument(attr, *value.args, **value.kwargs)
 
-    def __call__(self, current_path, *args):
-        self.current_path = current_path
+    def __call__(self, *args):
         args = self.parser.parse_args(args=args)
-        result = self.run(**args.__dict__)
-        return (self.current_path, result)
+        return self.run(**args.__dict__)
 
 
 class ExperimentalCommand(Command):
@@ -78,8 +77,8 @@ class Ls(Command):
             if attr in ("to", "fq_name"):
                 data[attr] = ":".join(value)
             if attr in ("href", "parent_href"):
-                data[attr] = value.relative_to(self.current_path)
-                utils.COMPLETION_QUEUE.put(value)
+                data[attr] = value.relative_to(ShellContext.current_path)
+                ShellContext.completion_queue.put(value)
         return data
 
     def colorize(self, data):
@@ -93,12 +92,12 @@ class Ls(Command):
     def run(self, resource=''):
         # Find Path from fq_name
         if ":" in resource:
-            target = APIClient().fqname_to_id(self.current_path, resource)
+            target = APIClient().fqname_to_id(ShellContext.current_path, resource)
             if target is None:
                 print("Can't find %s" % resource)
                 return
         else:
-            target = self.current_path / resource
+            target = ShellContext.current_path / resource
         data = APIClient().list(target)
         if target.is_resource:
             data = self.walk_resource(data)
@@ -112,7 +111,7 @@ class Count(Command):
     resource = Arg(nargs="?", help="Resource path", default='')
 
     def run(self, resource=''):
-        target = self.current_path / resource
+        target = ShellContext.current_path / resource
         if target.is_collection:
             data = APIClient().get(target, count=True)
             return data[target.resource_name + "s"]["count"]
@@ -139,16 +138,16 @@ class Rm(ExperimentalCommand):
         return back_refs
 
     def run(self, resource='', recursive=False):
-        target = self.current_path / resource
+        target = ShellContext.current_path / resource
         if not target.is_resource:
-            raise CommandError('"%s" is not a resource.' % target.relative_to(self.current_path))
+            raise CommandError('"%s" is not a resource.' % target.relative_to(ShellContext.current_path))
 
         back_refs = [target]
         if recursive:
             back_refs = self._get_back_refs(target, [])
         if back_refs:
             print("About to delete:\n - %s" %
-                  "\n - ".join([str(p.relative_to(self.current_path)) for p in back_refs]))
+                  "\n - ".join([str(p.relative_to(ShellContext.current_path)) for p in back_refs]))
             if utils.continue_prompt():
                 for ref in reversed(back_refs):
                     print("Deleting %s" % str(ref))
@@ -165,7 +164,7 @@ class Cd(Command):
     resource = Arg(nargs="?", help="Resource path", default='')
 
     def run(self, resource=''):
-        self.current_path = self.current_path / resource
+        ShellContext.current_path = ShellContext.current_path / resource
 
 
 class Exit(Command):
