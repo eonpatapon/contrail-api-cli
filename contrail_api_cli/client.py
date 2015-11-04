@@ -31,7 +31,7 @@ class APIClient:
         if path.is_collection:
             url += 's'
         try:
-            r = self.SESSION.get(url, user_agent=self.USER_AGENT, **kwargs)
+            r = self.SESSION.get(url, user_agent=self.USER_AGENT, params=kwargs)
         except ConnectionError:
             raise APIError("Failed to connect to API server at %s" % APIClient.base_url)
         if r.status_code == 200:
