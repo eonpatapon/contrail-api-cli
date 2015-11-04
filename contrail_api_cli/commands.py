@@ -29,7 +29,7 @@ class Arg:
         self.kwargs = kwargs
 
 
-class Command:
+class Command(object):
     description = ""
 
     def __init__(self, *args):
@@ -44,16 +44,16 @@ class Command:
                     value.args = value.args[1:]
                 self.parser.add_argument(attr, *value.args, **value.kwargs)
 
-    def __call__(self, *args):
+    def parse_and_call(self, *args):
         args = self.parser.parse_args(args=args)
-        return self.run(**args.__dict__)
+        return self.__call__(**vars(args))
 
 
 class ExperimentalCommand(Command):
 
-    def __call__(self, *args):
+    def parse_and_call(self, *args):
         print("This command is experimental. Use at your own risk.")
-        return Command.__call__(self, *args)
+        return super(self, ExperimentalCommand).parse_and_call(*args)
 
 
 class Ls(Command):
@@ -89,7 +89,7 @@ class Ls(Command):
                          JsonLexer(indent=2),
                          Terminal256Formatter(bg="dark"))
 
-    def run(self, resource=''):
+    def __call__(self, resource=''):
         # Find Path from fq_name
         if ":" in resource:
             target = APIClient().fqname_to_id(ShellContext.current_path, resource)
@@ -110,7 +110,7 @@ class Count(Command):
     description = "Count number of resources"
     resource = Arg(nargs="?", help="Resource path", default='')
 
-    def run(self, resource=''):
+    def __call__(self, resource=''):
         target = ShellContext.current_path / resource
         if target.is_collection:
             data = APIClient().get(target, count=True)
@@ -137,7 +137,7 @@ class Rm(ExperimentalCommand):
                                                 back_refs)
         return back_refs
 
-    def run(self, resource='', recursive=False):
+    def __call__(self, resource='', recursive=False):
         target = ShellContext.current_path / resource
         if not target.is_resource:
             raise CommandError('"%s" is not a resource.' % target.relative_to(ShellContext.current_path))
@@ -163,20 +163,20 @@ class Cd(Command):
     description = "Change resource context"
     resource = Arg(nargs="?", help="Resource path", default='')
 
-    def run(self, resource=''):
+    def __call__(self, resource=''):
         ShellContext.current_path = ShellContext.current_path / resource
 
 
 class Exit(Command):
     description = "Exit from cli"
 
-    def run(self):
+    def __call__(self):
         raise EOFError
 
 
 class Help(Command):
 
-    def run(self):
+    def __call__(self):
         commands = {}
         for name, obj in globals().items():
             if isinstance(obj, Command):

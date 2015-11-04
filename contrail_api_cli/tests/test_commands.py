@@ -97,7 +97,7 @@ class TestCommands(unittest.TestCase):
                 }
             ]
         }
-        result = cmds.ls('ec1afeaa-8930-43b0-a60a-939f23a50724')
+        result = cmds.ls(resource='ec1afeaa-8930-43b0-a60a-939f23a50724')
         self.assertEqual(result, expected_resource)
 
     @mock.patch('contrail_api_cli.commands.APIClient.fqname_to_id')
@@ -111,7 +111,7 @@ class TestCommands(unittest.TestCase):
         mock_colorize.side_effect = lambda d: d
         mock_fqname_to_id.return_value = expected_path
 
-        cmds.ls(fq_name)
+        cmds.ls(resource=fq_name)
 
         mock_fqname_to_id.assert_has_calls([
             mock.call(ShellContext.current_path, fq_name)
@@ -125,7 +125,7 @@ class TestCommands(unittest.TestCase):
     def test_notfound_fqname_ls(self, mock_get, mock_fqname_to_id):
         ShellContext.current_path = Path('foo')
         mock_fqname_to_id.return_value = None
-        result = cmds.ls("default-domain:foo")
+        result = cmds.ls(resource="default-domain:foo")
         self.assertIsNone(result)
         self.assertFalse(mock_get.called)
 
@@ -141,7 +141,7 @@ class TestCommands(unittest.TestCase):
         self.assertEqual(result, 3)
 
         ShellContext.current_path = Path('/')
-        result = cmds.count('foo')
+        result = cmds.count(resource='foo')
         self.assertEqual(result, 3)
 
         ShellContext.current_path = Path('/foo/%s' % uuid.uuid4())
@@ -155,7 +155,7 @@ class TestCommands(unittest.TestCase):
         t = "foo/6b6a7f47-807e-4c39-8ac6-3adcf2f5498f"
         mock_continue_prompt.return_value = True
         mock_delete.return_value = True
-        cmds.rm(t)
+        cmds.rm(resource=t)
         mock_delete.assert_has_calls([mock.call(Path("/foo/6b6a7f47-807e-4c39-8ac6-3adcf2f5498f"))])
 
     @mock.patch('contrail_api_cli.commands.APIClient.get')
@@ -201,7 +201,7 @@ class TestCommands(unittest.TestCase):
             }
         ]
         mock_delete.return_value = True
-        cmds.rm(t, "-r")
+        cmds.rm(resource=t, recursive=True)
         mock_delete.assert_has_calls([
             mock.call(Path("/bar/776bdf88-6283-4c4b-9392-93a857807307")),
             mock.call(Path("/foobar/1050223f-a230-4ed6-96f1-c332700c5e01")),

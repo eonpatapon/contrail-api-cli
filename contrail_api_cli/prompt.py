@@ -73,7 +73,7 @@ def main():
             continue
 
         try:
-            result = cmd(*args)
+            result = cmd.parse_and_call(*args)
         except commands.CommandError as e:
             print(e)
             continue
