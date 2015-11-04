@@ -22,14 +22,25 @@ class ArgumentParser(argparse.ArgumentParser):
         raise CommandError()
 
 
-class Arg:
+class Arg(object):
 
     def __init__(self, *args, **kwargs):
         self.args = args
         self.kwargs = kwargs
 
 
-class Command(object):
+def experimental(cls):
+    old_call = cls.__call__
+
+    def new_call(self, *args, **kwargs):
+        print("This command is experimental. Use at your own risk.")
+        old_call(self, *args, **kwargs)
+
+    cls.__call__ = new_call
+    return cls
+
+
+class BaseCommand(object):
     description = ""
 
     def __init__(self, *args):
@@ -49,11 +60,16 @@ class Command(object):
         return self.__call__(**vars(args))
 
 
-class ExperimentalCommand(Command):
+class Command(BaseCommand):
+    """ Class for commands that can be used outside the shell
+    """
+    pass
 
-    def parse_and_call(self, *args):
-        print("This command is experimental. Use at your own risk.")
-        return super(self, ExperimentalCommand).parse_and_call(*args)
+
+class ShellCommand(BaseCommand):
+    """ Class for commands used only in the shell
+    """
+    pass
 
 
 class Ls(Command):
@@ -117,7 +133,8 @@ class Count(Command):
             return data[target.resource_name + "s"]["count"]
 
 
-class Rm(ExperimentalCommand):
+@experimental
+class Rm(Command):
     description = "Delete a resource"
     resource = Arg(nargs="?", help="Resource path", default='')
     recursive = Arg("-r", "--recursive", dest="recursive",
@@ -159,7 +176,7 @@ class Rm(ExperimentalCommand):
                                            % str(e))
 
 
-class Cd(Command):
+class Cd(ShellCommand):
     description = "Change resource context"
     resource = Arg(nargs="?", help="Resource path", default='')
 
@@ -167,19 +184,19 @@ class Cd(Command):
         ShellContext.current_path = ShellContext.current_path / resource
 
 
-class Exit(Command):
+class Exit(ShellCommand):
     description = "Exit from cli"
 
     def __call__(self):
         raise EOFError
 
 
-class Help(Command):
+class Help(ShellCommand):
 
     def __call__(self):
         commands = {}
         for name, obj in globals().items():
-            if isinstance(obj, Command):
+            if isinstance(obj, BaseCommand):
                 if name != "help":
                     commands[obj] = name
         return "Available commands: %s" % " ".join(commands.values())
