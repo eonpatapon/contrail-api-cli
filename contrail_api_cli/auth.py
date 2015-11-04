@@ -1,4 +1,5 @@
 import base64
+from six import b
 
 from oslo_config import cfg
 from keystoneclient.auth.base import BaseAuthPlugin
@@ -11,7 +12,8 @@ class HTTPAuth(BaseAuthPlugin):
         self.password = password
 
     def get_headers(self, session, **kwargs):
-        return {'Authorization': 'Basic %s' % base64.standard_b64encode("%s:%s" % (self.username, self.password))}
+        auth = "%s:%s" % (self.username, self.password)
+        return {'Authorization': 'Basic %s' % base64.b64encode(b(auth)).decode('utf-8')}
 
     @classmethod
     def get_options(cls):
