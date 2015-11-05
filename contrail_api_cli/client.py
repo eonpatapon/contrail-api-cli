@@ -1,10 +1,4 @@
-from keystoneclient.exceptions import ConnectionError
-
 from contrail_api_cli import utils
-
-
-class APIError(Exception):
-    pass
 
 
 class APIClient:
@@ -30,19 +24,12 @@ class APIClient:
         url = self._get_url(path)
         if path.is_collection:
             url += 's'
-        try:
-            r = self.SESSION.get(url, user_agent=self.USER_AGENT, params=kwargs)
-        except ConnectionError:
-            raise APIError("Failed to connect to API server at %s" % APIClient.base_url)
-        if r.status_code == 200:
-            return r.json(object_hook=utils.decode_paths)
-        raise APIError(r.text)
+        r = self.SESSION.get(url, user_agent=self.USER_AGENT, params=kwargs)
+        return r.json(object_hook=utils.decode_paths)
 
     def delete(self, path):
-        r = self.SESSION.delete(self._get_url(path), user_agent=self.USER_AGENT)
-        if r.status_code == 200:
-            return True
-        raise APIError(r.text)
+        self.SESSION.delete(self._get_url(path), user_agent=self.USER_AGENT)
+        return True
 
     def post(self, path, data):
         """
@@ -55,9 +42,7 @@ class APIClient:
         headers = {"content-type": "application/json"}
         r = self.SESSION.post(self._get_url(path), data=utils.to_json(data),
                               headers=headers, user_agent=self.USER_AGENT)
-        if r.status_code == 200:
-            return r.json(object_hook=utils.decode_paths)
-        raise APIError(r.text)
+        return r.json(object_hook=utils.decode_paths)
 
     def fqname_to_id(self, path, fq_name):
         """

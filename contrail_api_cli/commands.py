@@ -2,13 +2,15 @@ import inspect
 import argparse
 import json
 
+from keystoneclient.exceptions import HttpError
+
 from pygments import highlight
 from pygments.lexers import JsonLexer
 from pygments.formatters import Terminal256Formatter
 
 from contrail_api_cli import utils
 from contrail_api_cli.utils import ShellContext
-from contrail_api_cli.client import APIClient, APIError
+from contrail_api_cli.client import APIClient
 
 
 class CommandError(Exception):
@@ -181,10 +183,8 @@ class Rm(Command):
                     print("Deleting %s" % str(ref))
                     try:
                         APIClient().delete(ref)
-                    except APIError as e:
-                        raise CommandError("Failed to delete all resources: %s\n \
-                                            Try to delete the resource recursively with -r."
-                                           % str(e))
+                    except HttpError as e:
+                        raise CommandError("Failed to delete resource: %s" % str(e))
 
 
 class Cd(ShellCommand):

@@ -8,8 +8,9 @@ from prompt_toolkit.history import InMemoryHistory
 from pygments.token import Token
 
 from keystoneclient import session, auth
+from keystoneclient.exceptions import ClientException, HttpError
 
-from contrail_api_cli.client import APIClient, APIError
+from contrail_api_cli.client import APIClient
 from contrail_api_cli.style import PromptStyle
 from contrail_api_cli import utils, commands
 from contrail_api_cli.utils import ShellContext
@@ -51,8 +52,12 @@ def main():
     auth_plugin = auth.load_from_argparse_arguments(options)
     APIClient.SESSION = session.Session.load_from_cli_options(options, auth=auth_plugin)
 
-    for p in APIClient().list(ShellContext.current_path):
-        ShellContext.completion_queue.put(p)
+    try:
+        for p in APIClient().list(ShellContext.current_path):
+            ShellContext.completion_queue.put(p)
+    except ClientException as e:
+        print(e)
+        sys.exit(1)
 
     while True:
         try:
@@ -74,10 +79,7 @@ def main():
 
         try:
             result = cmd.parse_and_call(*args)
-        except commands.CommandError as e:
-            print(e)
-            continue
-        except APIError as e:
+        except (HttpError, ClientException, commands.CommandError) as e:
             print(e)
             continue
         except KeyboardInterrupt:
