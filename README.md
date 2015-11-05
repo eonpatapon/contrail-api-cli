@@ -2,6 +2,8 @@
 
 contrail-api-cli
 ================
+
+[![Join the chat at https://gitter.im/eonpatapon/contrail-api-cli](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/eonpatapon/contrail-api-cli?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 Simple CLI program to browse Contrail API server
 
 ## Installation
