@@ -48,8 +48,7 @@ def main():
     if options.host:
         APIClient.HOST = options.host
 
-    auth_plugin = auth.load_from_argparse_arguments(options)
-    APIClient.SESSION = session.Session.load_from_cli_options(options, auth=auth_plugin)
+    APIClient.make_session(options.os_auth_plugin, **vars(options))
 
     # load home resources
     try:

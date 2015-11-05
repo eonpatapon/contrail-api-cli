@@ -1,3 +1,8 @@
+from argparse import Namespace
+
+from keystoneclient.auth import base
+from keystoneclient.session import Session
+
 from contrail_api_cli import utils
 
 
@@ -15,6 +20,17 @@ class APIClient:
     def user(cls):
         return cls.SESSION.auth.username
 
+    @classmethod
+    def make_session(cls, plugin_name, **kwargs):
+        plugin_cls = base.get_plugin_class(plugin_name)
+        plugin_options = {opt.dest: kwargs.pop("os_%s" % opt.dest)
+                          for opt in plugin_cls.get_options()}
+        plugin = plugin_cls.load_from_options(**plugin_options)
+        args = Namespace(**kwargs)
+        cls.SESSION = Session.load_from_cli_options(args,
+                                                    auth=plugin,
+                                                    user_agent=cls.USER_AGENT)
+
     def _get_url(self, path):
         if path.is_absolute():
             return self.base_url + str(path)
@@ -24,11 +40,11 @@ class APIClient:
         url = self._get_url(path)
         if path.is_collection:
             url += 's'
-        r = self.SESSION.get(url, user_agent=self.USER_AGENT, params=kwargs)
+        r = self.SESSION.get(url, params=kwargs)
         return r.json(object_hook=utils.decode_paths)
 
     def delete(self, path):
-        self.SESSION.delete(self._get_url(path), user_agent=self.USER_AGENT)
+        self.SESSION.delete(self._get_url(path))
         return True
 
     def post(self, path, data):
@@ -41,7 +57,7 @@ class APIClient:
         """
         headers = {"content-type": "application/json"}
         r = self.SESSION.post(self._get_url(path), data=utils.to_json(data),
-                              headers=headers, user_agent=self.USER_AGENT)
+                              headers=headers)
         return r.json(object_hook=utils.decode_paths)
 
     def fqname_to_id(self, path, fq_name):

@@ -7,11 +7,13 @@ from keystoneclient.auth.base import BaseAuthPlugin
 
 class HTTPAuth(BaseAuthPlugin):
 
-    def __init__(self, username, password):
+    def __init__(self, username=None, password=None):
         self.username = username
         self.password = password
 
     def get_headers(self, session, **kwargs):
+        if self.username is None and self.password is None:
+            return {}
         auth = "%s:%s" % (self.username, self.password)
         return {'Authorization': 'Basic %s' % base64.b64encode(b(auth)).decode('utf-8')}
 
