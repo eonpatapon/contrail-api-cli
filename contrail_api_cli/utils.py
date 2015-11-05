@@ -153,10 +153,11 @@ class classproperty(object):
         return self.f(klass)
 
 
-def continue_prompt():
+def continue_prompt(message=""):
     answer = False
+    message = message + u"\n'Yes' or 'No' to continue: "
     while answer not in ('Yes', 'No'):
-        answer = prompt(u"'Yes' or 'No' to continue: ")
+        answer = prompt(message)
         if answer == "Yes":
             answer = True
             break

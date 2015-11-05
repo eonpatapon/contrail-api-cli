@@ -176,9 +176,9 @@ class Rm(Command):
         if recursive:
             back_refs = self._get_back_refs(target, [])
         if back_refs:
-            print("About to delete:\n - %s" %
-                  "\n - ".join([str(p.relative_to(ShellContext.current_path)) for p in back_refs]))
-            if force or utils.continue_prompt():
+            message = """About to delete:
+ - %s""" % "\n - ".join([str(p.relative_to(ShellContext.current_path)) for p in back_refs])
+            if force or utils.continue_prompt(message=message):
                 for ref in reversed(back_refs):
                     print("Deleting %s" % str(ref))
                     try:
