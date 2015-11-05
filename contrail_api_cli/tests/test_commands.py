@@ -153,10 +153,19 @@ class TestCommands(unittest.TestCase):
     def test_rm(self, mock_continue_prompt, mock_delete):
         ShellContext.current_path = Path("/")
         t = "foo/6b6a7f47-807e-4c39-8ac6-3adcf2f5498f"
-        mock_continue_prompt.return_value = True
         mock_delete.return_value = True
-        cmds.rm(resource=t)
+        cmds.rm(resource=t, force=True)
         mock_delete.assert_has_calls([mock.call(Path("/foo/6b6a7f47-807e-4c39-8ac6-3adcf2f5498f"))])
+        self.assertFalse(mock_continue_prompt.called)
+
+    @mock.patch('contrail_api_cli.commands.APIClient.delete')
+    @mock.patch('contrail_api_cli.commands.utils.continue_prompt')
+    def test_rm_noconfirm(self, mock_continue_prompt, mock_delete):
+        ShellContext.current_path = Path("/")
+        mock_continue_prompt.return_value = False
+        t = "foo/6b6a7f47-807e-4c39-8ac6-3adcf2f5498f"
+        cmds.rm(resource=t)
+        self.assertFalse(mock_delete.called)
 
     @mock.patch('contrail_api_cli.commands.APIClient.get')
     @mock.patch('contrail_api_cli.commands.APIClient.delete')

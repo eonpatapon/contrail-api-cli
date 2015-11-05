@@ -148,6 +148,9 @@ class Rm(Command):
     recursive = Arg("-r", "--recursive", dest="recursive",
                     action="store_true", default=False,
                     help="Recursive delete of back_refs resources")
+    force = Arg("-f", "--force", dest="force",
+                action="store_true", default=False,
+                help="Don't ask for confirmation")
 
     def _get_back_refs(self, path, back_refs):
         resource = APIClient().get(path)[path.resource_name]
@@ -162,7 +165,7 @@ class Rm(Command):
                                                 back_refs)
         return back_refs
 
-    def __call__(self, resource='', recursive=False):
+    def __call__(self, resource='', recursive=False, force=False):
         target = ShellContext.current_path / resource
         if not target.is_resource:
             raise CommandError('"%s" is not a resource.' % target.relative_to(ShellContext.current_path))
@@ -173,7 +176,7 @@ class Rm(Command):
         if back_refs:
             print("About to delete:\n - %s" %
                   "\n - ".join([str(p.relative_to(ShellContext.current_path)) for p in back_refs]))
-            if utils.continue_prompt():
+            if force or utils.continue_prompt():
                 for ref in reversed(back_refs):
                     print("Deleting %s" % str(ref))
                     try:
