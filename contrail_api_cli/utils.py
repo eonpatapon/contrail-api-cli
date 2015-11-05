@@ -185,3 +185,8 @@ def decode_paths(obj):
             obj[attr] = Path(value[len(APIClient.base_url):])
             obj[attr].meta["fq_name"] = ":".join(obj.get('to', obj.get('fq_name', '')))
     return obj
+
+
+def all_subclasses(cls):
+    return cls.__subclasses__() + [g for s in cls.__subclasses__()
+                                   for g in all_subclasses(s)]

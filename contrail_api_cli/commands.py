@@ -43,17 +43,25 @@ def experimental(cls):
 class BaseCommand(object):
     description = ""
 
-    def __init__(self, *args):
-        self.parser = ArgumentParser(prog=self.__class__.__name__.lower(),
+    def __init__(self):
+        self.parser = ArgumentParser(prog=self.name,
                                      description=self.description)
-        for attr, value in inspect.getmembers(self.__class__):
+        self.add_arguments_to_parser(self.parser)
+
+    @utils.classproperty
+    def name(cls):
+        return cls.__name__.lower()
+
+    @classmethod
+    def add_arguments_to_parser(cls, parser):
+        for attr, value in inspect.getmembers(cls):
             if isinstance(value, Arg):
                 # Handle case for options
                 # attr can't be something like '-r'
                 if len(value.args) > 0:
                     attr = value.args[0]
                     value.args = value.args[1:]
-                self.parser.add_argument(attr, *value.args, **value.kwargs)
+                parser.add_argument(attr, *value.args, **value.kwargs)
 
     def parse_and_call(self, *args):
         args = self.parser.parse_args(args=args)
@@ -194,12 +202,19 @@ class Exit(ShellCommand):
 class Help(ShellCommand):
 
     def __call__(self):
-        commands = {}
-        for name, obj in globals().items():
-            if isinstance(obj, BaseCommand):
-                if name != "help":
-                    commands[obj] = name
-        return "Available commands: %s" % " ".join(commands.values())
+        return "Available commands: %s" % " ".join([c.name for c in all_commands_list()])
+
+
+def all_commands_list():
+    return commands_list() + shell_commands_list()
+
+
+def commands_list():
+    return utils.all_subclasses(Command)
+
+
+def shell_commands_list():
+    return utils.all_subclasses(ShellCommand)
 
 
 ls = ll = Ls()
