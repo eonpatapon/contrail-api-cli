@@ -160,7 +160,7 @@ class Rm(Command):
             back_refs.remove(resource["href"])
         back_refs.append(resource["href"])
         for attr, values in resource.items():
-            if not attr.endswith("back_refs"):
+            if not attr.endswith(("back_refs", "loadbalancer_members")):
                 continue
             for back_ref in values:
                 back_refs = self._get_back_refs(back_ref["href"],
