@@ -1,14 +1,17 @@
+import sys
 from setuptools import setup, find_packages
 
 install_requires = [
     'prompt_toolkit',
-    'pathlib',
     'python-keystoneclient'
 ]
 
-test_requires = [
-    'mock'
-]
+test_requires = []
+
+if sys.version_info[0] == 2:
+    install_requires.append('pathlib')
+    test_requires.append('mock')
+
 
 setup(
     name='contrail-api-cli',
