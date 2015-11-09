@@ -1,0 +1,18 @@
+Source: contrail-api-cli
+Maintainer: Filip Pytloun <filip@pytloun.cz>
+Section: python
+Priority: optional
+Build-Depends: python-setuptools (>= 0.6b3), python-all (>= 2.6.6-3), debhelper (>= 9),
+ python-mock, dh-python, python-pathlib, python-prompt-toolkit, python-keystoneclient
+Standards-Version: 3.9.6
+Homepage: https://github.com/eonpatapon/contrail-api-cli
+X-Python-Version: >= 2.7
+
+Package: contrail-api-cli
+Architecture: all
+Depends: ${misc:Depends}, ${python:Depends}, python-keystoneclient,
+ python-prompt-toolkit, python-pathlib, python-tz, python-netifaces
+Description: Simple CLI program to browse Contrail API server
+ Run ``contrail-api-cli`` to start the cli. Use the ``-h`` option to see all
+ supported options. By default it will try to connect to ``localhost`` on port
+ ``8082`` with no authentication.
