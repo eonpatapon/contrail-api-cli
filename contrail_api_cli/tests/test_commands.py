@@ -117,7 +117,7 @@ class TestCommands(unittest.TestCase):
                 {
                     "href": APIClient.base_url + "/bar/ec1afeaa-8930-43b0-a60a-939f23a50724",
                     "path": Path("/bar/ec1afeaa-8930-43b0-a60a-939f23a50724"),
-                    "to": [
+                    "fq_name": [
                         "bar",
                         "ec1afeaa-8930-43b0-a60a-939f23a50724"
                     ]

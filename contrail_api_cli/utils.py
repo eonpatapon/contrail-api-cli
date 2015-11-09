@@ -25,6 +25,10 @@ class PathEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, Path):
             return str(obj)
+        if isinstance(obj, Resource):
+            return obj.data
+        if isinstance(obj, Collection):
+            return obj.data
         return super(self, PathEncoder).default(obj)
 
 
@@ -86,12 +90,12 @@ class ResourceCompleter(Completer):
 
 class Collection(UserDict, object):
 
-    def __init__(self, retrieve=True, **kwargs):
+    def __init__(self, retrieve=True, recursive=1, **kwargs):
         assert isinstance(kwargs.get('path'), Path)
         UserDict.__init__(self, list=[], **kwargs)
         self.fq_name = ""
         if retrieve:
-            self._get()
+            self.retrieve(recursive=recursive)
         ShellContext.completion_queue.put(self)
 
     @property
@@ -110,17 +114,19 @@ class Collection(UserDict, object):
     def list(self, values):
         self.data["list"] = values
 
-    def _get(self):
+    def retrieve(self, recursive=1):
         from contrail_api_cli.client import APIClient
         data = APIClient().get(self.path)
 
         if self.path.is_root:
-            self.list = [Collection(retrieve=False,
+            self.list = [Collection(retrieve=recursive - 1 > 0,
+                                    recursive=recursive - 1,
                                     **l["link"])
                          for l in data['links']
                          if l["link"]["rel"] == "resource-base"]
         elif self.path.is_collection:
-            self.list = [Resource(retrieve=False,
+            self.list = [Resource(retrieve=recursive - 1 > 0,
+                                  recursive=recursive - 1,
                                   **res)
                          for res_name, res_list in data.items()
                          for res in res_list]
@@ -131,12 +137,17 @@ class Collection(UserDict, object):
 
 class Resource(UserDict, object):
 
-    def __init__(self, retrieve=True, **kwargs):
+    def __init__(self, retrieve=True, recursive=1, **kwargs):
         assert isinstance(kwargs.get('path'), Path)
         UserDict.__init__(self, **kwargs)
+        self._refs = set()
         if retrieve:
-            self._get()
+            self.retrieve(recursive=recursive)
         ShellContext.completion_queue.put(self)
+
+    @property
+    def uuid(self):
+        return self.data.get("uuid")
 
     @property
     def path(self):
@@ -150,21 +161,24 @@ class Resource(UserDict, object):
     def fq_name(self):
         return ":".join(self.data.get("fq_name", self.data.get("to", [])))
 
-    def _get(self):
+    def retrieve(self, recursive=1):
         from contrail_api_cli.client import APIClient
         self.data.update(APIClient().get(self.path)[self.path.resource_name])
         # Find other linked resources
-        self.data = self._walk_resource(self.data)
+        self.data = self._walk_resource(self.data, recursive=recursive)
 
-    def _walk_resource(self, data):
-        if 'path' in data:
-            Resource(retrieve=False, **data)
+    def _walk_resource(self, data, recursive=1):
         for attr, value in list(data.items()):
             if attr.endswith('refs'):
                 for idx, r in enumerate(data[attr]):
-                    data[attr][idx] = self._walk_resource(data[attr][idx])
+                    data[attr][idx]['fq_name'] = data[attr][idx]['to']
+                    del data[attr][idx]['to']
+                    data[attr][idx] = Resource(retrieve=recursive - 1 > 0,
+                                               recursive=recursive - 1,
+                                               **data[attr][idx])
             if type(data[attr]) is dict:
-                data[attr] = self._walk_resource(data[attr])
+                data[attr] = self._walk_resource(data[attr],
+                                                 recursive=recursive)
         return data
 
     def __str__(self):
