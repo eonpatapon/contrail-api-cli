@@ -22,7 +22,7 @@ utils.PathCompletionFiller(completer).start()
 
 def get_prompt_tokens(cli):
     return [
-        (Token.Username, APIClient.user),
+        (Token.Username, APIClient.user or ''),
         (Token.At, '@' if APIClient.user else ''),
         (Token.Host, APIClient.HOST),
         (Token.Colon, ':'),
