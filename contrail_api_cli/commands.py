@@ -1,3 +1,4 @@
+import json
 import inspect
 import argparse
 
@@ -5,7 +6,11 @@ from keystoneclient.exceptions import HttpError
 
 from contrail_api_cli import utils
 from contrail_api_cli.utils import ShellContext
-from contrail_api_cli.client import APIClient
+from contrail_api_cli import client
+
+from pygments import highlight
+from pygments.lexers import JsonLexer
+from pygments.formatters import Terminal256Formatter
 
 
 class CommandError(Exception):
@@ -35,6 +40,14 @@ def experimental(cls):
 
     cls.__call__ = new_call
     return cls
+
+
+class RelativeResourceEncoder(utils.ResourceEncoder):
+
+    def default(self, obj):
+        if isinstance(obj, utils.Path):
+            return str(obj.relative_to(ShellContext.current_path))
+        return super(RelativeResourceEncoder, self).default(obj)
 
 
 class BaseCommand(object):
@@ -81,20 +94,36 @@ class Ls(Command):
     description = "List resource objects"
     resource = Arg(nargs="?", help="Resource path", default="")
 
+    def colorize(self, json_data):
+        return highlight(json_data,
+                         JsonLexer(indent=2),
+                         Terminal256Formatter(bg="dark"))
+
     def __call__(self, resource=''):
+        path = ShellContext.current_path / resource
         # Find Path from fq_name
         if ":" in resource:
-            target = APIClient().fqname_to_id(ShellContext.current_path, resource)
-            if target is None:
-                print("Can't find %s" % resource)
-                return
+            try:
+                return utils.Resource(path.base, fq_name=path.name, fetch=True)
+            except ValueError as e:
+                return str(e)
         else:
-            target = ShellContext.current_path / resource
+            if path.is_collection or path.is_root:
+                return "\n".join([str(i.path.relative_to(ShellContext.current_path))
+                                  for i in utils.Collection(path.base, fetch=True)])
+            elif path.is_resource:
+                res = utils.Resource(path.base, uuid=path.name, fetch=True)
+                json_data = client.to_json(res.data, cls=RelativeResourceEncoder)
+                return self.colorize(json_data)
+        return "Not a resource"
 
-        if target.is_collection or target.is_root:
-            return utils.Collection(path=target)
-        elif target.is_resource:
-            return utils.Resource(path=target)
+
+class Cat(Command):
+    description = "Print a resource"
+    resource = Arg(nargs="?", help="Resource path", default="")
+
+    def __call__(self, resource=''):
+        ShellContext.current_path = ShellContext.current_path / resource
 
 
 class Count(Command):
@@ -102,10 +131,9 @@ class Count(Command):
     resource = Arg(nargs="?", help="Resource path", default='')
 
     def __call__(self, resource=''):
-        target = ShellContext.current_path / resource
-        if target.is_collection:
-            data = APIClient().get(target, count=True)
-            return data[target.resource_name + "s"]["count"]
+        path = ShellContext.current_path / resource
+        if path.is_collection:
+            return len(utils.Collection(path.base))
 
 
 @experimental
@@ -119,35 +147,33 @@ class Rm(Command):
                 action="store_true", default=False,
                 help="Don't ask for confirmation")
 
-    def _get_back_refs(self, path, back_refs):
-        resource = APIClient().get(path)[path.resource_name]
-        if resource["href"] in back_refs:
-            back_refs.remove(resource["href"])
-        back_refs.append(resource["href"])
-        for attr, values in resource.items():
-            if not attr.endswith(("back_refs", "loadbalancer_members")):
-                continue
-            for back_ref in values:
-                back_refs = self._get_back_refs(back_ref["href"],
-                                                back_refs)
+    def _get_back_refs(self, resource, back_refs):
+        resource.fetch()
+        if resource in back_refs:
+            back_refs.remove(resource)
+        back_refs.append(resource)
+        for back_ref in resource.back_refs:
+            back_refs = self._get_back_refs(back_ref, back_refs)
         return back_refs
 
     def __call__(self, resource='', recursive=False, force=False):
-        target = ShellContext.current_path / resource
-        if not target.is_resource:
-            raise CommandError('"%s" is not a resource.' % target.relative_to(ShellContext.current_path))
+        path = ShellContext.current_path / resource
+        if not path.is_resource:
+            raise CommandError('"%s" is not a resource.' % path.relative_to(ShellContext.current_path))
 
-        back_refs = [target]
+        resource = utils.Resource(path.base, uuid=path.name)
+        back_refs = [resource]
         if recursive:
-            back_refs = self._get_back_refs(target, [])
+            back_refs = self._get_back_refs(resource, [])
         if back_refs:
             message = """About to delete:
- - %s""" % "\n - ".join([str(p.relative_to(ShellContext.current_path)) for p in back_refs])
+ - %s""" % "\n - ".join([str(res.path.relative_to(ShellContext.current_path))
+                         for res in back_refs])
             if force or utils.continue_prompt(message=message):
-                for ref in reversed(back_refs):
-                    print("Deleting %s" % str(ref))
+                for res in reversed(back_refs):
+                    print("Deleting %s" % str(res.path))
                     try:
-                        APIClient().delete(ref)
+                        res.delete()
                     except HttpError as e:
                         raise CommandError("Failed to delete resource: %s" % str(e))
 

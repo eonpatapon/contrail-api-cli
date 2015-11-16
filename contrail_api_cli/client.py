@@ -1,3 +1,4 @@
+import json
 from argparse import Namespace
 
 from keystoneclient.auth import base
@@ -6,71 +7,117 @@ from keystoneclient.session import Session
 from contrail_api_cli import utils
 
 
-class APIClient:
-    USER_AGENT = "contrail-api-cli"
-    PROTOCOL = "http"
-    HOST = "localhost:8082"
-    SESSION = None
+class ContrailAPISession(Session):
+    user_agent = "contrail-api-cli"
+    protocol = None
+    host = None
+    port = None
+    session = None
 
     @utils.classproperty
     def base_url(cls):
-        return cls.PROTOCOL + "://" + cls.HOST
+        return "%s://%s:%s" % (cls.protocol, cls.host, cls.port)
+
+    @utils.classproperty
+    def make_url(cls, uri):
+        return cls.base_url + uri
 
     @utils.classproperty
     def user(cls):
-        return cls.SESSION.auth.username
+        return cls.session.auth.username
 
     @classmethod
-    def make_session(cls, plugin_name, **kwargs):
+    def make(cls, plugin_name, protocol="http", host="localhost", port=8082, **kwargs):
+        """Initialize a session to Contrail API server
+
+        @param plugin_name: auth plugin to use:
+            - http: basic HTTP authentification
+            - v2password: keystone v2 auth
+            - v3password: keystone v3 auth
+        @type plugin_name: str
+
+        @param protocol: protocol used to connect to the API server (default: http)
+        @type protocol: str
+        @param host: API server host (default: localhost)
+        @type host: str
+        @param port: API server port (default: 8082)
+        @type port: int
+
+        @param kwargs: plugin arguments
+        """
+        cls.protocol = protocol
+        cls.host = host
+        cls.port = port
         plugin_cls = base.get_plugin_class(plugin_name)
         plugin_options = {opt.dest: kwargs.pop("os_%s" % opt.dest)
                           for opt in plugin_cls.get_options()}
         plugin = plugin_cls.load_from_options(**plugin_options)
         args = Namespace(**kwargs)
-        cls.SESSION = Session.load_from_cli_options(args,
-                                                    auth=plugin,
-                                                    user_agent=cls.USER_AGENT)
+        session = cls.load_from_cli_options(args,
+                                            auth=plugin)
+        utils.ResourceBase.session = session
+        cls.session = session
+        return session
 
-    def _get_url(self, path):
-        if path.is_absolute():
-            return self.base_url + str(path)
-        raise ValueError("Path must be absolute")
+    def get(self, url, **kwargs):
+        r = super(ContrailAPISession, self).get(url, params=kwargs)
+        return r.json()
 
-    def get(self, path, **kwargs):
-        url = self._get_url(path)
-        if path.is_collection:
-            url += 's'
-        r = self.SESSION.get(url, params=kwargs)
-        return r.json(object_hook=utils.decode_paths)
-
-    def delete(self, path):
-        self.SESSION.delete(self._get_url(path))
-        return True
-
-    def post(self, path, data):
+    def post(self, url, data):
         """
         POST data to the api-server
 
-        @type path: Path
+        @param url: resource location (eg: "/type/uuid")
+        @type url: str
         @type data: dict
         @rtype: dict
         """
         headers = {"content-type": "application/json"}
-        r = self.SESSION.post(self._get_url(path), data=utils.to_json(data),
-                              headers=headers)
-        return r.json(object_hook=utils.decode_paths)
+        r = super(ContrailAPISession, self).post(url,
+                                                 data=to_json(data),
+                                                 headers=headers)
+        return r.json()
 
-    def fqname_to_id(self, path, fq_name):
+    def put(self, url, data):
         """
-        Return Path for fq_name
+        PUT data to the api-server
 
-        @type path: Path
+        @param url: resource location (eg: "/type/uuid")
+        @type url: str
+        @type data: dict
+        @rtype: dict
+        """
+        headers = {"content-type": "application/json"}
+        r = super(ContrailAPISession, self).put(url,
+                                                data=to_json(data),
+                                                headers=headers)
+        return r.json()
+
+    def fqname_to_id(self, type, fq_name):
+        """
+        Return uuid for fq_name
+
+        @param type: resource type
+        @type type: str
+        @param fq_name: resource fq name (domain:project:identifier)
         @type fq_name: str
-        @rtype: Path
+
+        @rtype: UUIDv4 str
         """
         data = {
-            "type": path.resource_name,
+            "type": type,
             "fq_name": fq_name.split(":")
         }
-        uuid = self.post(utils.Path("/fqname-to-id"), data)['uuid']
-        return utils.Path(path, uuid)
+        try:
+            uuid = self.post("/fqname-to-id", data)['uuid']
+            return uuid
+        except:
+            return None
+
+
+def to_json(resource_dict, cls=utils.ResourceEncoder):
+    return json.dumps(resource_dict,
+                      indent=2,
+                      sort_keys=True,
+                      skipkeys=True,
+                      cls=cls)

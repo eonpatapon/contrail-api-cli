@@ -27,13 +27,13 @@ class TestPath(unittest.TestCase):
         p = Path("/foo")
         self.assertFalse(p.is_root)
 
-    def test_resource_name(self):
+    def test_base(self):
         p = Path("/foo")
-        self.assertEqual(p.resource_name, "foo")
+        self.assertEqual(p.base, "foo")
         p = Path("/foo/%s" % uuid4())
-        self.assertEqual(p.resource_name, "foo")
+        self.assertEqual(p.base, "foo")
         p = Path("/")
-        self.assertEqual(p.resource_name, "")
+        self.assertEqual(p.base, "")
 
 
 if __name__ == "__main__":
