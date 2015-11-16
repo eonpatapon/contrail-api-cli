@@ -106,11 +106,13 @@ class ResourceBase(Observable):
 class Collection(ResourceBase, UserList):
 
     def __init__(self, type, fetch=False, recursive=1,
-                 fields=None, filters=None, **kwargs):
+                 fields=None, filters=None, parent_uuid=None,
+                 **kwargs):
         UserList.__init__(self)
         self.type = type
         self.fields = fields or []
         self.filters = filters or []
+        self.parent_uuid = list(self._sanitize_parent_uuid(parent_uuid))
         self.path = Path('/' + type)
         self.meta = dict(kwargs)
         if fetch:
@@ -120,7 +122,7 @@ class Collection(ResourceBase, UserList):
     @property
     def href(self):
         url = self.session.base_url + str(self.path)
-        if not self.path.is_root:
+        if self.type:
             url = url + 's'
         return url
 
@@ -139,16 +141,53 @@ class Collection(ResourceBase, UserList):
             return self.type + 's'
         return self.type
 
+    def _sanitize_parent_uuid(self, parent_uuid):
+        if parent_uuid is None:
+            raise StopIteration
+        if isinstance(parent_uuid, str):
+            parent_uuid = [parent_uuid]
+        for p in parent_uuid:
+            try:
+                UUID(p, version=4)
+            except ValueError:
+                continue
+            yield p
+
     def filter(self, field_name, field_value):
         self.filters.append((field_name, field_value))
 
-    def fetch(self, recursive=1, fields=None, filters=None):
+    def _fetch_params(self, fields, filters, parent_uuid):
+        params = {}
         fields_str = ",".join(self.fields + (fields or []))
         filters_str = ",".join(['%s=="%s"' % (f, v)
                                 for f, v in self.filters + (filters or [])])
-        data = self.session.get(self.href,
-                                fields=fields_str,
-                                filters=filters_str)
+        parent_uuid_str = ",".join(self.parent_uuid +
+                                   list(self._sanitize_parent_uuid(parent_uuid)))
+        if fields_str:
+            params['fields'] = fields_str
+        if filters_str:
+            params['filters'] = filters_str
+        if parent_uuid_str:
+            params['parent_id'] = parent_uuid_str
+
+        return params
+
+    def fetch(self, recursive=1, fields=None, filters=None, parent_uuid=None):
+        """
+        Get Collection from API server
+
+        @param recursive: level of recursion
+        @type recursive: int
+        @param fields: list of field names to fetch
+        @type fields: [str]
+        @param filters: list of filters
+        @tpye filters: [(name, value), ...]
+        @param parent_uuid: filter by parent_uuid
+        @type parent_uuid: v4UUID str or list of v4UUID str
+        """
+
+        params = self._fetch_params(fields, filters, parent_uuid)
+        data = self.session.get(self.href, **params)
 
         if not self.type:
             self.data = [Collection(col["link"]["name"],
