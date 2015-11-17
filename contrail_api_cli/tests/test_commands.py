@@ -7,7 +7,8 @@ except ImportError:
 
 import contrail_api_cli.commands as cmds
 from contrail_api_cli import client
-from contrail_api_cli.utils import Path, ShellContext, Collection, Resource
+from contrail_api_cli.utils import Path, ShellContext
+from contrail_api_cli.resource import Collection, Resource
 
 
 BASE = 'http://localhost:8082'
@@ -27,7 +28,7 @@ class TestCommands(unittest.TestCase):
         cmds.cd('/')
         self.assertEqual(ShellContext.current_path, Path('/'))
 
-    @mock.patch('contrail_api_cli.utils.ResourceBase.session')
+    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
     def test_root_collection(self, mock_session):
         mock_session.get.return_value = {
             'href': BASE,
@@ -45,7 +46,7 @@ class TestCommands(unittest.TestCase):
         result = cmds.ls()
         self.assertEqual('instance-ip', result)
 
-    @mock.patch('contrail_api_cli.utils.ResourceBase.session')
+    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
     def test_resource_collection(self, mock_session):
         mock_session.get.return_value = {
             'instance-ips': [
@@ -69,7 +70,7 @@ class TestCommands(unittest.TestCase):
                          result)
 
     @mock.patch('contrail_api_cli.commands.Ls.colorize')
-    @mock.patch('contrail_api_cli.utils.ResourceBase.session')
+    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
     def test_resource_ls(self, mock_session, mock_colorize):
         mock_colorize.side_effect = lambda d: d
         mock_session.get.return_value = {
@@ -112,7 +113,7 @@ class TestCommands(unittest.TestCase):
         # found_paths.append(ShellContext.completion_queue.get().path)
         # self.assertIn(Path('/bar/ec1afeaa-8930-43b0-a60a-939f23a50724'), found_paths)
 
-    @mock.patch('contrail_api_cli.utils.ResourceBase.session')
+    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
     def test_notfound_fqname_ls(self, mock_session):
         fq_name = 'default-domain:foo'
         ShellContext.current_path = Path('foo')
@@ -121,7 +122,7 @@ class TestCommands(unittest.TestCase):
         self.assertEqual("%s doesn't exists" % fq_name, result)
         self.assertFalse(mock_session.get.called)
 
-    @mock.patch('contrail_api_cli.utils.ResourceBase.session')
+    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
     def test_count(self, mock_session):
         ShellContext.current_path = Path('/foo')
         mock_session.get.return_value = {
@@ -146,8 +147,8 @@ class TestCommands(unittest.TestCase):
         result = cmds.count()
         self.assertEqual(result, None)
 
-    @mock.patch('contrail_api_cli.utils.ResourceBase.session')
-    @mock.patch('contrail_api_cli.commands.utils.continue_prompt')
+    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
+    @mock.patch('contrail_api_cli.commands.continue_prompt')
     def test_rm(self, mock_continue_prompt, mock_session):
         mock_session.configure_mock(base_url=BASE)
         ShellContext.current_path = Path('/')
@@ -159,8 +160,8 @@ class TestCommands(unittest.TestCase):
         ])
         self.assertFalse(mock_continue_prompt.called)
 
-    @mock.patch('contrail_api_cli.utils.ResourceBase.session')
-    @mock.patch('contrail_api_cli.commands.utils.continue_prompt')
+    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
+    @mock.patch('contrail_api_cli.commands.continue_prompt')
     def test_rm_noconfirm(self, mock_continue_prompt, mock_session):
         ShellContext.current_path = Path('/')
         mock_continue_prompt.return_value = False
@@ -168,8 +169,8 @@ class TestCommands(unittest.TestCase):
         cmds.rm(resource=t)
         self.assertFalse(mock_session.delete.called)
 
-    @mock.patch('contrail_api_cli.utils.ResourceBase.session')
-    @mock.patch('contrail_api_cli.commands.utils.continue_prompt')
+    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
+    @mock.patch('contrail_api_cli.commands.continue_prompt')
     def test_rm_recursive(self, mock_continue_prompt, mock_session):
         ShellContext.current_path = Path('/')
         t = 'foo/6b6a7f47-807e-4c39-8ac6-3adcf2f5498f'

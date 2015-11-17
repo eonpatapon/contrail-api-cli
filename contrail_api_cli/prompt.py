@@ -10,13 +10,14 @@ from pygments.token import Token
 from keystoneclient import session as ksession, auth
 from keystoneclient.exceptions import ClientException, HttpError
 
-from contrail_api_cli.client import ContrailAPISession
-from contrail_api_cli.style import PromptStyle
-from contrail_api_cli import utils, commands
-from contrail_api_cli.utils import ShellContext
+from .client import ContrailAPISession
+from .style import PromptStyle
+from .utils import ShellContext
+from .resource import RootCollection, ResourceCompleter
+from . import commands
 
 history = InMemoryHistory()
-completer = utils.ResourceCompleter()
+completer = ResourceCompleter()
 
 
 def get_prompt_tokens(cli):
@@ -56,7 +57,7 @@ def main():
 
     # load home resources
     try:
-        utils.RootCollection(fetch=True)
+        RootCollection(fetch=True)
     except ClientException as e:
         print(e)
         sys.exit(1)

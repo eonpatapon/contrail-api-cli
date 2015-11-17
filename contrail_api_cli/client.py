@@ -4,7 +4,8 @@ from argparse import Namespace
 from keystoneclient.auth import base
 from keystoneclient.session import Session
 
-from contrail_api_cli import utils
+from .utils import classproperty
+from .resource import ResourceBase, ResourceEncoder
 
 
 class ContrailAPISession(Session):
@@ -14,15 +15,15 @@ class ContrailAPISession(Session):
     port = None
     session = None
 
-    @utils.classproperty
+    @classproperty
     def base_url(cls):
         return "%s://%s:%s" % (cls.protocol, cls.host, cls.port)
 
-    @utils.classproperty
+    @classproperty
     def make_url(cls, uri):
         return cls.base_url + uri
 
-    @utils.classproperty
+    @classproperty
     def user(cls):
         return cls.session.auth.username
 
@@ -55,7 +56,7 @@ class ContrailAPISession(Session):
         args = Namespace(**kwargs)
         session = cls.load_from_cli_options(args,
                                             auth=plugin)
-        utils.ResourceBase.session = session
+        ResourceBase.session = session
         cls.session = session
         return session
 
@@ -115,7 +116,7 @@ class ContrailAPISession(Session):
             return None
 
 
-def to_json(resource_dict, cls=utils.ResourceEncoder):
+def to_json(resource_dict, cls=ResourceEncoder):
     return json.dumps(resource_dict,
                       indent=2,
                       sort_keys=True,

@@ -3,13 +3,13 @@ import argparse
 
 from keystoneclient.exceptions import HttpError
 
-from contrail_api_cli import utils
-from contrail_api_cli.utils import ShellContext
-from contrail_api_cli import client
-
 from pygments import highlight
 from pygments.lexers import JsonLexer
 from pygments.formatters import Terminal256Formatter
+
+from .resource import ResourceEncoder, Resource, Collection
+from .client import to_json
+from .utils import ShellContext, Path, classproperty, all_subclasses, continue_prompt
 
 
 class CommandError(Exception):
@@ -41,10 +41,10 @@ def experimental(cls):
     return cls
 
 
-class RelativeResourceEncoder(utils.ResourceEncoder):
+class RelativeResourceEncoder(ResourceEncoder):
 
     def default(self, obj):
-        if isinstance(obj, utils.Path):
+        if isinstance(obj, Path):
             return str(obj.relative_to(ShellContext.current_path))
         return super(RelativeResourceEncoder, self).default(obj)
 
@@ -57,7 +57,7 @@ class BaseCommand(object):
                                      description=self.description)
         self.add_arguments_to_parser(self.parser)
 
-    @utils.classproperty
+    @classproperty
     def name(cls):
         return cls.__name__.lower()
 
@@ -103,16 +103,16 @@ class Ls(Command):
         # Find Path from fq_name
         if ":" in resource:
             try:
-                return utils.Resource(path.base, fq_name=path.name, fetch=True)
+                return Resource(path.base, fq_name=path.name, fetch=True)
             except ValueError as e:
                 return str(e)
         else:
             if path.is_collection or path.is_root:
                 return "\n".join([str(i.path.relative_to(ShellContext.current_path))
-                                  for i in utils.Collection(path.base, fetch=True)])
+                                  for i in Collection(path.base, fetch=True)])
             elif path.is_resource:
-                res = utils.Resource(path.base, uuid=path.name, fetch=True)
-                json_data = client.to_json(res.data, cls=RelativeResourceEncoder)
+                res = Resource(path.base, uuid=path.name, fetch=True)
+                json_data = to_json(res.data, cls=RelativeResourceEncoder)
                 return self.colorize(json_data)
         return "Not a resource"
 
@@ -132,7 +132,7 @@ class Count(Command):
     def __call__(self, resource=''):
         path = ShellContext.current_path / resource
         if path.is_collection:
-            return len(utils.Collection(path.base))
+            return len(Collection(path.base))
 
 
 @experimental
@@ -160,7 +160,7 @@ class Rm(Command):
         if not path.is_resource:
             raise CommandError('"%s" is not a resource.' % path.relative_to(ShellContext.current_path))
 
-        resource = utils.Resource(path.base, uuid=path.name)
+        resource = Resource(path.base, uuid=path.name)
         back_refs = [resource]
         if recursive:
             back_refs = self._get_back_refs(resource, [])
@@ -168,7 +168,7 @@ class Rm(Command):
             message = """About to delete:
  - %s""" % "\n - ".join([str(res.path.relative_to(ShellContext.current_path))
                          for res in back_refs])
-            if force or utils.continue_prompt(message=message):
+            if force or continue_prompt(message=message):
                 for res in reversed(back_refs):
                     print("Deleting %s" % str(res.path))
                     try:
@@ -203,11 +203,11 @@ def all_commands_list():
 
 
 def commands_list():
-    return utils.all_subclasses(Command)
+    return all_subclasses(Command)
 
 
 def shell_commands_list():
-    return utils.all_subclasses(ShellCommand)
+    return all_subclasses(ShellCommand)
 
 
 ls = ll = Ls()
