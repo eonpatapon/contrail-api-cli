@@ -73,10 +73,37 @@ class ResourceBase(Observable):
 
 
 class Collection(ResourceBase, UserList):
+    """Class for interacting with an API collection
+
+    c = Collection('virtual-network', fetch=True)
+    # iterate over the resources
+    for r in c:
+        print(r.path)
+    # filter support
+    c.filter("router_external", False)
+    c.fetch()
+    assert all([r.get('router_external') for r in c]) == False
+    """
 
     def __init__(self, type, fetch=False, recursive=1,
                  fields=None, filters=None, parent_uuid=None,
                  **kwargs):
+        """
+        Base class for API collections
+
+        @param type: name of the collection
+        @type type: str
+        @param fetch: immediately fetch collection from the server
+        @type fetch: bool
+        @param recursive: level of recursion
+        @type recursive: int
+        @param fields: list of field names to fetch
+        @type fields: [str]
+        @param filters: list of filters
+        @tpye filters: [(name, value), ...]
+        @param parent_uuid: filter by parent_uuid
+        @type parent_uuid: v4UUID str or list of v4UUID str
+        """
         UserList.__init__(self)
         self.type = type
         self.fields = fields or []
@@ -90,6 +117,10 @@ class Collection(ResourceBase, UserList):
 
     @property
     def href(self):
+        """Return collection URL
+
+        @rtype: str
+        """
         url = self.session.base_url + str(self.path)
         if self.type:
             url = url + 's'
@@ -100,6 +131,10 @@ class Collection(ResourceBase, UserList):
         return ""
 
     def __len__(self):
+        """Return the number of items of the collection
+
+        @rtype: int
+        """
         if not self.data:
             return self.session.get(self.href, count=True)[self._contrail_name]["count"]
         return super(Collection, self).__len__()
@@ -123,6 +158,12 @@ class Collection(ResourceBase, UserList):
             yield p
 
     def filter(self, field_name, field_value):
+        """Add permanent filter on the collection
+
+        @param field_name: name of the field to filter on
+        @type field_name: str
+        @param field_value: value to filter on
+        """
         self.filters.append((field_name, field_value))
 
     def _fetch_params(self, fields, filters, parent_uuid):
@@ -143,7 +184,7 @@ class Collection(ResourceBase, UserList):
 
     def fetch(self, recursive=1, fields=None, filters=None, parent_uuid=None):
         """
-        Get Collection from API server
+        Fetch collection from API server
 
         @param recursive: level of recursion
         @type recursive: int
@@ -181,15 +222,21 @@ class RootCollection(Collection):
 
 
 class Resource(ResourceBase, UserDict):
+    """Class for interacting with an API resource
+
+    r = Resource('virtual-network', uuid='4c45e89b-7780-4b78-8508-314fe04a7cbd', fetch=True)
+    back_refs = list(r.back_refs)
+    r.delete()
+    """
 
     def __init__(self, type, fetch=False, recursive=1, **kwargs):
-        """Init an API Resource
+        """Base class for API resources
 
         @param type: type of the resource
         @type type: str
-        @param fetch: get data from the server
-        @type fetch: boolean
-        @param recursive: recursive level to fetch resource data
+        @param fetch: immediately fetch resource from the server
+        @type fetch: bool
+        @param recursive: level of recursion
         @param recursion: int
 
         Either:
@@ -225,28 +272,46 @@ class Resource(ResourceBase, UserDict):
 
     @property
     def href(self):
+        """Return URL of the resource
+
+        @rtype: str
+        """
         return self.session.base_url + str(self.path)
 
     @property
     def path(self):
+        """Return Path of the resource
+
+        @rtype: Path
+        """
         return self.data.get("path")
 
     @property
     def uuid(self):
+        """Return UUID of the resource
+
+        @rtype: v4UUID str
+        """
         return self.data.get("uuid")
 
     @property
     def fq_name(self):
+        """Return FQDN of the resource
+
+        @rtype: str
+        """
         return ":".join(self.data.get("fq_name", self.data.get("to", [])))
 
     def save(self):
+        """Save the resource to the API server
+        """
         if self.path.is_collection:
             self.session.post(self.href, data=self.data)
         else:
             self.session.put(self.href, data=self.data)
 
     def fetch(self, recursive=1):
-        """Fetch resource data from the server
+        """Fetch resource from the API server
 
         @param recursive: level of recursion for fetching resources
         @type recursive: int
@@ -257,6 +322,8 @@ class Resource(ResourceBase, UserDict):
         self.data.update(data)
 
     def delete(self):
+        """Delete resource from the API server
+        """
         return self.session.delete(self.href)
 
     def _walk_resource(self, data, recursive=1):
@@ -278,8 +345,7 @@ class Resource(ResourceBase, UserDict):
 
     @property
     def back_refs(self):
-        """Return back_refs resources of
-        the current resource
+        """Return back_refs resources of the resource
 
         @rtype: Resource generator
         """
