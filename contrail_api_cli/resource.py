@@ -128,7 +128,7 @@ class Collection(ResourceBase, UserList):
     def _fetch_params(self, fields, filters, parent_uuid):
         params = {}
         fields_str = ",".join(self.fields + (fields or []))
-        filters_str = ",".join(['%s=="%s"' % (f, v)
+        filters_str = ",".join(['%s==%s' % (f, json.dumps(v))
                                 for f, v in self.filters + (filters or [])])
         parent_uuid_str = ",".join(self.parent_uuid +
                                    list(self._sanitize_parent_uuid(parent_uuid)))

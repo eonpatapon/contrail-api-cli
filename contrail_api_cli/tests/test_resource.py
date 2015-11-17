@@ -164,10 +164,13 @@ class TestResource(unittest.TestCase):
         mock_session.configure_mock(base_url=BASE)
         c = Collection('foo', filters=[('foo', 'bar')], fetch=True)
         mock_session.get.assert_called_with(BASE + '/foos', filters='foo=="bar"')
-        c.fetch(filters=[('bar', 'foo')])
-        mock_session.get.assert_called_with(BASE + '/foos', filters='foo=="bar",bar=="foo"')
+        c.fetch(filters=[('bar', False)])
+        mock_session.get.assert_called_with(BASE + '/foos', filters='foo=="bar",bar==false')
         c.fetch()
         mock_session.get.assert_called_with(BASE + '/foos', filters='foo=="bar"')
+        c.filter('bar', 42)
+        c.fetch()
+        mock_session.get.assert_called_with(BASE + '/foos', filters='foo=="bar",bar==42')
 
     @mock.patch('contrail_api_cli.resource.ResourceBase.session')
     def test_collection_parent_uuid(self, mock_session):
