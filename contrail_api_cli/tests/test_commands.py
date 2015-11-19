@@ -30,6 +30,7 @@ class TestCommands(unittest.TestCase):
 
     @mock.patch('contrail_api_cli.resource.ResourceBase.session')
     def test_root_collection(self, mock_session):
+        ShellContext.current_path = Path('/')
         mock_session.get.return_value = {
             'href': BASE,
             'links': [
@@ -152,7 +153,7 @@ class TestCommands(unittest.TestCase):
     def test_rm(self, mock_continue_prompt, mock_session):
         mock_session.configure_mock(base_url=BASE)
         ShellContext.current_path = Path('/')
-        t = 'foo/6b6a7f47-807e-4c39-8ac6-3adcf2f5498f'
+        t = ['foo/6b6a7f47-807e-4c39-8ac6-3adcf2f5498f']
         mock_session.delete.return_value = True
         cmds.rm(resource=t, force=True)
         mock_session.delete.assert_has_calls([
@@ -161,11 +162,50 @@ class TestCommands(unittest.TestCase):
         self.assertFalse(mock_continue_prompt.called)
 
     @mock.patch('contrail_api_cli.resource.ResourceBase.session')
+    def test_rm_multiple_resources(self, mock_session):
+        mock_session.configure_mock(base_url=BASE)
+        ShellContext.current_path = Path('/foo')
+        ts = ['6b6a7f47-807e-4c39-8ac6-3adcf2f5498f',
+              '22916187-5b6f-40f1-b7b6-fc6fe9f23bce']
+        mock_session.delete.return_value = True
+        cmds.rm(resource=ts, force=True)
+        mock_session.delete.assert_has_calls([
+            mock.call(BASE + '/foo/6b6a7f47-807e-4c39-8ac6-3adcf2f5498f'),
+            mock.call(BASE + '/foo/22916187-5b6f-40f1-b7b6-fc6fe9f23bce')
+        ])
+
+    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
+    def test_rm_wildcard_resources(self, mock_session):
+        mock_session.configure_mock(base_url=BASE)
+        ShellContext.current_path = Path('/foo')
+        mock_session.get.return_value = {
+            'foos': [
+                {'href': BASE + '/foo/ec1afeaa-8930-43b0-a60a-939f23a50724',
+                 'uuid': 'ec1afeaa-8930-43b0-a60a-939f23a50724'},
+                {'href': BASE + '/foo/c2588045-d6fb-4f37-9f46-9451f653fb6a',
+                 'uuid': 'c2588045-d6fb-4f37-9f46-9451f653fb6a'}
+            ]
+        }
+        mock_session.delete.return_value = True
+        t = ['ec1afeaa-8930*', 'c2588045-d6fb-4f37-9f46-9451f653fb6a']
+        cmds.rm(resource=t, force=True)
+        mock_session.delete.assert_has_calls([
+            mock.call(BASE + '/foo/ec1afeaa-8930-43b0-a60a-939f23a50724'),
+            mock.call(BASE + '/foo/c2588045-d6fb-4f37-9f46-9451f653fb6a')
+        ])
+        t = ['*', 'c2588045-d6fb-4f37-9f46-9451f653fb6a']
+        cmds.rm(resource=t, force=True)
+        mock_session.delete.assert_has_calls([
+            mock.call(BASE + '/foo/ec1afeaa-8930-43b0-a60a-939f23a50724'),
+            mock.call(BASE + '/foo/c2588045-d6fb-4f37-9f46-9451f653fb6a')
+        ])
+
+    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
     @mock.patch('contrail_api_cli.commands.continue_prompt')
     def test_rm_noconfirm(self, mock_continue_prompt, mock_session):
         ShellContext.current_path = Path('/')
         mock_continue_prompt.return_value = False
-        t = 'foo/6b6a7f47-807e-4c39-8ac6-3adcf2f5498f'
+        t = ['foo/6b6a7f47-807e-4c39-8ac6-3adcf2f5498f']
         cmds.rm(resource=t)
         self.assertFalse(mock_session.delete.called)
 
@@ -173,7 +213,7 @@ class TestCommands(unittest.TestCase):
     @mock.patch('contrail_api_cli.commands.continue_prompt')
     def test_rm_recursive(self, mock_continue_prompt, mock_session):
         ShellContext.current_path = Path('/')
-        t = 'foo/6b6a7f47-807e-4c39-8ac6-3adcf2f5498f'
+        t = ['foo/6b6a7f47-807e-4c39-8ac6-3adcf2f5498f']
         mock_continue_prompt.return_value = True
         mock_session.configure_mock(base_url=BASE)
         mock_session.get.side_effect = [

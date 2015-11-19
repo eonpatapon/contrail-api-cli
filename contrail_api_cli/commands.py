@@ -1,5 +1,6 @@
 import inspect
 import argparse
+import fnmatch
 
 from keystoneclient.exceptions import HttpError
 
@@ -138,7 +139,7 @@ class Count(Command):
 @experimental
 class Rm(Command):
     description = "Delete a resource"
-    resource = Arg(nargs="?", help="Resource path", default='')
+    resource = Arg(nargs="*", help="Resource path", default=[])
     recursive = Arg("-r", "--recursive", dest="recursive",
                     action="store_true", default=False,
                     help="Recursive delete of back_refs resources")
@@ -146,35 +147,43 @@ class Rm(Command):
                 action="store_true", default=False,
                 help="Don't ask for confirmation")
 
-    def _get_back_refs(self, resource, back_refs):
-        resource.fetch()
-        if resource in back_refs:
-            back_refs.remove(resource)
-        back_refs.append(resource)
-        for back_ref in resource.back_refs:
-            back_refs = self._get_back_refs(back_ref, back_refs)
+    def _get_back_refs(self, resources, back_refs):
+        for resource in resources:
+            resource.fetch()
+            if resource in back_refs:
+                back_refs.remove(resource)
+            back_refs.append(resource)
+            for back_ref in resource.back_refs:
+                back_refs = self._get_back_refs([back_ref], back_refs)
         return back_refs
 
-    def __call__(self, resource='', recursive=False, force=False):
-        path = ShellContext.current_path / resource
-        if not path.is_resource:
-            raise CommandError('"%s" is not a resource.' % path.relative_to(ShellContext.current_path))
-
-        resource = Resource(path.base, uuid=path.name)
-        back_refs = [resource]
-        if recursive:
-            back_refs = self._get_back_refs(resource, [])
-        if back_refs:
-            message = """About to delete:
- - %s""" % "\n - ".join([str(res.path.relative_to(ShellContext.current_path))
-                         for res in back_refs])
-            if force or continue_prompt(message=message):
-                for res in reversed(back_refs):
-                    print("Deleting %s" % str(res.path))
-                    try:
-                        res.delete()
-                    except HttpError as e:
-                        raise CommandError("Failed to delete resource: %s" % str(e))
+    def __call__(self, resource=None, recursive=False, force=False):
+        if resource is None:
+            paths = [ShellContext.current_path]
+        else:
+            paths = [ShellContext.current_path / res for res in resource]
+        for path in paths:
+            if '*' in str(path):
+                col = Collection(path.base, fetch=True)
+                res = [r for r in col if fnmatch.fnmatch(str(r.path), str(path))]
+            elif not path.is_resource:
+                raise CommandError('"%s" is not a res.' % path.relative_to(ShellContext.current_path))
+            else:
+                res = [Resource(path.base, uuid=path.name)]
+            back_refs = res
+            if recursive:
+                back_refs = self._get_back_refs(res, [])
+            if back_refs:
+                message = """About to delete:
+ - %s""" % "\n - ".join([str(back_ref.path.relative_to(ShellContext.current_path))
+                         for back_ref in back_refs])
+                if force or continue_prompt(message=message):
+                    for back_ref in reversed(back_refs):
+                        print("Deleting %s" % str(back_ref.path))
+                        try:
+                            back_ref.delete()
+                        except HttpError as e:
+                            raise CommandError("Failed to delete res: %s" % str(e))
 
 
 class Cd(ShellCommand):
