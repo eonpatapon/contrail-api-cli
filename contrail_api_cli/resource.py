@@ -255,7 +255,7 @@ class Resource(ResourceBase, UserDict):
             assert UUID(uuid, version=4)
             path = path / uuid
         elif fq_name is not None:
-            uuid = self.session.fqname_to_id(fq_name)
+            uuid = self.session.fqname_to_id(type, fq_name)
             if uuid is None:
                 raise ValueError("%s doesn't exists" % fq_name)
             path = path / uuid

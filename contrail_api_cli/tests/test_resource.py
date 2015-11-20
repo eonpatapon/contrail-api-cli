@@ -196,6 +196,7 @@ class TestResource(unittest.TestCase):
         uuid = "b25f5a6b-292f-4d0c-b5c6-22ad7209abe5"
         mock_session.fqname_to_id.return_value = uuid
         r = Resource('foo', fq_name=fq_name)
+        mock_session.fqname_to_id.assert_called_with('foo', fq_name)
         self.assertEqual(r.uuid, uuid)
         self.assertEqual(r.path, Path("/foo/b25f5a6b-292f-4d0c-b5c6-22ad7209abe5"))
 
