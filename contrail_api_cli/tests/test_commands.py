@@ -170,8 +170,8 @@ class TestCommands(unittest.TestCase):
         mock_session.delete.return_value = True
         cmds.rm(resource=ts, force=True)
         mock_session.delete.assert_has_calls([
-            mock.call(BASE + '/foo/6b6a7f47-807e-4c39-8ac6-3adcf2f5498f'),
-            mock.call(BASE + '/foo/22916187-5b6f-40f1-b7b6-fc6fe9f23bce')
+            mock.call(BASE + '/foo/22916187-5b6f-40f1-b7b6-fc6fe9f23bce'),
+            mock.call(BASE + '/foo/6b6a7f47-807e-4c39-8ac6-3adcf2f5498f')
         ])
 
     @mock.patch('contrail_api_cli.resource.ResourceBase.session')
@@ -190,14 +190,14 @@ class TestCommands(unittest.TestCase):
         t = ['ec1afeaa-8930*', 'c2588045-d6fb-4f37-9f46-9451f653fb6a']
         cmds.rm(resource=t, force=True)
         mock_session.delete.assert_has_calls([
-            mock.call(BASE + '/foo/ec1afeaa-8930-43b0-a60a-939f23a50724'),
-            mock.call(BASE + '/foo/c2588045-d6fb-4f37-9f46-9451f653fb6a')
+            mock.call(BASE + '/foo/c2588045-d6fb-4f37-9f46-9451f653fb6a'),
+            mock.call(BASE + '/foo/ec1afeaa-8930-43b0-a60a-939f23a50724')
         ])
         t = ['*', 'c2588045-d6fb-4f37-9f46-9451f653fb6a']
         cmds.rm(resource=t, force=True)
         mock_session.delete.assert_has_calls([
-            mock.call(BASE + '/foo/ec1afeaa-8930-43b0-a60a-939f23a50724'),
-            mock.call(BASE + '/foo/c2588045-d6fb-4f37-9f46-9451f653fb6a')
+            mock.call(BASE + '/foo/c2588045-d6fb-4f37-9f46-9451f653fb6a'),
+            mock.call(BASE + '/foo/ec1afeaa-8930-43b0-a60a-939f23a50724')
         ])
 
     @mock.patch('contrail_api_cli.resource.ResourceBase.session')
