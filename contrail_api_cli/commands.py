@@ -59,10 +59,13 @@ def expand_resources(resources):
     for path in paths:
         if any([c in str(path) for c in ('*', '?')]):
             col = Collection(path.base, fetch=True)
-            result += ([r.path for r in col
-                        if fnmatch(str(r.path), str(path))])
+            expanded_paths = [r.path for r in col
+                              if fnmatch(str(r.path), str(path))]
         else:
-            result.append(path)
+            expanded_paths = [path]
+        for ep in expanded_paths:
+            if ep not in result:
+                result.append(ep)
     return result
 
 
@@ -183,7 +186,7 @@ class Rm(Command):
 
     def __call__(self, resource=None, recursive=False, force=False):
         paths = expand_resources(resource)
-        resources = list(set([Resource(p.base, uuid=p.name) for p in paths if p.is_resource]))
+        resources = [Resource(p.base, uuid=p.name) for p in paths if p.is_resource]
         if not resources:
             print("Can't match any resource to delete.")
         if recursive:
