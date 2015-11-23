@@ -23,6 +23,15 @@ class ResourceEncoder(json.JSONEncoder):
         return super(ResourceEncoder, self).default(obj)
 
 
+class ResourceWithoutPathEncoder(ResourceEncoder):
+
+    def default(self, obj):
+        if isinstance(obj, Path):
+            print("raise")
+            raise TypeError()
+        return super(ResourceWithoutPathEncoder, self).default(obj)
+
+
 class ResourceCompleter(Completer):
     """
     Simple autocompletion on a list of resources.
@@ -271,10 +280,13 @@ class Resource(ResourceBase, UserDict):
 
         if fq_name is not None:
             kwargs["fq_name"] = fq_name.split(":")
-        kwargs["uuid"] = uuid
-        kwargs["path"] = path / uuid
+        if uuid is not None:
+            kwargs["uuid"] = uuid
+            kwargs["path"] = path / uuid
+        else:
+            kwargs["path"] = path
         UserDict.__init__(self, **kwargs)
-        if self.path.is_resource and fetch:
+        if self.path and self.path.is_resource and fetch:
             self.fetch(recursive=recursive)
         self.emit('created', self)
 
@@ -346,9 +358,6 @@ class Resource(ResourceBase, UserDict):
                                                fetch=recursive - 1 > 0,
                                                recursive=recursive - 1,
                                                **data[attr][idx])
-            if type(data[attr]) is dict:
-                data[attr] = self._walk_resource(data[attr],
-                                                 recursive=recursive)
         return data
 
     @property

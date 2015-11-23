@@ -3,9 +3,10 @@ from argparse import Namespace
 
 from keystoneclient.auth import base
 from keystoneclient.session import Session
+from keystoneclient.exceptions import HTTPError
 
 from .utils import classproperty
-from .resource import ResourceBase, ResourceEncoder
+from .resource import ResourceBase, ResourceEncoder, ResourceWithoutPathEncoder
 
 
 class ContrailAPISession(Session):
@@ -63,7 +64,7 @@ class ContrailAPISession(Session):
         r = super(ContrailAPISession, self).get(url, params=kwargs)
         return r.json()
 
-    def post(self, url, data):
+    def post(self, url, data, cls=ResourceWithoutPathEncoder):
         """
         POST data to the api-server
 
@@ -71,14 +72,15 @@ class ContrailAPISession(Session):
         @type url: str
         @type data: dict
         @rtype: dict
+        @param cls: JSONEncoder class
         """
         headers = {"content-type": "application/json"}
         r = super(ContrailAPISession, self).post(url,
-                                                 data=to_json(data),
+                                                 data=to_json(data, cls=cls),
                                                  headers=headers)
         return r.json()
 
-    def put(self, url, data):
+    def put(self, url, data, cls=ResourceWithoutPathEncoder):
         """
         PUT data to the api-server
 
@@ -89,7 +91,7 @@ class ContrailAPISession(Session):
         """
         headers = {"content-type": "application/json"}
         r = super(ContrailAPISession, self).put(url,
-                                                data=to_json(data),
+                                                data=to_json(data, cls=cls),
                                                 headers=headers)
         return r.json()
 
@@ -110,7 +112,7 @@ class ContrailAPISession(Session):
         }
         try:
             return self.post(self.make_url("/fqname-to-id"), data)["uuid"]
-        except KeyError:
+        except HTTPError:
             return None
 
     def id_to_fqname(self, type, uuid):
@@ -131,7 +133,7 @@ class ContrailAPISession(Session):
         try:
             fq_name = self.post(self.make_url("/id-to-fqname"), data)['fq_name']
             return ":".join(fq_name)
-        except Exception:
+        except HTTPError:
             return None
 
 
