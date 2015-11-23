@@ -19,9 +19,8 @@ class ContrailAPISession(Session):
     def base_url(cls):
         return "%s://%s:%s" % (cls.protocol, cls.host, cls.port)
 
-    @classproperty
-    def make_url(cls, uri):
-        return cls.base_url + uri
+    def make_url(self, uri):
+        return self.base_url + uri
 
     @classproperty
     def user(cls):
@@ -110,9 +109,29 @@ class ContrailAPISession(Session):
             "fq_name": fq_name.split(":")
         }
         try:
-            uuid = self.post("/fqname-to-id", data)['uuid']
-            return uuid
-        except:
+            return self.post(self.make_url("/fqname-to-id"), data)["uuid"]
+        except KeyError:
+            return None
+
+    def id_to_fqname(self, type, uuid):
+        """
+        Return fq_name for uuid
+
+        @param type: resource type
+        @type type: str
+        @param uuid: resource uuid
+        @type uuid: UUIDv4 str
+
+        @rtype: str (domain:project:identifier)
+        """
+        data = {
+            "type": type,
+            "uuid": uuid
+        }
+        try:
+            fq_name = self.post(self.make_url("/id-to-fqname"), data)['fq_name']
+            return ":".join(fq_name)
+        except Exception:
             return None
 
 

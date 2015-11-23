@@ -69,7 +69,7 @@ class Path(PurePosixPath):
 
     @property
     def is_collection(self):
-        return not self.is_resource and self.base
+        return self.base == self.name
 
     def relative_to(self, path):
         try:

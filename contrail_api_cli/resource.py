@@ -229,13 +229,15 @@ class Resource(ResourceBase, UserDict):
     r.delete()
     """
 
-    def __init__(self, type, fetch=False, recursive=1, **kwargs):
+    def __init__(self, type, fetch=False, check_uuid=False, recursive=1, **kwargs):
         """Base class for API resources
 
         @param type: type of the resource
         @type type: str
         @param fetch: immediately fetch resource from the server
         @type fetch: bool
+        @param check_uuid: check that uuid exists on the API (makes an extra call)
+        @type check_uuid: bool
         @param recursive: level of recursion
         @param recursion: int
 
@@ -244,29 +246,35 @@ class Resource(ResourceBase, UserDict):
         @type uuid: v4UUID str
         Or:
         @param fq_name: fq name of the resource
-        @type fq_name: str (domain:project:identifier)
+        @type fq_name: str (domain:project:identifier) or list ['domain', 'project', 'identifier']
+
+        @raises ValueError: bad uuid or fq_name is given
         """
         self.type = type
         path = Path("/" + type)
         fq_name = kwargs.get('fq_name', None)
+        if isinstance(fq_name, list):
+            fq_name = ":".join(fq_name)
+        elif not any([isinstance(fq_name, str), fq_name is None]):
+            raise ValueError("Wrong fq_name type")
         uuid = kwargs.get('uuid', None)
 
         if uuid is not None:
-            assert UUID(uuid, version=4)
-            path = path / uuid
+            if check_uuid:
+                fq_name = self.session.id_to_fqname(type, uuid)
+                if fq_name is None:
+                    raise ValueError("%s doesn't exists" % uuid)
         elif fq_name is not None:
             uuid = self.session.fqname_to_id(type, fq_name)
             if uuid is None:
                 raise ValueError("%s doesn't exists" % fq_name)
-            path = path / uuid
-            kwargs["uuid"] = uuid
 
-        if fq_name is not None and isinstance(fq_name, str):
+        if fq_name is not None:
             kwargs["fq_name"] = fq_name.split(":")
-
-        kwargs["path"] = path
+        kwargs["uuid"] = uuid
+        kwargs["path"] = path / uuid
         UserDict.__init__(self, **kwargs)
-        if path.is_resource and fetch:
+        if self.path.is_resource and fetch:
             self.fetch(recursive=recursive)
         self.emit('created', self)
 

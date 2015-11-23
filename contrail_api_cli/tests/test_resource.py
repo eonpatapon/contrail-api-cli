@@ -6,12 +6,16 @@ except ImportError:
 
 from contrail_api_cli.utils import Path
 from contrail_api_cli.resource import RootCollection, Collection, Resource
+from contrail_api_cli.client import ContrailAPISession
 
 
 BASE = "http://localhost:8082"
 
 
 class TestResource(unittest.TestCase):
+
+    def setUp(self):
+        self.maxDiff = None
 
     @mock.patch('contrail_api_cli.resource.ResourceBase.session')
     def test_root_collection(self, mock_session):
@@ -111,6 +115,28 @@ class TestResource(unittest.TestCase):
 
     @mock.patch('contrail_api_cli.resource.ResourceBase.session')
     def test_resource(self, mock_session):
+        # bind original method to mock_session
+        mock_session.id_to_fqname = ContrailAPISession.id_to_fqname.__get__(mock_session, mock_session.__class__)
+        mock_session.make_url = ContrailAPISession.make_url.__get__(mock_session, mock_session.__class__)
+
+        # called by id_to_fqname
+        def post(url, data):
+            if data['type'] == "foo":
+                return {
+                    "fq_name": [
+                        "foo",
+                        "ec1afeaa-8930-43b0-a60a-939f23a50724"
+                    ]
+                }
+            if data['type'] == "bar":
+                return {
+                    "fq_name": [
+                        "bar",
+                        "15315402-8a21-4116-aeaa-b6a77dceb191"
+                    ]
+                }
+
+        mock_session.post.side_effect = post
         mock_session.get.return_value = {
             "foo": {
                 "href": BASE + "/foo/ec1afeaa-8930-43b0-a60a-939f23a50724",
@@ -122,11 +148,11 @@ class TestResource(unittest.TestCase):
                 ],
                 "bar_refs": [
                     {
-                        "href": BASE + "/bar/ec1afeaa-8930-43b0-a60a-939f23a50724",
-                        "uuid": "ec1afeaa-8930-43b0-a60a-939f23a50724",
+                        "href": BASE + "/bar/15315402-8a21-4116-aeaa-b6a77dceb191",
+                        "uuid": "15315402-8a21-4116-aeaa-b6a77dceb191",
                         "to": [
                             "bar",
-                            "ec1afeaa-8930-43b0-a60a-939f23a50724"
+                            "15315402-8a21-4116-aeaa-b6a77dceb191"
                         ]
                     }
                 ]
@@ -142,11 +168,10 @@ class TestResource(unittest.TestCase):
             attr=None,
             fq_name=["foo", "ec1afeaa-8930-43b0-a60a-939f23a50724"],
             bar_refs=[Resource("bar",
-                               uuid="ec1afeaa-8930-43b0-a60a-939f23a50724",
-                               href=BASE + "/bar/ec1afeaa-8930-43b0-a60a-939f23a50724",
-                               fq_name=["bar", "ec1afeaa-8930-43b0-a60a-939f23a50724"])]
+                               uuid="15315402-8a21-4116-aeaa-b6a77dceb191",
+                               href=BASE + "/bar/15315402-8a21-4116-aeaa-b6a77dceb191",
+                               fq_name=["bar", "15315402-8a21-4116-aeaa-b6a77dceb191"])]
         )
-
         self.assertEqual(resource, expected_resource)
 
     @mock.patch('contrail_api_cli.resource.ResourceBase.session')
@@ -192,11 +217,18 @@ class TestResource(unittest.TestCase):
 
     @mock.patch('contrail_api_cli.resource.ResourceBase.session')
     def test_fqname(self, mock_session):
+        mock_session.configure_mock(base_url=BASE)
+        # bind original method to mock_session
+        mock_session.fqname_to_id = ContrailAPISession.fqname_to_id.__get__(mock_session)
+        mock_session.make_url = ContrailAPISession.make_url.__get__(mock_session)
         fq_name = "default-domain:foo:b25f5a6b-292f-4d0c-b5c6-22ad7209abe5"
         uuid = "b25f5a6b-292f-4d0c-b5c6-22ad7209abe5"
-        mock_session.fqname_to_id.return_value = uuid
+        mock_session.post.return_value = {
+            "uuid": uuid
+        }
         r = Resource('foo', fq_name=fq_name)
-        mock_session.fqname_to_id.assert_called_with('foo', fq_name)
+        mock_session.post.assert_called_with(BASE + '/fqname-to-id',
+                                             {'type': 'foo', 'fq_name': fq_name.split(':')})
         self.assertEqual(r.uuid, uuid)
         self.assertEqual(r.path, Path("/foo/b25f5a6b-292f-4d0c-b5c6-22ad7209abe5"))
 

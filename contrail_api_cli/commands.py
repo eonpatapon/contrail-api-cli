@@ -1,6 +1,7 @@
 import inspect
 import argparse
 from fnmatch import fnmatch
+from collections import OrderedDict
 
 from keystoneclient.exceptions import HttpError
 
@@ -8,7 +9,7 @@ from pygments import highlight
 from pygments.lexers import JsonLexer
 from pygments.formatters import Terminal256Formatter
 
-from .resource import ResourceEncoder, Resource, Collection
+from .resource import ResourceEncoder, Resource, Collection, RootCollection
 from .client import to_json
 from .utils import ShellContext, Path, classproperty, all_subclasses, continue_prompt
 
@@ -42,31 +43,57 @@ def experimental(cls):
     return cls
 
 
-def expand_resources(resources):
-    """Return a list of paths from a list of resources in the cli
+class BadPath(Exception):
+    pass
 
-    @param resources: list of resources relative to the current path
-                      that may contain wildcards (*, ?)
-    @type resources: [str]
-    @rtype: [Path]
+
+def expand_paths(paths=None):
+    """Return an unique list of resources or collections from a list of paths.
+    Supports fq_name and wilcards resolution.
+
+    >>> expand_paths(['virtual-network', 'floating-ip/2a0a54b4-a420-485e-8372-42f70a627ec9'])
+    [Collection('virtual-network'), Resource('floating-ip', uuid='2a0a54b4-a420-485e-8372-42f70a627ec9')]
+
+    @param paths: list of paths relative to the current path
+                  that may contain wildcards (*, ?) or fq_names
+    @type paths: [str]
+    @rtype: [Resource|Collection]
+    @raises BadPath: path cannot be resolved
     """
-    if resources is None:
+    if not paths:
         paths = [ShellContext.current_path]
     else:
-        paths = [ShellContext.current_path / res for res in resources]
+        paths = [ShellContext.current_path / res for res in paths]
 
-    result = []
+    # use a dict to have unique paths
+    # but keep them ordered
+    result = OrderedDict()
     for path in paths:
         if any([c in str(path) for c in ('*', '?')]):
-            col = Collection(path.base, fetch=True)
-            expanded_paths = [r.path for r in col
-                              if fnmatch(str(r.path), str(path))]
+            if any([c in path.base for c in ('*', '?')]):
+                col = RootCollection(fetch=True)
+            else:
+                col = Collection(path.base, fetch=True)
+            for r in col:
+                if fnmatch(str(r.path), str(path)):
+                    result[r.path] = r
+        elif ':' in path.name:
+            try:
+                r = Resource(path.base, fq_name=path.name)
+                result[r.path] = r
+            except TypeError as e:
+                raise BadPath("Bad fq name format for in %s" % path)
+            except ValueError as e:
+                raise BadPath(str(e))
         else:
-            expanded_paths = [path]
-        for ep in expanded_paths:
-            if ep not in result:
-                result.append(ep)
-    return result
+            if path.is_resource:
+                try:
+                    result[path] = Resource(path.base, uuid=path.name, check_uuid=True)
+                except ValueError as e:
+                    raise BadPath(str(e))
+            elif path.is_collection:
+                result[path] = Collection(path.base)
+    return list(result.values())
 
 
 class RelativeResourceEncoder(ResourceEncoder):
@@ -88,6 +115,16 @@ class BaseCommand(object):
     @classproperty
     def name(cls):
         return cls.__name__.lower()
+
+    def current_path(self, resource):
+        """Return current path for resource
+
+        @param resource: resource or collection
+        @type resource: Resource|Collection
+
+        @rtype: str
+        """
+        return str(resource.path.relative_to(ShellContext.current_path))
 
     @classmethod
     def add_arguments_to_parser(cls, parser):
@@ -119,54 +156,74 @@ class ShellCommand(BaseCommand):
 
 class Ls(Command):
     description = "List resource objects"
-    resource = Arg(nargs="?", help="Resource path", default="")
+    paths = Arg(nargs="*", help="Resource path(s)")
+
+    def __call__(self, paths=None):
+        try:
+            resources = expand_paths(paths)
+        except BadPath as e:
+            raise CommandError(str(e))
+        result = []
+        for r in resources:
+            if isinstance(r, Collection):
+                r.fetch()
+                result += [self.current_path(i) for i in r]
+            elif isinstance(r, Resource):
+                result.append(self.current_path(r))
+            else:
+                raise CommandError('Not a resource or collection')
+        return "\n".join(result)
+
+
+class Cat(Command):
+    description = "Print a resource"
+    paths = Arg(nargs="*", help="Resource path(s)")
 
     def colorize(self, json_data):
         return highlight(json_data,
                          JsonLexer(indent=2),
                          Terminal256Formatter(bg="dark"))
 
-    def __call__(self, resource=''):
-        path = ShellContext.current_path / resource
-        # Find Path from fq_name
-        if ":" in resource:
-            try:
-                return Resource(path.base, fq_name=path.name, fetch=True)
-            except ValueError as e:
-                return str(e)
-        else:
-            if path.is_collection or path.is_root:
-                return "\n".join([str(i.path.relative_to(ShellContext.current_path))
-                                  for i in Collection(path.base, fetch=True)])
-            elif path.is_resource:
-                res = Resource(path.base, uuid=path.name, fetch=True)
-                json_data = to_json(res.data, cls=RelativeResourceEncoder)
-                return self.colorize(json_data)
-        return "Not a resource"
-
-
-class Cat(Command):
-    description = "Print a resource"
-    resource = Arg(nargs="?", help="Resource path", default="")
-
-    def __call__(self, resource=''):
-        ShellContext.current_path = ShellContext.current_path / resource
+    def __call__(self, paths=None):
+        try:
+            resources = expand_paths(paths)
+        except BadPath as e:
+            return CommandError(str(e))
+        if not resources:
+            raise CommandError('No resource given')
+        result = []
+        for r in resources:
+            if not isinstance(r, Resource):
+                raise CommandError('%s is not a resource' % self.current_path(r))
+            r.fetch()
+            json_data = to_json(r.data, cls=RelativeResourceEncoder)
+            result.append(self.colorize(json_data))
+        return "".join(result)
 
 
 class Count(Command):
     description = "Count number of resources"
-    resource = Arg(nargs="?", help="Resource path", default='')
+    paths = Arg(nargs="*", help="Resource path(s)")
 
-    def __call__(self, resource=''):
-        path = ShellContext.current_path / resource
-        if path.is_collection:
-            return len(Collection(path.base))
+    def __call__(self, paths=None):
+        try:
+            collections = expand_paths(paths)
+        except BadPath as e:
+            raise CommandError(str(e))
+        if not collections:
+            raise CommandError('No collection given')
+        result = []
+        for c in collections:
+            if not isinstance(c, Collection):
+                raise CommandError('%s is not a collection' % self.current_path(c))
+            result.append(str(len(c)))
+        return "\n".join(result)
 
 
 @experimental
 class Rm(Command):
     description = "Delete a resource"
-    resource = Arg(nargs="*", help="Resource path", default=[])
+    paths = Arg(nargs="*", help="Resource path(s)")
     recursive = Arg("-r", "--recursive", dest="recursive",
                     action="store_true", default=False,
                     help="Recursive delete of back_refs resources")
@@ -184,20 +241,24 @@ class Rm(Command):
                 back_refs = self._get_back_refs([back_ref], back_refs)
         return back_refs
 
-    def __call__(self, resource=None, recursive=False, force=False):
-        paths = expand_resources(resource)
-        resources = [Resource(p.base, uuid=p.name) for p in paths if p.is_resource]
+    def __call__(self, paths=None, recursive=False, force=False):
+        try:
+            resources = expand_paths(paths)
+        except BadPath as e:
+            raise CommandError(str(e))
+        for r in resources:
+            if not isinstance(r, Resource):
+                raise CommandError('%s is not a resource' % self.current_path(r))
         if not resources:
-            print("Can't match any resource to delete.")
+            raise CommandError("No resource to delete")
         if recursive:
             resources = self._get_back_refs(resources, [])
         if resources:
             message = """About to delete:
- - %s""" % "\n - ".join([str(r.path.relative_to(ShellContext.current_path))
-                        for r in resources])
+ - %s""" % "\n - ".join([self.current_path(r) for r in resources])
             if force or continue_prompt(message=message):
                 for r in reversed(resources):
-                    print("Deleting %s" % str(r.path.relative_to(ShellContext.current_path)))
+                    print("Deleting %s" % self.current_path(r))
                     try:
                         r.delete()
                     except HttpError as e:
@@ -206,10 +267,10 @@ class Rm(Command):
 
 class Cd(ShellCommand):
     description = "Change resource context"
-    resource = Arg(nargs="?", help="Resource path", default='')
+    path = Arg(nargs="?", help="Resource path", default='')
 
-    def __call__(self, resource=''):
-        ShellContext.current_path = ShellContext.current_path / resource
+    def __call__(self, path=''):
+        ShellContext.current_path = ShellContext.current_path / path
 
 
 class Exit(ShellCommand):
@@ -238,6 +299,7 @@ def shell_commands_list():
 
 
 ls = ll = Ls()
+cat = Cat()
 cd = Cd()
 help = Help()
 count = Count()
