@@ -8,28 +8,17 @@ except ImportError:
 
 from prompt_toolkit.completion import Completer, Completion
 
-from .utils import Path, ShellContext, Observable
+from .utils import Path, ShellContext, Observable, to_json
 
 
 class ResourceEncoder(json.JSONEncoder):
 
     def default(self, obj):
-        if isinstance(obj, Path):
-            return str(obj)
         if isinstance(obj, Resource):
             return obj.data
         if isinstance(obj, Collection):
             return obj.data
         return super(ResourceEncoder, self).default(obj)
-
-
-class ResourceWithoutPathEncoder(ResourceEncoder):
-
-    def default(self, obj):
-        if isinstance(obj, Path):
-            print("raise")
-            raise TypeError()
-        return super(ResourceWithoutPathEncoder, self).default(obj)
 
 
 class ResourceCompleter(Completer):
@@ -125,11 +114,18 @@ class Collection(ResourceBase, UserList):
         self.fields = fields or []
         self.filters = filters or []
         self.parent_uuid = list(self._sanitize_parent_uuid(parent_uuid))
-        self.path = Path('/' + type)
         self.meta = dict(kwargs)
         if fetch:
             self.fetch(recursive=recursive)
         self.emit('created', self)
+
+    @property
+    def path(self):
+        """Return Path of the resource
+
+        @rtype: Path
+        """
+        return Path('/') / self.type
 
     @property
     def href(self):
@@ -144,7 +140,8 @@ class Collection(ResourceBase, UserList):
 
     @property
     def fq_name(self):
-        return ""
+        # Needed for resource completion
+        return ''
 
     def __len__(self):
         """Return the number of items of the collection
@@ -153,7 +150,7 @@ class Collection(ResourceBase, UserList):
         """
         if not self.data:
             res = self.session.get_json(self.href, count=True)
-            return res[self._contrail_name]["count"]
+            return res[self._contrail_name]['count']
         return super(Collection, self).__len__()
 
     @property
@@ -243,10 +240,12 @@ class Resource(ResourceBase, UserDict):
 
     r = Resource('virtual-network', uuid='4c45e89b-7780-4b78-8508-314fe04a7cbd', fetch=True)
     back_refs = list(r.back_refs)
+    r['display_name'] = 'foo'
+    r.save()
     r.delete()
     """
 
-    def __init__(self, type, fetch=False, check_uuid=False, recursive=1, **kwargs):
+    def __init__(self, type, fetch=False, check_uuid=False, check_fq_name=True, recursive=1, **kwargs):
         """Base class for API resources
 
         @param type: type of the resource
@@ -268,7 +267,6 @@ class Resource(ResourceBase, UserDict):
         @raises ValueError: bad uuid or fq_name is given
         """
         self.type = type
-        path = Path("/" + type)
         fq_name = kwargs.get('fq_name', None)
         if isinstance(fq_name, list):
             fq_name = ":".join(fq_name)
@@ -282,17 +280,15 @@ class Resource(ResourceBase, UserDict):
                 if fq_name is None:
                     raise ValueError("%s doesn't exists" % uuid)
         elif fq_name is not None:
-            uuid = self.session.fqname_to_id(type, fq_name)
-            if uuid is None:
-                raise ValueError("%s doesn't exists" % fq_name)
+            if check_fq_name:
+                uuid = self.session.fqname_to_id(type, fq_name)
+                if uuid is None:
+                    raise ValueError("%s doesn't exists" % fq_name)
 
         if fq_name is not None:
             kwargs["fq_name"] = fq_name.split(":")
         if uuid is not None:
             kwargs["uuid"] = uuid
-            kwargs["path"] = path / uuid
-        else:
-            kwargs["path"] = path
         UserDict.__init__(self, **kwargs)
         if self.path and self.path.is_resource and fetch:
             self.fetch(recursive=recursive)
@@ -304,6 +300,8 @@ class Resource(ResourceBase, UserDict):
 
         @rtype: str
         """
+        if self.get('href') is not None:
+            return self['href']
         return self.session.base_url + str(self.path)
 
     @property
@@ -312,15 +310,18 @@ class Resource(ResourceBase, UserDict):
 
         @rtype: Path
         """
-        return self.data.get("path")
+        p = Path("/") / self.type
+        if self.uuid:
+            return p / self.uuid
+        return p
 
     @property
     def uuid(self):
         """Return UUID of the resource
 
-        @rtype: v4UUID str
+        @rtype: v4UUID str | None
         """
-        return self.data.get("uuid")
+        return self.get("uuid")
 
     @property
     def fq_name(self):
@@ -328,26 +329,23 @@ class Resource(ResourceBase, UserDict):
 
         @rtype: str
         """
-        return ":".join(self.data.get("fq_name", self.data.get("to", [])))
+        return ":".join(self.get("fq_name", self.get("to", [])))
 
     def save(self):
         """Save the resource to the API server
+
+        If the resource doesn't have a uuid the resource will be created.
+        If uuid is present the resource is updated.
         """
         if self.path.is_collection:
-            self.session.post_json(self.href, data=self.data)
+            data = self.session.post_json(self.href + 's',
+                                          {self.type: self.data},
+                                          cls=ResourceEncoder)
         else:
-            self.session.put_json(self.href, data=self.data)
-
-    def fetch(self, recursive=1):
-        """Fetch resource from the API server
-
-        @param recursive: level of recursion for fetching resources
-        @type recursive: int
-        """
-        data = self.session.get_json(self.href)[self.type]
-        # Find other linked resources
-        data = self._walk_resource(data, recursive=recursive)
-        self.data.update(data)
+            data = self.session.put_json(self.href, {self.type: self.data},
+                                         cls=ResourceEncoder)
+        self.update(data[self.type])
+        self.fetch(exclude_children=True, exclude_back_refs=True)
 
     def delete(self):
         """Delete resource from the API server
@@ -357,14 +355,37 @@ class Resource(ResourceBase, UserDict):
             self.emit('deleted', self)
         return res
 
-    def _walk_resource(self, data, recursive=1):
+    def fetch(self, recursive=1, exclude_children=False, exclude_back_refs=False):
+        """Fetch resource from the API server
+
+        @param recursive: level of recursion for fetching resources
+        @type recursive: int
+        @param exclude_children: don't get children references
+        @type exclude_children: bool
+        @param exclude_back_refs: don't get back_refs references
+        @type exclude_back_refs: bool
+        """
+        data = self.session.get_json(self.href,
+                                     exclude_children=exclude_children,
+                                     exclude_back_refs=exclude_back_refs)[self.type]
+        self.from_dict(data)
+
+    def from_dict(self, data, recursive=1):
+        """Populate the resource from a python dict
+
+        @param recursive: level of recursion for fetching resources
+        @type recursive: int
+        """
+        # Find other linked resources
+        data = self._encode_resource(data, recursive=recursive)
+        self.data.update(data)
+
+    def _encode_resource(self, data, recursive=1):
         for attr, value in list(data.items()):
             if attr.endswith('refs'):
                 res_type = "-".join([c for c in attr.split('_')
                                      if c not in ('back', 'refs')])
                 for idx, r in enumerate(data[attr]):
-                    data[attr][idx]['fq_name'] = data[attr][idx]['to']
-                    del data[attr][idx]['to']
                     data[attr][idx] = Resource(res_type,
                                                fetch=recursive - 1 > 0,
                                                recursive=recursive - 1,
@@ -382,7 +403,15 @@ class Resource(ResourceBase, UserDict):
                 for back_ref in value:
                     yield back_ref
 
+    def json(self):
+        """Return JSON representation of the resource
+        """
+        return to_json(self.data, cls=ResourceEncoder)
+
     def __str__(self):
         if hasattr(self, 'data'):
             return str(self.data)
         return str({})
+
+    def __repr__(self):
+        return 'Resource(%s,%s)' % (self.path, self)

@@ -72,13 +72,11 @@ class TestResource(unittest.TestCase):
             Resource(
                 'instance-ip',
                 href=BASE + "/instance-ip/ec1afeaa-8930-43b0-a60a-939f23a50724",
-                path=Path("/instance-ip/ec1afeaa-8930-43b0-a60a-939f23a50724"),
                 uuid="ec1afeaa-8930-43b0-a60a-939f23a50724"
             ),
             Resource(
                 'instance-ip',
                 href=BASE + "/instance-ip/c2588045-d6fb-4f37-9f46-9451f653fb6a",
-                path=Path("/instance-ip/c2588045-d6fb-4f37-9f46-9451f653fb6a"),
                 uuid="c2588045-d6fb-4f37-9f46-9451f653fb6a"
             )
         ]
@@ -87,7 +85,7 @@ class TestResource(unittest.TestCase):
     @mock.patch('contrail_api_cli.resource.ResourceBase.session')
     def test_resource_str(self, mock_session):
         r = Resource('foo', key='foo', key2='bar')
-        self.assertEqual(str(r), str({'key': 'foo', 'key2': 'bar', 'path': Path('/foo')}))
+        self.assertEqual(str(r), str({'key': 'foo', 'key2': 'bar'}))
 
     @mock.patch('contrail_api_cli.resource.ResourceBase.session')
     def test_resource_fqname(self, mock_session):
@@ -127,14 +125,13 @@ class TestResource(unittest.TestCase):
         expected_resource = Resource(
             "foo",
             uuid="ec1afeaa-8930-43b0-a60a-939f23a50724",
-            path=Path('/foo/ec1afeaa-8930-43b0-a60a-939f23a50724'),
             href=BASE + "/foo/ec1afeaa-8930-43b0-a60a-939f23a50724",
             attr=None,
             fq_name=["foo", "ec1afeaa-8930-43b0-a60a-939f23a50724"],
             bar_refs=[Resource("bar",
                                uuid="15315402-8a21-4116-aeaa-b6a77dceb191",
                                href=BASE + "/bar/15315402-8a21-4116-aeaa-b6a77dceb191",
-                               fq_name=["bar", "15315402-8a21-4116-aeaa-b6a77dceb191"])]
+                               to=["bar", "15315402-8a21-4116-aeaa-b6a77dceb191"])]
         )
         self.assertEqual(resource, expected_resource)
 

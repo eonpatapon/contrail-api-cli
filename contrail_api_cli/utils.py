@@ -1,4 +1,6 @@
+import json
 import os.path
+import hashlib
 from uuid import UUID
 from pathlib import PurePosixPath
 
@@ -113,3 +115,19 @@ def continue_prompt(message=""):
 def all_subclasses(cls):
     return cls.__subclasses__() + [g for s in cls.__subclasses__()
                                    for g in all_subclasses(s)]
+
+
+def to_json(resource_dict, cls=None):
+    return json.dumps(resource_dict,
+                      indent=2,
+                      sort_keys=True,
+                      skipkeys=True,
+                      cls=cls)
+
+
+def md5(fname):
+    hash = hashlib.md5()
+    with open(fname, "rb") as f:
+        for chunk in iter(lambda: f.read(4096), b""):
+            hash.update(chunk)
+    return hash.hexdigest()
