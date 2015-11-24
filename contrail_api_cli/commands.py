@@ -1,6 +1,8 @@
 import sys
 import inspect
 import argparse
+import pipes
+import tempfile
 from fnmatch import fnmatch
 from collections import OrderedDict
 
@@ -209,7 +211,7 @@ class Cat(Command):
                 raise CommandError('%s is not a resource' % self.current_path(r))
             r.fetch()
             json_data = to_json(r.data, cls=RelativeResourceEncoder)
-            if sys.stdout.isatty():
+            if not sys.stdout.isatty():
                 result.append(self.colorize(json_data))
             else:
                 result.append(json_data)
@@ -312,9 +314,15 @@ class Shell(Command):
             except (EOFError, KeyboardInterrupt):
                 break
             try:
-                action_list = action.split()
+                action = action.split('|')
+                pipe_cmds = action[1:]
+                action_list = action[0].split()
                 cmd = globals()[action_list[0]]
                 args = action_list[1:]
+                if pipe_cmds:
+                    p = pipes.Template()
+                    for pipe_cmd in pipe_cmds:
+                        p.append(str(pipe_cmd.strip()), '--')
             except IndexError:
                 continue
             except KeyError:
@@ -330,9 +338,15 @@ class Shell(Command):
             except EOFError:
                 break
             else:
-                if result is None:
+                if not result:
                     continue
-                print(result)
+                elif pipe_cmds:
+                    t = tempfile.NamedTemporaryFile('r')
+                    with p.open(t.name, 'w') as f:
+                        f.write(result)
+                    print(t.read())
+                else:
+                    print(result)
 
 
 class Cd(ShellCommand):
