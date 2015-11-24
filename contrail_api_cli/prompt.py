@@ -2,33 +2,18 @@ import os
 import sys
 import argparse
 
-from prompt_toolkit import prompt
-from prompt_toolkit.history import InMemoryHistory
-
-from pygments.token import Token
-
 from keystoneclient import session as ksession, auth
 from keystoneclient.exceptions import ClientException, HttpError
 
-from .client import ContrailAPISession
-from .style import PromptStyle
-from .utils import ShellContext
-from .resource import RootCollection, ResourceCompleter
 from . import commands
 
-history = InMemoryHistory()
-completer = ResourceCompleter()
 
-
-def get_prompt_tokens(cli):
-    return [
-        (Token.Username, ContrailAPISession.user or ''),
-        (Token.At, '@' if ContrailAPISession.user else ''),
-        (Token.Host, ContrailAPISession.host),
-        (Token.Colon, ':'),
-        (Token.Path, str(ShellContext.current_path)),
-        (Token.Pound, '> ')
-    ]
+def get_subcommand_kwargs(name, namespace):
+    subcmd = getattr(commands, name)
+    subcmd_kwargs = {}
+    for (arg_name, arg_args, arg_kwargs) in subcmd.arguments:
+        subcmd_kwargs[arg_name] = getattr(namespace, arg_name)
+    return (subcmd, subcmd_kwargs)
 
 
 def main():
@@ -50,49 +35,29 @@ def main():
     ksession.Session.register_cli_options(parser)
     # Default auth plugin will be http unless OS_AUTH_PLUGIN envvar is set
     auth.register_argparse_arguments(parser, argv, default="http")
+
+    # Register cmds for direct call
+    subparsers = parser.add_subparsers(dest='subcmd')
+    for cmd in commands.commands_list():
+        cmd_parser = subparsers.add_parser(cmd.name, help=cmd.description)
+        cmd.add_arguments_to_parser(cmd_parser)
+
     options = parser.parse_args()
 
-    ContrailAPISession.make(options.os_auth_plugin,
-                            **vars(options))
-
-    # load home resources
+    commands.make_api_session(options)
+    subcmd, subcmd_kwargs = get_subcommand_kwargs(options.subcmd, options)
     try:
-        RootCollection(fetch=True)
-    except ClientException as e:
+        result = subcmd(**subcmd_kwargs)
+    except (HttpError, ClientException, commands.CommandError) as e:
         print(e)
-        sys.exit(1)
-
-    while True:
-        try:
-            action = prompt(get_prompt_tokens=get_prompt_tokens,
-                            history=history,
-                            completer=completer,
-                            style=PromptStyle)
-        except (EOFError, KeyboardInterrupt):
-            break
-        try:
-            action_list = action.split()
-            cmd = getattr(commands, action_list[0])
-            args = action_list[1:]
-        except IndexError:
-            continue
-        except AttributeError:
-            print("Command not found. Type help for all commands.")
-            continue
-
-        try:
-            result = cmd.parse_and_call(*args)
-        except (HttpError, ClientException, commands.CommandError) as e:
-            print(e)
-            continue
-        except KeyboardInterrupt:
-            continue
-        except EOFError:
-            break
-        else:
-            if result is None:
-                continue
+    except KeyboardInterrupt:
+        pass
+    except EOFError:
+        pass
+    else:
+        if result:
             print(result)
+
 
 if __name__ == "__main__":
     main()

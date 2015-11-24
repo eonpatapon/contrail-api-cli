@@ -21,5 +21,5 @@ class HTTPAuth(BaseAuthPlugin):
     def get_options(cls):
         return [
             cfg.StrOpt('username', help='username for basic HTTP authentication'),
-            cfg.StrOpt('password', help='passowrd for basic HTTP authentication')
+            cfg.StrOpt('password', help='password for basic HTTP authentication')
         ]

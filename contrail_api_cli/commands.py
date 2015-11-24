@@ -1,17 +1,23 @@
+import sys
 import inspect
 import argparse
 from fnmatch import fnmatch
 from collections import OrderedDict
 
-from keystoneclient.exceptions import HttpError
+from keystoneclient.exceptions import ClientException, HttpError
+
+from prompt_toolkit import prompt
+from prompt_toolkit.history import InMemoryHistory
 
 from pygments import highlight
+from pygments.token import Token
 from pygments.lexers import JsonLexer
 from pygments.formatters import Terminal256Formatter
 
-from .resource import ResourceEncoder, Resource, Collection, RootCollection
-from .client import to_json
+from .resource import ResourceEncoder, Resource, Collection, RootCollection, ResourceCompleter
+from .client import to_json, ContrailAPISession
 from .utils import ShellContext, Path, classproperty, all_subclasses, continue_prompt
+from .style import PromptStyle
 
 
 class CommandError(Exception):
@@ -126,8 +132,8 @@ class BaseCommand(object):
         """
         return str(resource.path.relative_to(ShellContext.current_path))
 
-    @classmethod
-    def add_arguments_to_parser(cls, parser):
+    @classproperty
+    def arguments(cls):
         for attr, value in inspect.getmembers(cls):
             if isinstance(value, Arg):
                 # Handle case for options
@@ -135,7 +141,13 @@ class BaseCommand(object):
                 if len(value.args) > 0:
                     attr = value.args[0]
                     value.args = value.args[1:]
-                parser.add_argument(attr, *value.args, **value.kwargs)
+                yield (attr, value.args, value.kwargs)
+        raise StopIteration()
+
+    @classmethod
+    def add_arguments_to_parser(cls, parser):
+        for (arg_name, arg_args, arg_kwargs) in cls.arguments:
+            parser.add_argument(arg_name, *arg_args, **arg_kwargs)
 
     def parse_and_call(self, *args):
         args = self.parser.parse_args(args=args)
@@ -197,7 +209,10 @@ class Cat(Command):
                 raise CommandError('%s is not a resource' % self.current_path(r))
             r.fetch()
             json_data = to_json(r.data, cls=RelativeResourceEncoder)
-            result.append(self.colorize(json_data))
+            if sys.stdout.isatty():
+                result.append(self.colorize(json_data))
+            else:
+                result.append(json_data)
         return "".join(result)
 
 
@@ -265,6 +280,61 @@ class Rm(Command):
                         raise CommandError("Failed to delete resource: %s" % str(e))
 
 
+class Shell(Command):
+    description = "Run an interactive shell"
+
+    def __call__(self):
+
+        def get_prompt_tokens(cli):
+            return [
+                (Token.Username, ContrailAPISession.user or ''),
+                (Token.At, '@' if ContrailAPISession.user else ''),
+                (Token.Host, ContrailAPISession.host),
+                (Token.Colon, ':'),
+                (Token.Path, str(ShellContext.current_path)),
+                (Token.Pound, '> ')
+            ]
+
+        history = InMemoryHistory()
+        completer = ResourceCompleter()
+        # load home resources
+        try:
+            RootCollection(fetch=True)
+        except ClientException as e:
+            return str(e)
+
+        while True:
+            try:
+                action = prompt(get_prompt_tokens=get_prompt_tokens,
+                                history=history,
+                                completer=completer,
+                                style=PromptStyle)
+            except (EOFError, KeyboardInterrupt):
+                break
+            try:
+                action_list = action.split()
+                cmd = globals()[action_list[0]]
+                args = action_list[1:]
+            except IndexError:
+                continue
+            except KeyError:
+                print("Command not found. Type help for all commands.")
+                continue
+            try:
+                result = cmd.parse_and_call(*args)
+            except (HttpError, ClientException, CommandError) as e:
+                print(e)
+                continue
+            except KeyboardInterrupt:
+                continue
+            except EOFError:
+                break
+            else:
+                if result is None:
+                    continue
+                print(result)
+
+
 class Cd(ShellCommand):
     description = "Change resource context"
     path = Arg(nargs="?", help="Resource path", default='')
@@ -286,6 +356,11 @@ class Help(ShellCommand):
         return "Available commands: %s" % " ".join([c.name for c in all_commands_list()])
 
 
+def make_api_session(options):
+    ContrailAPISession.make(options.os_auth_plugin,
+                            **vars(options))
+
+
 def all_commands_list():
     return commands_list() + shell_commands_list()
 
@@ -305,3 +380,4 @@ help = Help()
 count = Count()
 rm = Rm()
 exit = Exit()
+shell = Shell()

@@ -16,7 +16,7 @@ First create the virtualenv and install contrail-api-cli with pip.
 
 ## Usage
 
-Run ``contrail-api-cli`` to start the cli. Use the ``-h`` option to see all supported options. By default it will try to connect to ``localhost`` on port ``8082`` with no authentication.
+Run ``contrail-api-cli shell`` to start the cli. Use the ``-h`` option to see all supported options. By default it will try to connect to ``localhost`` on port ``8082`` with no authentication.
     
 Type ``help`` to get the list of all available commands.
 
@@ -32,7 +32,7 @@ When running the contrail API server with ``--auth keystone`` you can login on p
 
 ### Basic HTTP auth
 
-    contrail-api-cli --host localhost:8095 --os-auth-plugin http --os-username admin --os-password contrail123
+    contrail-api-cli --host localhost:8095 --os-auth-plugin http --os-username admin --os-password contrail123 shell
 
 The username and password can be sourced from the environment variables ``OS_USERNAME``, ``OS_PASSWORD``.
 
@@ -42,7 +42,7 @@ The auth plugin default to ``http`` unless ``OS_AUTH_PLUGIN`` is set.
 
 The easiest way is to source your openstack openrc file and run
 
-    contrail-api-cli --os-auth-plugin [v2password|v3password]
+    contrail-api-cli --os-auth-plugin [v2password|v3password] shell
 
 See ``contrail-api-cli --os-auth-plugin [v2password|v3password] --help`` for all options.
 
