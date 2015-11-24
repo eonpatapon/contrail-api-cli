@@ -145,7 +145,8 @@ class Collection(ResourceBase, UserList):
         @rtype: int
         """
         if not self.data:
-            return self.session.get(self.href, count=True)[self._contrail_name]["count"]
+            res = self.session.get_json(self.href, count=True)
+            return res[self._contrail_name]["count"]
         return super(Collection, self).__len__()
 
     @property
@@ -206,7 +207,7 @@ class Collection(ResourceBase, UserList):
         """
 
         params = self._fetch_params(fields, filters, parent_uuid)
-        data = self.session.get(self.href, **params)
+        data = self.session.get_json(self.href, **params)
 
         if not self.type:
             self.data = [Collection(col["link"]["name"],
@@ -326,9 +327,9 @@ class Resource(ResourceBase, UserDict):
         """Save the resource to the API server
         """
         if self.path.is_collection:
-            self.session.post(self.href, data=self.data)
+            self.session.post_json(self.href, data=self.data)
         else:
-            self.session.put(self.href, data=self.data)
+            self.session.put_json(self.href, data=self.data)
 
     def fetch(self, recursive=1):
         """Fetch resource from the API server
@@ -336,7 +337,7 @@ class Resource(ResourceBase, UserDict):
         @param recursive: level of recursion for fetching resources
         @type recursive: int
         """
-        data = self.session.get(self.href)[self.type]
+        data = self.session.get_json(self.href)[self.type]
         # Find other linked resources
         data = self._walk_resource(data, recursive=recursive)
         self.data.update(data)

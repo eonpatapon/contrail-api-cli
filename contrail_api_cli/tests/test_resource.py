@@ -22,7 +22,7 @@ class TestResource(unittest.TestCase):
     @mock.patch('contrail_api_cli.resource.ResourceBase.session')
     def test_root_collection(self, mock_session):
         mock_session.configure_mock(base_url=BASE)
-        mock_session.get.return_value = {
+        mock_session.get_json.return_value = {
             "href": BASE,
             "links": [
                 {"link": {"href": BASE + "/instance-ips",
@@ -53,7 +53,7 @@ class TestResource(unittest.TestCase):
 
     @mock.patch('contrail_api_cli.resource.ResourceBase.session')
     def test_resource_collection(self, mock_session):
-        mock_session.get.return_value = {
+        mock_session.get_json.return_value = {
             "instance-ips": [
                 {"href": BASE + "/instance-ip/ec1afeaa-8930-43b0-a60a-939f23a50724",
                  "uuid": "ec1afeaa-8930-43b0-a60a-939f23a50724"},
@@ -101,7 +101,7 @@ class TestResource(unittest.TestCase):
     def test_resource(self, mock_session):
         # bind original method to mock_session
         mock_session.make_url = ContrailAPISession.make_url.__get__(mock_session)
-        mock_session.get.return_value = {
+        mock_session.get_json.return_value = {
             "foo": {
                 "href": BASE + "/foo/ec1afeaa-8930-43b0-a60a-939f23a50724",
                 "uuid": "ec1afeaa-8930-43b0-a60a-939f23a50724",
@@ -145,15 +145,15 @@ class TestResource(unittest.TestCase):
         mock_session.make_url = ContrailAPISession.make_url.__get__(mock_session)
 
         # called by fqname_to_id
-        def post(url, data):
-            if data['type'] == "foo":
+        def post(url, json):
+            if json['type'] == "foo":
                 return {
                     "uuid": "ec1afeaa-8930-43b0-a60a-939f23a50724"
                 }
-            if data['type'] == "bar":
+            if json['type'] == "bar":
                 raise HttpError()
 
-        mock_session.post.side_effect = post
+        mock_session.post_json.side_effect = post
         r = Resource('foo', fq_name='domain:foo:uuid')
         self.assertEqual(r.uuid, 'ec1afeaa-8930-43b0-a60a-939f23a50724')
         self.assertEqual(r.path, Path('/foo/ec1afeaa-8930-43b0-a60a-939f23a50724'))
@@ -169,8 +169,8 @@ class TestResource(unittest.TestCase):
         mock_session.make_url = ContrailAPISession.make_url.__get__(mock_session)
 
         # called by fqname_to_id
-        def post(url, data):
-            if data['type'] == "foo":
+        def post(url, json):
+            if json['type'] == "foo":
                 return {
                     'fq_name': [
                         'domain',
@@ -178,10 +178,10 @@ class TestResource(unittest.TestCase):
                         'uuid'
                     ]
                 }
-            if data['type'] == "bar":
+            if json['type'] == "bar":
                 raise HttpError()
 
-        mock_session.post.side_effect = post
+        mock_session.post_json.side_effect = post
         r = Resource('foo', uuid='a5a1b67b-4246-4e2d-aa24-479d8d47435d', check_uuid=True)
         self.assertEqual(r.fq_name, 'domain:foo:uuid')
         self.assertEqual(r.path, Path('/foo/a5a1b67b-4246-4e2d-aa24-479d8d47435d'))
@@ -193,12 +193,12 @@ class TestResource(unittest.TestCase):
     # @mock.patch('contrail_api_cli.resource.ResourceBase.session')
     # def test_resource_save(self, mock_session, mock_ksession):
         # mock_session.configure_mock(base_url=BASE)
-        # mock_session.post = ContrailAPISession.post.__get__(mock_session)
+        # mock_session.post_json = ContrailAPISession.post.__get__(mock_session)
         # mock_session.make_url = ContrailAPISession.make_url.__get__(mock_session)
         # r = Resource('foo')
         # r['foo'] = 'bar'
         # r.save()
-        # mock_session.post.assert_called_with(BASE + '/foo', data={'foo': 'bar', 'path': Path('/foo')})
+        # mock_session.post_json.assert_called_with(BASE + '/foo', data={'foo': 'bar', 'path': Path('/foo')})
         # print(mock_ksession.post.mock_calls)
 
 
@@ -208,24 +208,24 @@ class TestCollection(unittest.TestCase):
     def test_collection_fields(self, mock_session):
         mock_session.configure_mock(base_url=BASE)
         c = Collection('foo', fields=['foo', 'bar'], fetch=True)
-        mock_session.get.assert_called_with(BASE + '/foos', fields='foo,bar')
+        mock_session.get_json.assert_called_with(BASE + '/foos', fields='foo,bar')
         c.fetch(fields=['baz'])
-        mock_session.get.assert_called_with(BASE + '/foos', fields='foo,bar,baz')
+        mock_session.get_json.assert_called_with(BASE + '/foos', fields='foo,bar,baz')
         c.fetch()
-        mock_session.get.assert_called_with(BASE + '/foos', fields='foo,bar')
+        mock_session.get_json.assert_called_with(BASE + '/foos', fields='foo,bar')
 
     @mock.patch('contrail_api_cli.resource.ResourceBase.session')
     def test_collection_filters(self, mock_session):
         mock_session.configure_mock(base_url=BASE)
         c = Collection('foo', filters=[('foo', 'bar')], fetch=True)
-        mock_session.get.assert_called_with(BASE + '/foos', filters='foo=="bar"')
+        mock_session.get_json.assert_called_with(BASE + '/foos', filters='foo=="bar"')
         c.fetch(filters=[('bar', False)])
-        mock_session.get.assert_called_with(BASE + '/foos', filters='foo=="bar",bar==false')
+        mock_session.get_json.assert_called_with(BASE + '/foos', filters='foo=="bar",bar==false')
         c.fetch()
-        mock_session.get.assert_called_with(BASE + '/foos', filters='foo=="bar"')
+        mock_session.get_json.assert_called_with(BASE + '/foos', filters='foo=="bar"')
         c.filter('bar', 42)
         c.fetch()
-        mock_session.get.assert_called_with(BASE + '/foos', filters='foo=="bar",bar==42')
+        mock_session.get_json.assert_called_with(BASE + '/foos', filters='foo=="bar",bar==42')
 
     @mock.patch('contrail_api_cli.resource.ResourceBase.session')
     def test_collection_parent_uuid(self, mock_session):
@@ -240,15 +240,15 @@ class TestCollection(unittest.TestCase):
                                          '3a0e179e-fbe6-4390-8e5d-00a630de0b68'])
         c.fetch()
         expected_parent_id = '0d7d4197-891b-4767-b599-54667370cab1,3a0e179e-fbe6-4390-8e5d-00a630de0b68'
-        mock_session.get.assert_called_with(BASE + '/foos', parent_id=expected_parent_id)
+        mock_session.get_json.assert_called_with(BASE + '/foos', parent_id=expected_parent_id)
         c.fetch(parent_uuid='a9420bd1-59dc-4576-a548-b28cedbf3e5c')
         expected_parent_id = '0d7d4197-891b-4767-b599-54667370cab1,3a0e179e-fbe6-4390-8e5d-00a630de0b68,a9420bd1-59dc-4576-a548-b28cedbf3e5c'
-        mock_session.get.assert_called_with(BASE + '/foos', parent_id=expected_parent_id)
+        mock_session.get_json.assert_called_with(BASE + '/foos', parent_id=expected_parent_id)
 
     @mock.patch('contrail_api_cli.resource.ResourceBase.session')
     def test_collection_count(self, mock_session):
         mock_session.configure_mock(base_url=BASE)
-        mock_session.get.return_value = {
+        mock_session.get_json.return_value = {
             "instance-ips": {
                 "count": 2
             }
@@ -259,9 +259,9 @@ class TestCollection(unittest.TestCase):
         expected_calls = [
             mock.call(BASE + '/instance-ips', count=True),
         ]
-        self.assertEqual(mock_session.get.mock_calls, expected_calls)
+        self.assertEqual(mock_session.get_json.mock_calls, expected_calls)
 
-        mock_session.get.return_value = {
+        mock_session.get_json.return_value = {
             "instance-ips": [
                 {"href": BASE + "/instance-ip/ec1afeaa-8930-43b0-a60a-939f23a50724",
                  "uuid": "ec1afeaa-8930-43b0-a60a-939f23a50724"},
@@ -274,7 +274,7 @@ class TestCollection(unittest.TestCase):
         expected_calls.append(
             mock.call(BASE + '/instance-ips')
         )
-        self.assertEqual(mock_session.get.mock_calls, expected_calls)
+        self.assertEqual(mock_session.get_json.mock_calls, expected_calls)
 
     @mock.patch('contrail_api_cli.resource.ResourceBase.session')
     def test_collection_contrail_name(self, mock_session):

@@ -31,7 +31,7 @@ class TestCommands(unittest.TestCase):
     @mock.patch('contrail_api_cli.resource.ResourceBase.session')
     def test_root_collection(self, mock_session):
         ShellContext.current_path = Path('/')
-        mock_session.get.return_value = {
+        mock_session.get_json.return_value = {
             'href': BASE,
             'links': [
                 {'link': {'href': BASE + '/instance-ips',
@@ -49,7 +49,7 @@ class TestCommands(unittest.TestCase):
 
     @mock.patch('contrail_api_cli.resource.ResourceBase.session')
     def test_resource_collection(self, mock_session):
-        mock_session.get.return_value = {
+        mock_session.get_json.return_value = {
             'instance-ips': [
                 {'href': BASE + '/instance-ip/ec1afeaa-8930-43b0-a60a-939f23a50724',
                  'uuid': 'ec1afeaa-8930-43b0-a60a-939f23a50724'},
@@ -72,7 +72,7 @@ class TestCommands(unittest.TestCase):
 
     @mock.patch('contrail_api_cli.resource.ResourceBase.session')
     def test_resource_ls(self, mock_session):
-        mock_session.get.return_value = {
+        mock_session.get_json.return_value = {
             'foo': {
                 'href': BASE + '/foo/ec1afeaa-8930-43b0-a60a-939f23a50724',
                 'uuid': 'ec1afeaa-8930-43b0-a60a-939f23a50724',
@@ -91,15 +91,15 @@ class TestCommands(unittest.TestCase):
         mock_session.make_url = client.ContrailAPISession.make_url.__get__(mock_session)
 
         # called by id_to_fqname
-        def post(url, data):
-            if data['type'] == "foo":
+        def post(url, json=None):
+            if json['type'] == "foo":
                 return {
                     "fq_name": [
                         "foo",
                         "ec1afeaa-8930-43b0-a60a-939f23a50724"
                     ]
                 }
-            if data['type'] == "bar":
+            if json['type'] == "bar":
                 return {
                     "fq_name": [
                         "bar",
@@ -107,9 +107,9 @@ class TestCommands(unittest.TestCase):
                     ]
                 }
 
-        mock_session.post.side_effect = post
+        mock_session.post_json.side_effect = post
         mock_colorize.side_effect = lambda d: d
-        mock_session.get.return_value = {
+        mock_session.get_json.return_value = {
             'foo': {
                 'href': BASE + '/foo/ec1afeaa-8930-43b0-a60a-939f23a50724',
                 'uuid': 'ec1afeaa-8930-43b0-a60a-939f23a50724',
@@ -151,11 +151,11 @@ class TestCommands(unittest.TestCase):
         with self.assertRaises(cmds.CommandError) as e:
             cmds.ls(paths=[fq_name])
             self.assertEqual("%s doesn't exists" % fq_name, str(e))
-        self.assertFalse(mock_session.get.called)
+        self.assertFalse(mock_session.get_json.called)
 
     @mock.patch('contrail_api_cli.resource.ResourceBase.session')
     def test_count(self, mock_session):
-        mock_session.get.return_value = {
+        mock_session.get_json.return_value = {
             'foos': {
                 'count': 3
             }
@@ -204,7 +204,7 @@ class TestCommands(unittest.TestCase):
     def test_rm_wildcard_resources(self, mock_session):
         mock_session.configure_mock(base_url=BASE)
         ShellContext.current_path = Path('/foo')
-        mock_session.get.return_value = {
+        mock_session.get_json.return_value = {
             'foos': [
                 {'href': BASE + '/foo/ec1afeaa-8930-43b0-a60a-939f23a50724',
                  'uuid': 'ec1afeaa-8930-43b0-a60a-939f23a50724'},
@@ -242,7 +242,7 @@ class TestCommands(unittest.TestCase):
         t = ['foo/6b6a7f47-807e-4c39-8ac6-3adcf2f5498f']
         mock_continue_prompt.return_value = True
         mock_session.configure_mock(base_url=BASE)
-        mock_session.get.side_effect = [
+        mock_session.get_json.side_effect = [
             {
                 'foo': {
                     'href': BASE + '/foo/6b6a7f47-807e-4c39-8ac6-3adcf2f5498f',

@@ -60,40 +60,42 @@ class ContrailAPISession(Session):
         cls.session = session
         return session
 
-    def get(self, url, **kwargs):
-        r = super(ContrailAPISession, self).get(url, params=kwargs)
-        return r.json()
+    def get_json(self, url, **kwargs):
+        return self.get(url, params=kwargs).json()
 
-    def post(self, url, data, cls=ResourceWithoutPathEncoder):
+    def post(self, url, cls=ResourceWithoutPathEncoder, **kwargs):
         """
         POST data to the api-server
 
         @param url: resource location (eg: "/type/uuid")
         @type url: str
-        @type data: dict
-        @rtype: dict
         @param cls: JSONEncoder class
+        @type cls: JSONEncoder
         """
-        headers = {"content-type": "application/json"}
-        r = super(ContrailAPISession, self).post(url,
-                                                 data=to_json(data, cls=cls),
-                                                 headers=headers)
-        return r.json()
+        if 'data' in kwargs:
+            kwargs['data'] = to_json(kwargs['data'], cls=cls)
+            kwargs['headers'].update({"content-type": "application/json"})
+        return super(ContrailAPISession, self).post(url, **kwargs)
 
-    def put(self, url, data, cls=ResourceWithoutPathEncoder):
+    def post_json(self, *args, **kwargs):
+        return self.post(*args, **kwargs).json()
+
+    def put(self, url, cls=ResourceWithoutPathEncoder, **kwargs):
         """
         PUT data to the api-server
 
         @param url: resource location (eg: "/type/uuid")
         @type url: str
-        @type data: dict
-        @rtype: dict
+        @param cls: JSONEncoder class
+        @type cls: JSONEncoder
         """
-        headers = {"content-type": "application/json"}
-        r = super(ContrailAPISession, self).put(url,
-                                                data=to_json(data, cls=cls),
-                                                headers=headers)
-        return r.json()
+        if 'data' in kwargs:
+            kwargs['data'] = to_json(kwargs['data'], cls=cls)
+            kwargs['headers'].update({"content-type": "application/json"})
+        return super(ContrailAPISession, self).put(url, **kwargs)
+
+    def put_json(self, *args, **kwargs):
+        return self.put(*args, **kwargs).json()
 
     def fqname_to_id(self, type, fq_name):
         """
@@ -111,7 +113,7 @@ class ContrailAPISession(Session):
             "fq_name": fq_name.split(":")
         }
         try:
-            return self.post(self.make_url("/fqname-to-id"), data)["uuid"]
+            return self.post_json(self.make_url("/fqname-to-id"), json=data)["uuid"]
         except HTTPError:
             return None
 
@@ -131,7 +133,7 @@ class ContrailAPISession(Session):
             "uuid": uuid
         }
         try:
-            fq_name = self.post(self.make_url("/id-to-fqname"), data)['fq_name']
+            fq_name = self.post_json(self.make_url("/id-to-fqname"), json=data)['fq_name']
             return ":".join(fq_name)
         except HTTPError:
             return None
