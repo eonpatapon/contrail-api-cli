@@ -9,7 +9,7 @@ from . import commands
 
 
 def get_subcommand_kwargs(name, namespace):
-    subcmd = getattr(commands, name)
+    subcmd = commands.get_command(name)
     subcmd_kwargs = {}
     for (arg_name, arg_args, arg_kwargs) in subcmd.arguments:
         subcmd_kwargs[arg_name] = getattr(namespace, arg_name)
@@ -45,8 +45,8 @@ def main():
     options = parser.parse_args()
 
     commands.make_api_session(options)
-    subcmd, subcmd_kwargs = get_subcommand_kwargs(options.subcmd, options)
     try:
+        subcmd, subcmd_kwargs = get_subcommand_kwargs(options.subcmd, options)
         result = subcmd(**subcmd_kwargs)
     except (HttpError, ClientException, commands.CommandError) as e:
         print(e)
@@ -56,7 +56,7 @@ def main():
         pass
     else:
         if result:
-            print(result)
+            print(result.strip())
 
 
 if __name__ == "__main__":

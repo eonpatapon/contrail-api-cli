@@ -1,8 +1,11 @@
 import sys
 import inspect
 import argparse
+import pipes
+import tempfile
 from fnmatch import fnmatch
 from collections import OrderedDict
+from functools import reduce
 
 from keystoneclient.exceptions import ClientException, HttpError
 
@@ -18,6 +21,10 @@ from .resource import ResourceEncoder, Resource, Collection, RootCollection, Res
 from .client import to_json, ContrailAPISession
 from .utils import ShellContext, Path, classproperty, all_subclasses, continue_prompt
 from .style import PromptStyle
+
+
+class CommandNotFound(Exception):
+    pass
 
 
 class CommandError(Exception):
@@ -113,11 +120,13 @@ class RelativeResourceEncoder(ResourceEncoder):
 
 class BaseCommand(object):
     description = ""
+    aliases = []
 
     def __init__(self):
         self.parser = ArgumentParser(prog=self.name,
                                      description=self.description)
         self.add_arguments_to_parser(self.parser)
+        self._is_piped = False
 
     @classproperty
     def name(cls):
@@ -132,6 +141,19 @@ class BaseCommand(object):
         @rtype: str
         """
         return str(resource.path.relative_to(ShellContext.current_path))
+
+    @property
+    def is_piped(self):
+        """Return True if the command result is beeing piped
+        to another command.
+
+        @rtype: bool
+        """
+        return not sys.stdout.isatty() or self._is_piped
+
+    @is_piped.setter
+    def is_piped(self, value):
+        self._is_piped = value
 
     @classproperty
     def arguments(cls):
@@ -170,6 +192,7 @@ class ShellCommand(BaseCommand):
 class Ls(Command):
     description = "List resource objects"
     paths = Arg(nargs="*", help="Resource path(s)")
+    aliases = ['ll']
 
     def __call__(self, paths=None):
         try:
@@ -210,10 +233,10 @@ class Cat(Command):
                 raise CommandError('%s is not a resource' % self.current_path(r))
             r.fetch()
             json_data = to_json(r.data, cls=RelativeResourceEncoder)
-            if sys.stdout.isatty():
-                result.append(self.colorize(json_data))
-            else:
+            if self.is_piped:
                 result.append(json_data)
+            else:
+                result.append(self.colorize(json_data))
         return "".join(result)
 
 
@@ -240,10 +263,10 @@ class Count(Command):
 class Rm(Command):
     description = "Delete a resource"
     paths = Arg(nargs="*", help="Resource path(s)")
-    recursive = Arg("-r", "--recursive", dest="recursive",
+    recursive = Arg("-r", "--recursive",
                     action="store_true", default=False,
                     help="Recursive delete of back_refs resources")
-    force = Arg("-f", "--force", dest="force",
+    force = Arg("-f", "--force",
                 action="store_true", default=False,
                 help="Don't ask for confirmation")
 
@@ -313,13 +336,22 @@ class Shell(Command):
             except (EOFError, KeyboardInterrupt):
                 break
             try:
-                action_list = action.split()
-                cmd = globals()[action_list[0]]
-                args = action_list[1:]
+                action = action.split('|')
+                pipe_cmds = action[1:]
+                action = action[0].split()
+                cmd = get_command(action[0])
+                args = action[1:]
+                if pipe_cmds:
+                    p = pipes.Template()
+                    for pipe_cmd in pipe_cmds:
+                        p.append(str(pipe_cmd.strip()), '--')
+                    cmd.is_piped = True
+                else:
+                    cmd.is_piped = False
             except IndexError:
                 continue
-            except KeyError:
-                print("Command not found. Type help for all commands.")
+            except CommandNotFound as e:
+                print(e)
                 continue
             try:
                 result = cmd.parse_and_call(*args)
@@ -331,9 +363,15 @@ class Shell(Command):
             except EOFError:
                 break
             else:
-                if result is None:
+                if not result:
                     continue
-                print(result)
+                elif pipe_cmds:
+                    t = tempfile.NamedTemporaryFile('r')
+                    with p.open(t.name, 'w') as f:
+                        f.write(result)
+                    print(t.read().strip())
+                else:
+                    print(result.strip())
 
 
 class Cd(ShellCommand):
@@ -374,11 +412,17 @@ def shell_commands_list():
     return all_subclasses(ShellCommand)
 
 
-ls = ll = Ls()
-cat = Cat()
-cd = Cd()
-help = Help()
-count = Count()
-rm = Rm()
-exit = Exit()
-shell = Shell()
+def get_command(name):
+    """Return command instance from name
+
+    @param name: name or alias of command
+    @type name: str
+
+    @rtype: Command|ShellCommand
+    @raise: CommandNotFound
+    """
+    cmd = reduce(lambda a, c: c if c.name == name or name in c.aliases else a,
+                 all_commands_list(), None)
+    if cmd is None:
+        raise CommandNotFound('Command %s not found. Type help for all commands' % name)
+    return cmd()
