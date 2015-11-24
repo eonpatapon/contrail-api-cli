@@ -1,11 +1,15 @@
+import os
 import sys
+import tempfile
 import inspect
 import argparse
 import pipes
-import tempfile
+import subprocess
+import json
 from fnmatch import fnmatch
 from collections import OrderedDict
 from functools import reduce
+from six import b
 
 from keystoneclient.exceptions import ClientException, HttpError
 
@@ -18,8 +22,8 @@ from pygments.lexers import JsonLexer
 from pygments.formatters import Terminal256Formatter
 
 from .resource import ResourceEncoder, Resource, Collection, RootCollection, ResourceCompleter
-from .client import to_json, ContrailAPISession
-from .utils import ShellContext, Path, classproperty, all_subclasses, continue_prompt
+from .client import ContrailAPISession
+from .utils import ShellContext, Path, classproperty, all_subclasses, continue_prompt, to_json, md5
 from .style import PromptStyle
 
 
@@ -301,6 +305,59 @@ class Rm(Command):
                         r.delete()
                     except HttpError as e:
                         raise CommandError("Failed to delete resource: %s" % str(e))
+
+
+@experimental
+class Edit(Command):
+    description = "Edit resource"
+    path = Arg(nargs="?", help="Resource path", default='')
+    template = Arg('-t', '--template',
+                   help="Create new resource from existing",
+                   action="store_true", default=False)
+    aliases = ['vim', 'emacs', 'nano']
+
+    def __call__(self, path='', template=False):
+        try:
+            resources = expand_paths([path])
+        except BadPath as e:
+            raise CommandError(str(e))
+        if not resources:
+            raise CommandError('No resource given')
+        if len(resources) > 1:
+            raise CommandError("Can't edit multiple resources")
+        resource = resources[0]
+        if not isinstance(resource, Resource):
+            raise CommandError('%s is not a resource' % path.relative_to(ShellContext.current_path))
+        # don't show childs or back_refs
+        resource.fetch(exclude_children=True, exclude_back_refs=True)
+        resource.pop('id_perms')
+        if template:
+            resource.pop('href')
+            resource.pop('uuid')
+        editor = os.environ.get('EDITOR', 'vim')
+        with tempfile.NamedTemporaryFile(suffix='tmp.json') as tmp:
+            tmp.write(b(resource.json()))
+            tmp.flush()
+            tmp_md5 = md5(tmp.name)
+            subprocess.call([editor, tmp.name])
+            tmp.seek(0)
+            if tmp_md5 == md5(tmp.name):
+                print("No modification made, doing nothing...")
+                return
+            data_json = tmp.read().decode('utf-8')
+        try:
+            data = json.loads(data_json)
+        except ValueError as e:
+            raise CommandError('Provided JSON is not valid: ' + str(e))
+        if template:
+            # create new resource
+            resource = Resource(resource.type, check_fq_name=False, **data)
+        else:
+            resource.update(data)
+        try:
+            resource.save()
+        except HttpError as e:
+            raise CommandError(str(e))
 
 
 class Shell(Command):

@@ -152,7 +152,7 @@ class TestCommands(unittest.TestCase):
         expected_resource['bar_refs'] = [
             Resource('bar', uuid='15315402-8a21-4116-aeaa-b6a77dceb191',
                      href=BASE + '/bar/15315402-8a21-4116-aeaa-b6a77dceb191',
-                     fq_name='bar:15315402-8a21-4116-aeaa-b6a77dceb191')
+                     to=['bar', '15315402-8a21-4116-aeaa-b6a77dceb191'])
         ]
         expected_json = client.to_json(expected_resource, cls=cmds.RelativeResourceEncoder)
         result = cmds.get_command('cat')(paths=['ec1afeaa-8930-43b0-a60a-939f23a50724'])

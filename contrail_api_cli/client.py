@@ -1,12 +1,30 @@
-import json
+import platform
 from argparse import Namespace
+from functools import wraps
 
 from keystoneclient.auth import base
 from keystoneclient.session import Session
 from keystoneclient.exceptions import HTTPError
 
-from .utils import classproperty
-from .resource import ResourceBase, ResourceEncoder, ResourceWithoutPathEncoder
+from .utils import classproperty, to_json
+from .resource import ResourceBase
+
+
+def contrail_error_handler(f):
+    """Handle HTTPErrors returned by the API server
+    """
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        try:
+            return f(*args, **kwargs)
+        except HTTPError as e:
+            # Replace message by details to provide a
+            # meaningful message
+            if e.details:
+                e.message, e.details = e.details, e.message
+                e.args = ("%s (HTTP %s)" % (e.message, e.http_status),)
+            raise
+    return wrapper
 
 
 class ContrailAPISession(Session):
@@ -15,6 +33,10 @@ class ContrailAPISession(Session):
     host = None
     port = None
     session = None
+    default_headers = {
+        'X-Contrail-Useragent': '%s:%s' % (platform.node(), 'contrail-api-cli'),
+        "Content-Type": "application/json"
+    }
 
     @classproperty
     def base_url(cls):
@@ -60,10 +82,12 @@ class ContrailAPISession(Session):
         cls.session = session
         return session
 
+    @contrail_error_handler
     def get_json(self, url, **kwargs):
         return self.get(url, params=kwargs).json()
 
-    def post(self, url, cls=ResourceWithoutPathEncoder, **kwargs):
+    @contrail_error_handler
+    def post_json(self, url, data, cls=None, **kwargs):
         """
         POST data to the api-server
 
@@ -72,15 +96,12 @@ class ContrailAPISession(Session):
         @param cls: JSONEncoder class
         @type cls: JSONEncoder
         """
-        if 'data' in kwargs:
-            kwargs['data'] = to_json(kwargs['data'], cls=cls)
-            kwargs['headers'].update({"content-type": "application/json"})
-        return super(ContrailAPISession, self).post(url, **kwargs)
+        kwargs['data'] = to_json(data, cls=cls)
+        kwargs['headers'] = self.default_headers
+        return self.post(url, **kwargs).json()
 
-    def post_json(self, *args, **kwargs):
-        return self.post(*args, **kwargs).json()
-
-    def put(self, url, cls=ResourceWithoutPathEncoder, **kwargs):
+    @contrail_error_handler
+    def put_json(self, url, data, cls=None, **kwargs):
         """
         PUT data to the api-server
 
@@ -89,13 +110,9 @@ class ContrailAPISession(Session):
         @param cls: JSONEncoder class
         @type cls: JSONEncoder
         """
-        if 'data' in kwargs:
-            kwargs['data'] = to_json(kwargs['data'], cls=cls)
-            kwargs['headers'].update({"content-type": "application/json"})
-        return super(ContrailAPISession, self).put(url, **kwargs)
-
-    def put_json(self, *args, **kwargs):
-        return self.put(*args, **kwargs).json()
+        kwargs['data'] = to_json(data, cls=cls)
+        kwargs['headers'] = self.default_headers
+        return self.put(url, **kwargs).json()
 
     def fqname_to_id(self, type, fq_name):
         """
@@ -113,7 +130,7 @@ class ContrailAPISession(Session):
             "fq_name": fq_name.split(":")
         }
         try:
-            return self.post_json(self.make_url("/fqname-to-id"), json=data)["uuid"]
+            return self.post_json(self.make_url("/fqname-to-id"), data)["uuid"]
         except HTTPError:
             return None
 
@@ -133,15 +150,7 @@ class ContrailAPISession(Session):
             "uuid": uuid
         }
         try:
-            fq_name = self.post_json(self.make_url("/id-to-fqname"), json=data)['fq_name']
+            fq_name = self.post_json(self.make_url("/id-to-fqname"), data)['fq_name']
             return ":".join(fq_name)
         except HTTPError:
             return None
-
-
-def to_json(resource_dict, cls=ResourceEncoder):
-    return json.dumps(resource_dict,
-                      indent=2,
-                      sort_keys=True,
-                      skipkeys=True,
-                      cls=cls)
