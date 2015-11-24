@@ -39,9 +39,16 @@ class ResourceCompleter(Completer):
     def __init__(self):
         self.resources = {}
         ResourceBase.register('created', self.add_resource)
+        ResourceBase.register('deleted', self.del_resource)
 
     def add_resource(self, resource):
         self.resources[resource.path] = resource
+
+    def del_resource(self, resource):
+        try:
+            del self.resources[resource.path]
+        except IndexError:
+            pass
 
     def get_completions(self, document, complete_event):
         path_before_cursor = document.get_word_before_cursor(WORD=True).lower()
@@ -345,7 +352,10 @@ class Resource(ResourceBase, UserDict):
     def delete(self):
         """Delete resource from the API server
         """
-        return self.session.delete(self.href)
+        res = self.session.delete(self.href)
+        if res:
+            self.emit('deleted', self)
+        return res
 
     def _walk_resource(self, data, recursive=1):
         for attr, value in list(data.items()):
