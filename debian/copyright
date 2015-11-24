@@ -1,0 +1,29 @@
+Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: contrail-api-cli
+Upstream-Contact: Jean-Philippe Braun <eon@patapon.info>
+Source: https://github.com/eonpatapon/contrail-api-cli
+
+Files: *
+Copyright: 2015, Jean-Philippe Braun <eon@patapon.info>
+License: MIT
+
+Files: debian/*
+Copyright: 2015, Filip Pytloun <filip@pytloun.cz>
+License: MIT
+Comment: the Debian packaging is licensed under the same terms as the original package.
+
+License: MIT
+ Permission is hereby granted, free of charge, to any person obtaining
+ .
+ "Software"), to deal in the Software without restriction, including
+ without limitation the rights to use, copy, modify, merge, publish,
+ distribute, sublicense, and/or sell copies of the Software, and to
+ permit persons to whom the Software is furnished to do so, subject to
+ the following conditions:
+ .
+ The above copyright notice and this permission notice shall be
+ included in all copies or substantial portions of the Software.
+ .
+ On Debian systems, the full text of the GNU General Public
+ License version 2 can be found in the file
+ `/usr/share/common-licenses/MIT'.

@@ -7,12 +7,32 @@ Simple CLI program to browse Contrail API server
 
 ## Installation
 
+### Python virtualenv
+
 You can install contrail-api-cli inside a python virtualenv. 
 First create the virtualenv and install contrail-api-cli with pip.
 
     $ virtualenv contrail-api-cli-venv
     $ source contrail-api-cli-venv/bin/activate
     (contrail-api-cli-venv) $ pip install contrail-api-cli
+
+### Debian package
+
+First you need to satisfy dependencies missing in Ubuntu Trusty. You can
+install them from newer distribution or from backports (eg.
+[tcpcloud/extra](https://launchpad.net/~tcpcloud/+archive/ubuntu/extra))
+
+- python-pathlib
+- python-prompt-toolkit
+- python-wcwidth
+
+When dependencies are satisfied, you can build package:
+
+    dpkg-buildpackage -uc -us
+
+Then upload into your repository or install directly:
+
+    dpkg -i ../contrail-api-cli_*.deb
 
 ## Usage
 
