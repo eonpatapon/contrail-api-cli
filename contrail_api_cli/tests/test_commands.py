@@ -334,7 +334,7 @@ class TestCommands(unittest.TestCase):
         cmds.get_command('shell')()
         sys.stdout = old_stdout
         result = out.getvalue().strip()
-        self.assertEqual(result, "piped\n\nnot piped")
+        self.assertEqual(result, "piped\nnot piped")
 
 if __name__ == '__main__':
     unittest.main()
