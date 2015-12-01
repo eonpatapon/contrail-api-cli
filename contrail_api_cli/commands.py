@@ -82,7 +82,7 @@ def expand_paths(paths=None):
                 col = Collection(path.base, fetch=True)
             for r in col:
                 if (fnmatch(str(r.path), str(path)) or
-                        fnmatch(r.fq_name, str(path))):
+                        fnmatch(str(Path("/", r.type, r.fq_name)), str(path))):
                     result[r.path] = r
         elif ':' in path.name:
             try:
