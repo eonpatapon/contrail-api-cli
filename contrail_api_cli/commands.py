@@ -224,7 +224,7 @@ class Cat(Command):
         try:
             resources = expand_paths(paths)
         except BadPath as e:
-            return CommandError(str(e))
+            raise CommandError(str(e))
         if not resources:
             raise CommandError('No resource given')
         result = []
