@@ -163,8 +163,7 @@ class BaseCommand(object):
                 # attr can't be something like '-r'
                 if len(value.args) > 0:
                     attr = value.args[0]
-                    value.args = value.args[1:]
-                yield (attr, value.args, value.kwargs)
+                yield (attr, value.args[1:], value.kwargs)
         raise StopIteration()
 
     @classmethod
