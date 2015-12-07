@@ -74,7 +74,7 @@ def main():
         pass
     else:
         if result:
-            print(result.strip())
+            print(result)
 
 
 if __name__ == "__main__":

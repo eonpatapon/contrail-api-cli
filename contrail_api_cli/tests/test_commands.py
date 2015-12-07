@@ -107,6 +107,42 @@ class TestCommands(unittest.TestCase):
         result = self.mgr.get('ls')(paths=['ec1afeaa-8930-43b0-a60a-939f23a50724'])
         self.assertEqual(result, expected_result)
 
+    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
+    def test_resource_long_ls(self, mock_session):
+        mock_session.id_to_fqname.return_value = 'default-project:foo:ec1afeaa-8930-43b0-a60a-939f23a50724'
+        mock_session.get_json.return_value = {
+            'foo': {
+                'href': BASE + '/foo/ec1afeaa-8930-43b0-a60a-939f23a50724',
+                'uuid': 'ec1afeaa-8930-43b0-a60a-939f23a50724',
+                'fq_name': ['default-project', 'foo', 'ec1afeaa-8930-43b0-a60a-939f23a50724'],
+                'prop': {
+                    'foo': False,
+                    'bar': [1, 2, 3]
+                },
+                'prop2': [
+                    {'a': 1, 'b': [1, 2]},
+                    {'c': 3}
+                ],
+            }
+        }
+        ShellContext.current_path = Path('/')
+        result = self.mgr.get('ls')(paths=['foo/ec1afeaa-8930-43b0-a60a-939f23a50724'],
+                                    long=True)
+        expected_result = "foo/ec1afeaa-8930-43b0-a60a-939f23a50724  default-project:foo:ec1afeaa-8930-43b0-a60a-939f23a50724"
+        self.assertEqual(result, expected_result)
+
+        ShellContext.current_path = Path('/foo')
+        result = self.mgr.get('ls')(paths=['ec1afeaa-8930-43b0-a60a-939f23a50724'],
+                                    long=True, fields=['prop'])
+        expected_result = "ec1afeaa-8930-43b0-a60a-939f23a50724  foo=False|bar=1,2,3"
+        self.assertEqual(result, expected_result)
+
+        ShellContext.current_path = Path('/foo')
+        result = self.mgr.get('ls')(paths=['ec1afeaa-8930-43b0-a60a-939f23a50724'],
+                                    long=True, fields=['prop2'])
+        expected_result = "ec1afeaa-8930-43b0-a60a-939f23a50724  a=1|b=1,2,c=3"
+        self.assertEqual(result, expected_result)
+
     @mock.patch('contrail_api_cli.commands.Cat.colorize')
     @mock.patch('contrail_api_cli.resource.ResourceBase.session')
     def test_resource_cat(self, mock_session, mock_colorize):

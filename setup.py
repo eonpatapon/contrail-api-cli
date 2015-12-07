@@ -3,7 +3,8 @@ from setuptools import setup, find_packages
 
 install_requires = [
     'prompt_toolkit',
-    'python-keystoneclient'
+    'python-keystoneclient',
+    'tabulate'
 ]
 
 test_requires = []

@@ -13,6 +13,8 @@ from six import b, add_metaclass
 
 from keystoneclient.exceptions import ClientException, HttpError
 
+from tabulate import tabulate
+
 from prompt_toolkit import prompt
 from prompt_toolkit.history import InMemoryHistory
 
@@ -191,9 +193,44 @@ class ShellCommand(BaseCommand):
 class Ls(Command):
     description = "List resource objects"
     paths = Arg(nargs="*", help="Resource path(s)")
+    long = Arg('-l', '--long',
+               default=False, action="store_true",
+               help="use a long listing format")
+    fields = Arg('-c', '--column', action="append",
+                 help="list of fields to show",
+                 default=[], dest="fields")
+    # fields to show in -l mode when no
+    # column is specified
+    default_fields = [u'fq_name']
     aliases = ['ll']
 
-    def __call__(self, paths=None):
+    def _field_val_to_str(self, field_value, field_key=None):
+        if field_key in ('fq_name', 'to'):
+            return ":".join(field_value)
+        elif isinstance(field_value, list) or isinstance(field_value, Collection):
+            return ",".join([self._field_val_to_str(i) for i in field_value])
+        elif isinstance(field_value, dict) or isinstance(field_value, Resource):
+            return "|".join(["%s=%s" % (k, self._field_val_to_str(v, k))
+                             for k, v in field_value.items()])
+        return str(field_value)
+
+    def _get_field(self, resource, field):
+        # elif field.startswith('.'):
+            # value = jq(field).transform(resource.json())
+        value = '_'
+        if field == 'path':
+            value = self.current_path(resource)
+        elif hasattr(resource, field):
+            value = getattr(resource, field)
+        elif isinstance(resource, Resource):
+            value = resource.get(field, '_')
+        return self._field_val_to_str(value)
+
+    def __call__(self, paths=None, long=False, fields=None):
+        if not long:
+            fields = []
+        elif not fields:
+            fields = self.default_fields
         try:
             resources = expand_paths(paths)
         except BadPath as e:
@@ -201,13 +238,19 @@ class Ls(Command):
         result = []
         for r in resources:
             if isinstance(r, Collection):
-                r.fetch()
-                result += [self.current_path(i) for i in r]
+                r.fetch(fields=fields)
+                result += r.data
             elif isinstance(r, Resource):
-                result.append(self.current_path(r))
+                # need to fetch the resource to get needed fields
+                if len(fields) > 1 or 'fq_name' not in fields:
+                    r.fetch()
+                result.append(r)
             else:
                 raise CommandError('Not a resource or collection')
-        return "\n".join(result)
+        # retrieve asked fields for each resource
+        fields = ['path'] + fields
+        result = [[self._get_field(r, f) for f in fields] for r in result]
+        return tabulate(result, tablefmt='plain')
 
 
 class Cat(Command):
@@ -424,7 +467,7 @@ class Shell(Command):
                         f.write(result)
                     print(t.read().strip())
                 else:
-                    print(result.strip())
+                    print(result)
 
 
 class Cd(ShellCommand):
