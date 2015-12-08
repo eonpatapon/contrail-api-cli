@@ -9,10 +9,15 @@ from . import commands
 
 
 def get_subcommand_kwargs(name, namespace):
+    """Get subcommand options from global parsed
+    arguments.
+    """
     subcmd = commands.get_command(name)
     subcmd_kwargs = {}
-    for (arg_name, arg_args, arg_kwargs) in subcmd.arguments:
-        subcmd_kwargs[arg_name] = getattr(namespace, arg_name)
+    for action in subcmd.parser._actions:
+        if (action.dest is not argparse.SUPPRESS and
+                action.default is not argparse.SUPPRESS):
+            subcmd_kwargs[action.dest] = getattr(namespace, action.dest)
     return (subcmd, subcmd_kwargs)
 
 
