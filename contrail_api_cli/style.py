@@ -44,8 +44,11 @@ class Prompt8Style(Style):
     })
 
 
-curses.setupterm()
-nb_colors = curses.tigetnum("colors")
+try:
+    curses.setupterm()
+    nb_colors = curses.tigetnum("colors")
+except:
+    nb_colors = 256
 
 if nb_colors == 8:
     PromptStyle = type('PromptStyle', (Prompt8Style,), {})
