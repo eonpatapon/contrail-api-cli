@@ -106,7 +106,7 @@ class Collection(ResourceBase, UserList):
         @param fields: list of field names to fetch
         @type fields: [str]
         @param filters: list of filters
-        @tpye filters: [(name, value), ...]
+        @type filters: [(name, value), ...]
         @param parent_uuid: filter by parent_uuid
         @type parent_uuid: v4UUID str or list of v4UUID str
         """

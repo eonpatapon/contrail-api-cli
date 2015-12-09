@@ -56,7 +56,7 @@ def experimental(cls):
     return cls
 
 
-def expand_paths(paths=None):
+def expand_paths(paths=None, filters=None):
     """Return an unique list of resources or collections from a list of paths.
     Supports fq_name and wilcards resolution.
 
@@ -66,6 +66,8 @@ def expand_paths(paths=None):
     @param paths: list of paths relative to the current path
                   that may contain wildcards (*, ?) or fq_names
     @type paths: [str]
+    @param filters: list of filters for Collections
+    @type filters: [(name, value), ...]
     @rtype: [Resource|Collection]
     @raises BadPath: path cannot be resolved
     """
@@ -82,7 +84,7 @@ def expand_paths(paths=None):
             if any([c in path.base for c in ('*', '?')]):
                 col = RootCollection(fetch=True)
             else:
-                col = Collection(path.base, fetch=True)
+                col = Collection(path.base, fetch=True, filters=filters)
             for r in col:
                 if (fnmatch(str(r.path), str(path)) or
                         fnmatch(str(Path("/", r.type, r.fq_name)), str(path))):
@@ -102,7 +104,7 @@ def expand_paths(paths=None):
                 except ValueError as e:
                     raise BadPath(str(e))
             elif path.is_collection:
-                result[path] = Collection(path.base)
+                result[path] = Collection(path.base, filters=filters)
     return list(result.values())
 
 
@@ -192,13 +194,17 @@ class ShellCommand(BaseCommand):
 
 class Ls(Command):
     description = "List resource objects"
-    paths = Arg(nargs="*", help="Resource path(s)")
+    paths = Arg(nargs="*", help="Resource path(s)",
+                metavar='path')
     long = Arg('-l', '--long',
                default=False, action="store_true",
                help="use a long listing format")
     fields = Arg('-c', '--column', action="append",
-                 help="list of fields to show",
-                 default=[], dest="fields")
+                 help="fields to show in long mode",
+                 default=[], dest="fields", metavar="field_name")
+    filters = Arg('-f', '--filter', action="append",
+                  help="filter predicate",
+                  default=[], dest='filters', metavar='field_name=field_value')
     # fields to show in -l mode when no
     # column is specified
     default_fields = [u'fq_name']
@@ -226,13 +232,34 @@ class Ls(Command):
             value = resource.get(field, '_')
         return self._field_val_to_str(value)
 
-    def __call__(self, paths=None, long=False, fields=None):
+    def _get_filter(self, predicate):
+        # parse input predicate
+        try:
+            name, value = predicate.split('=')
+        except ValueError:
+            raise CommandError('Invalid filter predicate %s. Use name=value format.' % predicate)
+        if value == 'False':
+            value = False
+        elif value == 'True':
+            value = True
+        elif value == 'None':
+            value = None
+        else:
+            try:
+                value = int(value)
+            except ValueError:
+                value = str(value)
+        return (name, value)
+
+    def __call__(self, paths=None, long=False, fields=None, filters=None):
         if not long:
             fields = []
         elif not fields:
             fields = self.default_fields
+        if filters:
+            filters = [self._get_filter(p) for p in filters]
         try:
-            resources = expand_paths(paths)
+            resources = expand_paths(paths, filters)
         except BadPath as e:
             raise CommandError(str(e))
         result = []
@@ -255,7 +282,8 @@ class Ls(Command):
 
 class Cat(Command):
     description = "Print a resource"
-    paths = Arg(nargs="*", help="Resource path(s)")
+    paths = Arg(nargs="*", help="Resource path(s)",
+                metavar='path')
 
     def colorize(self, json_data):
         return highlight(json_data,
@@ -304,7 +332,8 @@ class Count(Command):
 @experimental
 class Rm(Command):
     description = "Delete a resource"
-    paths = Arg(nargs="*", help="Resource path(s)")
+    paths = Arg(nargs="*", help="Resource path(s)",
+                metavar='path')
     recursive = Arg("-r", "--recursive",
                     action="store_true", default=False,
                     help="Recursive delete of back_refs resources")
@@ -472,7 +501,8 @@ class Shell(Command):
 
 class Cd(ShellCommand):
     description = "Change resource context"
-    path = Arg(nargs="?", help="Resource path", default='')
+    path = Arg(nargs="?", help="Resource path", default='',
+               metavar='path')
 
     def __call__(self, path=''):
         ShellContext.current_path = ShellContext.current_path / path
