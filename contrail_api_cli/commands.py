@@ -56,7 +56,7 @@ def experimental(cls):
     return cls
 
 
-def expand_paths(paths=None, filters=None):
+def expand_paths(paths=None, filters=None, parent_uuid=None):
     """Return an unique list of resources or collections from a list of paths.
     Supports fq_name and wilcards resolution.
 
@@ -82,9 +82,13 @@ def expand_paths(paths=None, filters=None):
     for path in paths:
         if any([c in str(path) for c in ('*', '?')]):
             if any([c in path.base for c in ('*', '?')]):
-                col = RootCollection(fetch=True)
+                col = RootCollection(fetch=True,
+                                     filters=filters,
+                                     parent_uuid=parent_uuid)
             else:
-                col = Collection(path.base, fetch=True, filters=filters)
+                col = Collection(path.base, fetch=True,
+                                 filters=filters,
+                                 parent_uuid=parent_uuid)
             for r in col:
                 if (fnmatch(str(r.path), str(path)) or
                         fnmatch(str(Path("/", r.type, r.fq_name)), str(path))):
@@ -104,7 +108,9 @@ def expand_paths(paths=None, filters=None):
                 except ValueError as e:
                     raise BadPath(str(e))
             elif path.is_collection:
-                result[path] = Collection(path.base, filters=filters)
+                result[path] = Collection(path.base,
+                                          filters=filters,
+                                          parent_uuid=parent_uuid)
     return list(result.values())
 
 
@@ -201,10 +207,14 @@ class Ls(Command):
                help="use a long listing format")
     fields = Arg('-c', '--column', action="append",
                  help="fields to show in long mode",
-                 default=[], dest="fields", metavar="field_name")
+                 default=[], dest="fields",
+                 metavar="field_name")
     filters = Arg('-f', '--filter', action="append",
                   help="filter predicate",
-                  default=[], dest='filters', metavar='field_name=field_value')
+                  default=[], dest='filters',
+                  metavar='field_name=field_value')
+    parent_uuid = Arg('-p', '--parent_uuid',
+                      help="Filter by parent uuid")
     # fields to show in -l mode when no
     # column is specified
     default_fields = [u'fq_name']
@@ -251,7 +261,8 @@ class Ls(Command):
                 value = str(value)
         return (name, value)
 
-    def __call__(self, paths=None, long=False, fields=None, filters=None):
+    def __call__(self, paths=None, long=False, fields=None,
+                 filters=None, parent_uuid=None):
         if not long:
             fields = []
         elif not fields:
@@ -259,7 +270,8 @@ class Ls(Command):
         if filters:
             filters = [self._get_filter(p) for p in filters]
         try:
-            resources = expand_paths(paths, filters)
+            resources = expand_paths(paths, filters=filters,
+                                     parent_uuid=parent_uuid)
         except BadPath as e:
             raise CommandError(str(e))
         result = []
