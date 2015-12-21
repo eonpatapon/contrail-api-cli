@@ -6,10 +6,10 @@ import argparse
 import pipes
 import subprocess
 import json
+import abc
 from fnmatch import fnmatch
 from collections import OrderedDict
-from functools import reduce
-from six import b
+from six import b, add_metaclass
 
 from keystoneclient.exceptions import ClientException, HttpError
 
@@ -21,18 +21,12 @@ from pygments.token import Token
 from pygments.lexers import JsonLexer
 from pygments.formatters import Terminal256Formatter
 
+from .manager import CommandManager
 from .resource import ResourceEncoder, Resource, Collection, RootCollection, ResourceCompleter
 from .client import ContrailAPISession
-from .utils import ShellContext, Path, classproperty, all_subclasses, continue_prompt, to_json, md5
+from .utils import ShellContext, Path, classproperty, continue_prompt, to_json, md5
 from .style import PromptStyle
-
-
-class CommandNotFound(Exception):
-    pass
-
-
-class CommandError(Exception):
-    pass
+from .exceptions import CommandError, CommandNotFound, BadPath
 
 
 class ArgumentParser(argparse.ArgumentParser):
@@ -58,10 +52,6 @@ def experimental(cls):
 
     cls.__call__ = new_call
     return cls
-
-
-class BadPath(Exception):
-    pass
 
 
 def expand_paths(paths=None):
@@ -122,6 +112,7 @@ class RelativeResourceEncoder(ResourceEncoder):
         return super(RelativeResourceEncoder, self).default(obj)
 
 
+@add_metaclass(abc.ABCMeta)
 class BaseCommand(object):
     description = ""
     aliases = []
@@ -178,6 +169,11 @@ class BaseCommand(object):
     def parse_and_call(self, *args):
         args = self.parser.parse_args(args=args)
         return self.__call__(**vars(args))
+
+    @abc.abstractmethod
+    def __call__(self, **kwargs):
+        """The actual command operations
+        """
 
 
 class Command(BaseCommand):
@@ -377,6 +373,7 @@ class Shell(Command):
 
         history = InMemoryHistory()
         completer = ResourceCompleter()
+        commands = CommandManager()
         # load home resources
         try:
             RootCollection(fetch=True)
@@ -395,7 +392,7 @@ class Shell(Command):
                 action = action.split('|')
                 pipe_cmds = action[1:]
                 action = action[0].split()
-                cmd = get_command(action[0])
+                cmd = commands.get(action[0])
                 args = action[1:]
                 if pipe_cmds:
                     p = pipes.Template()
@@ -448,37 +445,10 @@ class Exit(ShellCommand):
 class Help(ShellCommand):
 
     def __call__(self):
-        return "Available commands: %s" % " ".join([c.name for c in all_commands_list()])
+        commands = CommandManager()
+        return "Available commands: %s" % " ".join([c.name for c in commands.list])
 
 
 def make_api_session(options):
     ContrailAPISession.make(options.os_auth_plugin,
                             **vars(options))
-
-
-def all_commands_list():
-    return commands_list() + shell_commands_list()
-
-
-def commands_list():
-    return all_subclasses(Command)
-
-
-def shell_commands_list():
-    return all_subclasses(ShellCommand)
-
-
-def get_command(name):
-    """Return command instance from name
-
-    @param name: name or alias of command
-    @type name: str
-
-    @rtype: Command|ShellCommand
-    @raise: CommandNotFound
-    """
-    cmd = reduce(lambda a, c: c if c.name == name or name in c.aliases else a,
-                 all_commands_list(), None)
-    if cmd is None:
-        raise CommandNotFound('Command %s not found. Type help for all commands' % name)
-    return cmd()

@@ -30,10 +30,21 @@ setup(
     license="MIT",
     entry_points={
         'console_scripts': [
-            'contrail-api-cli = contrail_api_cli.prompt:main'
+            'contrail-api-cli = contrail_api_cli.main:main'
         ],
         'keystoneclient.auth.plugin': [
             'http = contrail_api_cli.auth:HTTPAuth'
+        ],
+        'contrail_api_cli.command': [
+            'ls = contrail_api_cli.commands:Ls',
+            'cat = contrail_api_cli.commands:Cat',
+            'count = contrail_api_cli.commands:Count',
+            'rm = contrail_api_cli.commands:Rm',
+            'edit = contrail_api_cli.commands:Edit',
+            'shell = contrail_api_cli.commands:Shell',
+            'cd = contrail_api_cli.commands:Cd',
+            'exit = contrail_api_cli.commands:Exit',
+            'help = contrail_api_cli.commands:Help',
         ]
     },
     classifiers=[
