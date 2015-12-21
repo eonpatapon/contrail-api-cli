@@ -7,9 +7,7 @@ try:
 except ImportError:
     from collections import UserDict, UserList
 
-from prompt_toolkit.completion import Completer, Completion
-
-from .utils import Path, ShellContext, Observable, to_json
+from .utils import Path, Observable, to_json
 
 
 class ResourceEncoder(json.JSONEncoder):
@@ -20,47 +18,6 @@ class ResourceEncoder(json.JSONEncoder):
         if isinstance(obj, Collection):
             return obj.data
         return super(ResourceEncoder, self).default(obj)
-
-
-class ResourceCompleter(Completer):
-    """
-    Simple autocompletion on a list of resources.
-    """
-    def __init__(self):
-        self.resources = {}
-        ResourceBase.register('created', self.add_resource)
-        ResourceBase.register('deleted', self.del_resource)
-
-    def add_resource(self, resource):
-        self.resources[resource.path] = resource
-
-    def del_resource(self, resource):
-        try:
-            del self.resources[resource.path]
-        except IndexError:
-            pass
-
-    def get_completions(self, document, complete_event):
-        path_before_cursor = document.get_word_before_cursor(WORD=True).lower()
-
-        def resource_matches(*args):
-            return any([path_before_cursor in f for f in args])
-
-        def resource_sort(resource):
-            # Make the relative paths of the resource appear first in
-            # the list
-            if resource.type == ShellContext.current_path.base:
-                return "_"
-            return resource.type
-
-        for res in sorted(self.resources.values(), key=resource_sort):
-            rel_path = str(res.path.relative_to(ShellContext.current_path))
-            if rel_path in ('.', '/', ''):
-                continue
-            if resource_matches(rel_path, res.fq_name):
-                yield Completion(str(rel_path),
-                                 -len(path_before_cursor),
-                                 display_meta=res.fq_name)
 
 
 class ResourceBase(Observable):
@@ -119,6 +76,9 @@ class Collection(ResourceBase, UserList):
         if fetch:
             self.fetch(recursive=recursive)
         self.emit('created', self)
+
+    def __hash__(self):
+        return hash(self.type)
 
     @property
     def path(self):

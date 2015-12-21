@@ -14,7 +14,8 @@ from stevedore.extension import Extension
 
 import contrail_api_cli.commands as cmds
 from contrail_api_cli import client
-from contrail_api_cli.utils import Path, ShellContext
+from contrail_api_cli.utils import Path
+from contrail_api_cli.commands import ShellContext
 from contrail_api_cli.resource import Resource
 
 

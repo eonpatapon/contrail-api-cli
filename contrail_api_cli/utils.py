@@ -91,11 +91,6 @@ class Path(PurePosixPath):
             return self
 
 
-class ShellContext(object):
-    current_path = Path("/")
-    parent_uuid = None
-
-
 class classproperty(object):
 
     def __init__(self, f):

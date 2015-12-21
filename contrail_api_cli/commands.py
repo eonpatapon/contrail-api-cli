@@ -7,6 +7,7 @@ import pipes
 import subprocess
 import json
 import abc
+import weakref
 from fnmatch import fnmatch
 from collections import OrderedDict
 from six import b, add_metaclass
@@ -17,6 +18,7 @@ from tabulate import tabulate
 
 from prompt_toolkit import prompt
 from prompt_toolkit.history import InMemoryHistory
+from prompt_toolkit.completion import Completer, Completion
 
 from pygments import highlight
 from pygments.token import Token
@@ -24,9 +26,9 @@ from pygments.lexers import JsonLexer
 from pygments.formatters import Terminal256Formatter
 
 from .manager import CommandManager
-from .resource import ResourceEncoder, Resource, Collection, RootCollection, ResourceCompleter
+from .resource import ResourceEncoder, Resource, ResourceBase, Collection, RootCollection
 from .client import ContrailAPISession
-from .utils import ShellContext, Path, classproperty, continue_prompt, to_json, md5
+from .utils import Path, classproperty, continue_prompt, to_json, md5
 from .style import PromptStyle
 from .exceptions import CommandError, CommandNotFound, BadPath
 
@@ -442,6 +444,72 @@ class Edit(Command):
             resource.save()
         except HttpError as e:
             raise CommandError(str(e))
+
+
+class ResourceCompleter(Completer):
+    """Resource completer for the shell command.
+
+    The completer observe Resource created and deleted
+    events to construct its list of resources available
+    for completion.
+
+    Completion can be done on uuid or fq_name.
+    """
+    def __init__(self):
+        self.resources = {}
+        self.trie = {}
+        ResourceBase.register('created', self._add_resource)
+        ResourceBase.register('deleted', self._del_resource)
+
+    def _store_in_trie(self, value, resource):
+        v = ""
+        for c in value:
+            v += c
+            if v not in self.trie:
+                self.trie[v] = weakref.WeakSet()
+            self.trie[v].add(resource)
+
+    def _add_resource(self, resource):
+        path_str = str(resource.path)
+        self.resources[path_str] = resource
+        for c in [path_str, resource.fq_name]:
+            self._store_in_trie(c, resource)
+
+    def _del_resource(self, resource):
+        try:
+            del self.resources[str(resource.path)]
+        except IndexError:
+            pass
+
+    def _sort_results(self, resource):
+        return (resource.type, resource.fq_name, len(str(resource.path)))
+
+    def get_completions(self, document, complete_event):
+        path_before_cursor = document.get_word_before_cursor(WORD=True)
+
+        searches = [
+            # full path search
+            str(Path(ShellContext.current_path, path_before_cursor)),
+            # fq_name search
+            path_before_cursor
+        ]
+        searches = [s for s in searches if s in self.trie]
+
+        if not searches:
+            return
+
+        for res in sorted(self.trie[searches[0]], key=self._sort_results):
+            rel_path = str(res.path.relative_to(ShellContext.current_path))
+            if rel_path in ('.', '/', ''):
+                continue
+            yield Completion(str(rel_path),
+                             -len(path_before_cursor),
+                             display_meta=res.fq_name)
+
+
+class ShellContext(object):
+    current_path = Path("/")
+    parent_uuid = None
 
 
 class Shell(Command):
