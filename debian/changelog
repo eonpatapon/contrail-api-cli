@@ -1,3 +1,11 @@
+contrail-api-cli (0.1b1-1) trusty; urgency=low
+
+  * New upstream release
+    - new edit command
+    - add support for external commands via entrypoints
+
+ -- Jean-Philippe Braun <eon@patapon.info>  Mon, 21 Dec 2015 14:34:10 +0100
+
 contrail-api-cli (0.1a3-1) trusty; urgency=low
 
   * New upstream release
