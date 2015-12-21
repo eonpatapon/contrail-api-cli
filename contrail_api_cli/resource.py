@@ -1,5 +1,6 @@
 import json
 from uuid import UUID
+from six import string_types
 try:
     from UserDict import UserDict
     from UserList import UserList
@@ -162,7 +163,7 @@ class Collection(ResourceBase, UserList):
     def _sanitize_parent_uuid(self, parent_uuid):
         if parent_uuid is None:
             raise StopIteration
-        if isinstance(parent_uuid, str):
+        if isinstance(parent_uuid, string_types):
             parent_uuid = [parent_uuid]
         for p in parent_uuid:
             try:
@@ -270,7 +271,7 @@ class Resource(ResourceBase, UserDict):
         fq_name = kwargs.get('fq_name', None)
         if isinstance(fq_name, list):
             fq_name = ":".join(fq_name)
-        elif not any([isinstance(fq_name, str), fq_name is None]):
+        elif not any([isinstance(fq_name, string_types), fq_name is None]):
             raise ValueError("Wrong fq_name type")
         uuid = kwargs.get('uuid', None)
 
