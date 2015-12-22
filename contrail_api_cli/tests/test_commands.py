@@ -143,6 +143,15 @@ class TestCommands(unittest.TestCase):
         expected_result = "ec1afeaa-8930-43b0-a60a-939f23a50724  a=1|b=1,2,c=3"
         self.assertEqual(result, expected_result)
 
+    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
+    def test_resource_parent_uuid_ls(self, mock_session):
+        mock_session.configure_mock(base_url=BASE)
+        ShellContext.parent_uuid = '98409b5b-3d25-4533-8140-c430625f3775'
+        self.mgr.get('ls')(paths=['foo'])
+        mock_session.get_json.assert_called_with(BASE + '/foos', parent_id=ShellContext.parent_uuid)
+        self.mgr.get('ls')(paths=['foo'], parent_uuid='1ad831be-3b21-4870-aadf-8efc2b0a480d')
+        mock_session.get_json.assert_called_with(BASE + '/foos', parent_id='1ad831be-3b21-4870-aadf-8efc2b0a480d')
+
     @mock.patch('contrail_api_cli.commands.Cat.colorize')
     @mock.patch('contrail_api_cli.resource.ResourceBase.session')
     def test_resource_cat(self, mock_session, mock_colorize):

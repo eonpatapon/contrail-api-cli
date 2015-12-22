@@ -271,6 +271,8 @@ class Ls(Command):
             fields = self.default_fields
         if filters:
             filters = [self._get_filter(p) for p in filters]
+        if not parent_uuid:
+            parent_uuid = ShellContext.parent_uuid
         try:
             resources = expand_paths(paths, filters=filters,
                                      parent_uuid=parent_uuid)
@@ -444,8 +446,11 @@ class Edit(Command):
 
 class Shell(Command):
     description = "Run an interactive shell"
+    parent_uuid = Arg('-p', '--parent_uuid',
+                      help='Limit listing to parent_uuid',
+                      default=None)
 
-    def __call__(self):
+    def __call__(self, parent_uuid=None):
 
         def get_prompt_tokens(cli):
             return [
@@ -460,6 +465,11 @@ class Shell(Command):
         history = InMemoryHistory()
         completer = ResourceCompleter()
         commands = CommandManager()
+        ShellContext.parent_uuid = parent_uuid
+        if parent_uuid is None:
+            print 'Warning: no parent_uuid specified. ls command will list resources ' \
+                  'of all parents by default. See set --help to set parent_uuid or ' \
+                  'start the shell with the --parent_uuid option.'
         # load home resources
         try:
             RootCollection(fetch=True)
@@ -511,6 +521,27 @@ class Shell(Command):
                     print(t.read().strip())
                 else:
                     print(result)
+
+
+class Set(ShellCommand):
+    description = "Set or show shell options"
+    option = Arg('-o', '--option')
+    value = Arg(nargs='?',
+                default=None,
+                help='Option value')
+
+    def __call__(self, option=None, value=None):
+        if option and value:
+            if option == 'current_path':
+                value = Path(value)
+            setattr(ShellContext, option, value)
+        elif option:
+            print getattr(ShellContext, option)
+        else:
+            for option, value in inspect.getmembers(ShellContext,
+                                                    lambda a: not(inspect.isroutine(a))):
+                if not option.startswith('__'):
+                    print '%s = %s' % (option, value)
 
 
 class Cd(ShellCommand):

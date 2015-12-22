@@ -93,6 +93,7 @@ class Path(PurePosixPath):
 
 class ShellContext(object):
     current_path = Path("/")
+    parent_uuid = None
 
 
 class classproperty(object):
