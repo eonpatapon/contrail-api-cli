@@ -104,7 +104,9 @@ def expand_paths(paths=None, filters=None, parent_uuid=None):
         else:
             if path.is_resource:
                 try:
-                    result[path] = Resource(path.base, uuid=path.name, check_uuid=True)
+                    result[path] = Resource(path.base,
+                                            uuid=path.name,
+                                            check_uuid=True)
                 except ValueError as e:
                     raise BadPath(str(e))
             elif path.is_collection:

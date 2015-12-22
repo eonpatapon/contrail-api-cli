@@ -181,13 +181,12 @@ class Collection(ResourceBase, UserList):
         """
         self.filters.append((field_name, field_value))
 
-    def _fetch_params(self, fields, filters, parent_uuid):
+    def _format_fetch_params(self, fields, filters, parent_uuid):
         params = {}
-        fields_str = ",".join(self.fields + (fields or []))
+        fields_str = ",".join(self._fetch_fields(fields))
         filters_str = ",".join(['%s==%s' % (f, json.dumps(v))
-                                for f, v in self.filters + (filters or [])])
-        parent_uuid_str = ",".join(self.parent_uuid +
-                                   list(self._sanitize_parent_uuid(parent_uuid)))
+                                for f, v in self._fetch_filters(filters)])
+        parent_uuid_str = ",".join(self._fetch_parent_uuid(parent_uuid))
         if fields_str:
             params['fields'] = fields_str
         if filters_str:
@@ -196,6 +195,15 @@ class Collection(ResourceBase, UserList):
             params['parent_id'] = parent_uuid_str
 
         return params
+
+    def _fetch_parent_uuid(self, parent_uuid=None):
+        return self.parent_uuid + list(self._sanitize_parent_uuid(parent_uuid))
+
+    def _fetch_filters(self, filters=None):
+        return self.filters + (filters or [])
+
+    def _fetch_fields(self, fields=None):
+        return self.fields + (fields or [])
 
     def fetch(self, recursive=1, fields=None, filters=None, parent_uuid=None):
         """
@@ -211,13 +219,16 @@ class Collection(ResourceBase, UserList):
         @type parent_uuid: v4UUID str or list of v4UUID str
         """
 
-        params = self._fetch_params(fields, filters, parent_uuid)
+        params = self._format_fetch_params(fields, filters, parent_uuid)
         data = self.session.get_json(self.href, **params)
 
         if not self.type:
             self.data = [Collection(col["link"]["name"],
                                     fetch=recursive - 1 > 0,
                                     recursive=recursive - 1,
+                                    fields=self._fetch_fields(fields),
+                                    filters=self._fetch_filters(filters),
+                                    parent_uuid=self._fetch_parent_uuid(parent_uuid),
                                     **col["link"])
                          for col in data['links']
                          if col["link"]["rel"] == "collection"]
