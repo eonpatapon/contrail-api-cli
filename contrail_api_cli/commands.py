@@ -535,9 +535,9 @@ class Shell(Command):
         commands = CommandManager()
         ShellContext.parent_uuid = parent_uuid
         if parent_uuid is None:
-            print 'Warning: no parent_uuid specified. ls command will list resources ' \
-                  'of all parents by default. See set --help to set parent_uuid or ' \
-                  'start the shell with the --parent_uuid option.'
+            print('Warning: no parent_uuid specified. ls command will list resources '
+                  'of all parents by default. See set --help to set parent_uuid or '
+                  'start the shell with the --parent_uuid option.')
         # load home resources
         try:
             RootCollection(fetch=True)
@@ -604,12 +604,12 @@ class Set(ShellCommand):
                 value = Path(value)
             setattr(ShellContext, option, value)
         elif option:
-            print getattr(ShellContext, option)
+            print(getattr(ShellContext, option))
         else:
             for option, value in inspect.getmembers(ShellContext,
                                                     lambda a: not(inspect.isroutine(a))):
                 if not option.startswith('__'):
-                    print '%s = %s' % (option, value)
+                    print('%s = %s' % (option, value))
 
 
 class Cd(ShellCommand):

@@ -386,7 +386,7 @@ class TestCommands(unittest.TestCase):
             "cmd",
             "exit"
         ]
-        self.mgr.get('shell')()
+        self.mgr.get('shell')(parent_uuid='6b6a7f47-807e-4c39-8ac6-3adcf2f5498f')
         sys.stdout = old_stdout
         result = out.getvalue().strip()
         self.assertEqual(result, "piped\nnot piped")
