@@ -20,13 +20,14 @@ from prompt_toolkit.history import FileHistory
 from prompt_toolkit.completion import Completer, Completion
 
 from .manager import CommandManager
-from .resource import Resource
+from .resource import Resource, ResourceCache
 from .resource import Collection, RootCollection
 from .client import ContrailAPISession
 from .utils import CONFIG_DIR, Path, classproperty, continue_prompt, printo
 from .style import default as default_style
 from .exceptions import CommandError, CommandNotFound, BadPath, \
     ResourceNotFound, NoResourceFound
+from .parser import CommandParser
 
 
 class ArgumentParser(argparse.ArgumentParser):
@@ -239,80 +240,57 @@ class Rm(Command):
                     r.delete()
 
 
-class Actions:
-    STORE = 'STORE'
-    DELETE = 'DELETE'
+class ShellCompleter(Completer):
 
-
-class ResourceCompleter(Completer):
-    """Resource completer for the shell command.
-
-    The completer observe Resource created and deleted
-    events to construct its list of resources available
-    for completion.
-
-    Completion can be done on uuid or fq_name.
-    """
-    def __init__(self):
-        self.resources = {}
-        self.trie = {}
-        Resource.register('created', self._add_resource)
-        Resource.register('deleted', self._del_resource)
-        Collection.register('created', self._add_resource)
-        Collection.register('deleted', self._del_resource)
-
-    def _action_in_trie(self, value, path, action):
-        v = ""
-        for c in value:
-            v += c
-            if v not in self.trie:
-                self.trie[v] = []
-            if action == Actions.STORE:
-                if path not in self.trie[v]:
-                    self.trie[v].append(path)
-                    self.trie[v].sort()
-            elif action == Actions.DELETE:
-                if path in self.trie[v]:
-                    self.trie[v].remove(path)
-
-    def _resource_action(self, resource, action):
-        if action == Actions.STORE:
-            self.resources[text_type(resource.path)] = resource
-        elif action == Actions.DELETE and text_type(resource.path) in self.resources:
-            self.resources.pop(text_type(resource.path))
-        path_text_type = text_type(resource.path)
-        for c in [path_text_type, text_type(resource.fq_name)]:
-            self._action_in_trie(c, text_type(resource.path), action)
-
-    def _add_resource(self, resource):
-        self._resource_action(resource, Actions.STORE)
-
-    def _del_resource(self, resource):
-        self._resource_action(resource, Actions.DELETE)
+    def __init__(self, aliases=None):
+        self.mgr = CommandManager()
+        self.cache = ResourceCache()
+        self.aliases = aliases or ShellAliases()
 
     def get_completions(self, document, complete_event):
-        path_before_cursor = document.get_word_before_cursor(WORD=True)
+        text_before_cursor = document.get_word_before_cursor(WORD=True)
+        text = self.aliases.apply(document.text)
 
+        try:
+            parser = CommandParser(text)
+            # complete options for the current command
+            if text_before_cursor.startswith('-'):
+                for action in parser.available_options:
+                    option = action.option_strings[0]
+                    if option.startswith(text_before_cursor):
+                        yield Completion(option,
+                                         -len(text_before_cursor),
+                                         display_meta=action.help or '')
+                return
+        except CommandNotFound:
+            for cmd_name, cmd in self.mgr.list:
+                if cmd_name.startswith(text_before_cursor):
+                    yield Completion(cmd_name,
+                                     -len(text_before_cursor),
+                                     display_meta=cmd.description)
+            return
+
+        # resource completion from cache
         searches = [
             # full path search
-            text_type(Path(ShellContext.current_path, path_before_cursor)),
+            text_type(Path(ShellContext.current_path, text_before_cursor)),
             # fq_name search
-            path_before_cursor
+            text_before_cursor
         ]
-        searches = [s for s in searches if s in self.trie]
+        searches = [s for s in searches if s in self.cache.trie]
 
         if not searches:
             return
 
         # limit list to 50 entries
-        resources = [self.resources[p] for p in self.trie[searches[0]]][:50]
+        resources = [self.cache.resources[p] for p in self.cache.trie[searches[0]]][:50]
 
         for res in resources:
             rel_path = text_type(res.path.relative_to(ShellContext.current_path))
             if rel_path in ('.', '/', ''):
                 continue
             yield Completion(text_type(rel_path),
-                             -len(path_before_cursor),
+                             -len(text_before_cursor),
                              display_meta=text_type(res.fq_name))
 
 
@@ -353,12 +331,12 @@ class Shell(Command):
             ]
 
         history = FileHistory(os.path.join(CONFIG_DIR, 'history'))
-        completer = ResourceCompleter()
         commands = CommandManager()
         commands.load_namespace('contrail_api_cli.shell_command')
         aliases = ShellAliases()
         for cmd_name, cmd in commands.list:
             map(aliases.set, cmd.aliases)
+        completer = ShellCompleter(aliases=aliases)
         # load home resources
         try:
             RootCollection(fetch=True)
@@ -424,13 +402,14 @@ class Cd(Command):
 
 
 class Exit(Command):
-    description = "Exit from cli"
+    description = "Exit from shell"
 
     def __call__(self):
         raise EOFError
 
 
 class Help(Command):
+    description = "List all available commands"
 
     def __call__(self):
         commands = CommandManager()

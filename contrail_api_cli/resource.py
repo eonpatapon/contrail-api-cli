@@ -1,7 +1,7 @@
 from __future__ import unicode_literals
 import json
 from uuid import UUID
-from six import string_types
+from six import string_types, text_type
 try:
     from UserDict import UserDict
     from UserList import UserList
@@ -513,3 +513,49 @@ class Resource(ResourceBase, UserDict):
         if hasattr(self, 'data'):
             return str(self.data)
         return str({})
+
+
+class Actions:
+    STORE = 'STORE'
+    DELETE = 'DELETE'
+
+
+class ResourceCache(object):
+    """Resource cache of discovered resources.
+    """
+    def __init__(self):
+        self.resources = {}
+        self.trie = {}
+        Resource.register('created', self._add_resource)
+        Resource.register('deleted', self._del_resource)
+        Collection.register('created', self._add_resource)
+        Collection.register('deleted', self._del_resource)
+
+    def _action_in_trie(self, value, path, action):
+        v = ""
+        for c in value:
+            v += c
+            if v not in self.trie:
+                self.trie[v] = []
+            if action == Actions.STORE:
+                if path not in self.trie[v]:
+                    self.trie[v].append(path)
+                    self.trie[v].sort()
+            elif action == Actions.DELETE:
+                if path in self.trie[v]:
+                    self.trie[v].remove(path)
+
+    def _resource_action(self, resource, action):
+        if action == Actions.STORE:
+            self.resources[text_type(resource.path)] = resource
+        elif action == Actions.DELETE and text_type(resource.path) in self.resources:
+            self.resources.pop(text_type(resource.path))
+        path_text_type = text_type(resource.path)
+        for c in [path_text_type, text_type(resource.fq_name)]:
+            self._action_in_trie(c, text_type(resource.path), action)
+
+    def _add_resource(self, resource):
+        self._resource_action(resource, Actions.STORE)
+
+    def _del_resource(self, resource):
+        self._resource_action(resource, Actions.DELETE)

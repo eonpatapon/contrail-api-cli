@@ -75,6 +75,10 @@ class CommandManager(object):
                 continue
             yield (ext.name, ext.obj)
 
+    def add(self, name, cmd):
+        ext = extension.Extension(name, None, cmd.__class__, cmd)
+        self.mgrs[0].extensions.append(ext)
+
     @classmethod
     def register_argparse_commands(cls, parser, argv):
         in_parser = argparse.ArgumentParser(add_help=False)

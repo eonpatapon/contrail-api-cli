@@ -5,7 +5,7 @@ try:
 except ImportError:
     import unittest.mock as mock
 
-from contrail_api_cli.command import ShellContext, ResourceCompleter
+from contrail_api_cli.command import ShellContext, ShellCompleter
 from contrail_api_cli.resource import Resource
 from contrail_api_cli.utils import Path
 
@@ -19,8 +19,9 @@ class TestCompleter(unittest.TestCase):
         ShellContext.current_path = Path('/')
         mock_document = mock.Mock()
         mock_document.get_word_before_cursor.return_value = 'bar'
-        comp = ResourceCompleter()
+        mock_document.configure_mock(text='ls bar')
 
+        comp = ShellCompleter()
         r1 = Resource('foo', uuid='d8eb36b4-9c57-49c5-9eac-95bedc90eb9a')
         r2 = Resource('bar', uuid='4c6d3711-61f1-4505-b8df-189d32b52872')
         completions = comp.get_completions(mock_document, None)
@@ -38,7 +39,9 @@ class TestCompleter(unittest.TestCase):
         ShellContext.current_path = Path('/')
         mock_document = mock.Mock()
         mock_document.get_word_before_cursor.return_value = 'bar'
-        comp = ResourceCompleter()
+        mock_document.configure_mock(text='ls bar')
+
+        comp = ShellCompleter()
         r1 = Resource('bar', uuid='4c6d3711-61f1-4505-b8df-189d32b52872')
         r2 = Resource('bar', uuid='4c6d3711-61f1-4505-b8df-189d32b52872')
         completions = comp.get_completions(mock_document, None)
@@ -53,8 +56,9 @@ class TestCompleter(unittest.TestCase):
         ShellContext.current_path = Path('/')
         mock_document = mock.Mock()
         mock_document.get_word_before_cursor.return_value = 'default-dom'
+        mock_document.configure_mock(text='ls default-dom')
 
-        comp = ResourceCompleter()
+        comp = ShellCompleter()
         r1 = Resource('bar', fq_name='default-domain:project:resource')
         r2 = Resource('foo', fq_name='foo:foo:foo')
 
