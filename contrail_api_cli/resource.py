@@ -7,12 +7,16 @@ try:
 except ImportError:
     from collections import UserDict, UserList
 
-from .utils import Path, Observable, to_json
+from keystoneclient.exceptions import HTTPError
+
+from .utils import FQName, Path, Observable, to_json
 
 
 class ResourceEncoder(json.JSONEncoder):
 
     def default(self, obj):
+        if isinstance(obj, FQName):
+            return obj._data
         if isinstance(obj, Resource):
             return obj.data
         if isinstance(obj, Collection):
@@ -217,7 +221,7 @@ class Resource(ResourceBase, UserDict):
     r.delete()
     """
 
-    def __init__(self, type, fetch=False, check_uuid=False, check_fq_name=True, recursive=1, **kwargs):
+    def __init__(self, type, fetch=False, check_uuid=False, check_fq_name=False, recursive=1, **kwargs):
         """Base class for API resources
 
         @param type: type of the resource
@@ -239,27 +243,25 @@ class Resource(ResourceBase, UserDict):
         @raises ValueError: bad uuid or fq_name is given
         """
         self.type = type
-        fq_name = kwargs.get('fq_name', None)
-        if isinstance(fq_name, list):
-            fq_name = ":".join(fq_name)
-        elif not any([isinstance(fq_name, string_types), fq_name is None]):
-            raise ValueError("Wrong fq_name type")
+        fq_name = FQName(kwargs.get('fq_name'))
+        if 'to' in kwargs:
+            fq_name = FQName(kwargs.pop('to'))
         uuid = kwargs.get('uuid', None)
 
-        if uuid is not None:
-            if check_uuid:
-                fq_name = self.session.id_to_fqname(type, uuid)
-                if fq_name is None:
-                    raise ValueError("%s doesn't exists" % uuid)
-        elif fq_name is not None:
-            if check_fq_name:
+        if uuid and check_uuid:
+            try:
+                fq_name = self.session.id_to_fqname(uuid)
+            except HTTPError:
+                raise ValueError("%s doesn't exists" % uuid)
+        elif fq_name and check_fq_name:
+            try:
                 uuid = self.session.fqname_to_id(type, fq_name)
-                if uuid is None:
-                    raise ValueError("%s doesn't exists" % fq_name)
+            except HTTPError:
+                raise ValueError("%s doesn't exists" % fq_name)
 
-        if fq_name is not None:
-            kwargs["fq_name"] = fq_name.split(":")
-        if uuid is not None:
+        if fq_name:
+            kwargs["fq_name"] = fq_name
+        if uuid:
             kwargs["uuid"] = uuid
         UserDict.__init__(self, **kwargs)
         if self.path and self.path.is_resource and fetch:
@@ -299,9 +301,9 @@ class Resource(ResourceBase, UserDict):
     def fq_name(self):
         """Return FQDN of the resource
 
-        @rtype: str
+        @rtype: FQName
         """
-        return ":".join(self.get("fq_name", self.get("to", [])))
+        return self.get('fq_name', FQName())
 
     def save(self):
         """Save the resource to the API server
@@ -354,11 +356,13 @@ class Resource(ResourceBase, UserDict):
 
     def _encode_resource(self, data, recursive=1):
         for attr, value in list(data.items()):
+            if attr == 'fq_name':
+                data[attr] = FQName(value)
             if attr.endswith('refs'):
-                res_type = "-".join([c for c in attr.split('_')
+                ref_type = "-".join([c for c in attr.split('_')
                                      if c not in ('back', 'refs')])
                 for idx, r in enumerate(data[attr]):
-                    data[attr][idx] = Resource(res_type,
+                    data[attr][idx] = Resource(ref_type,
                                                fetch=recursive - 1 > 0,
                                                recursive=recursive - 1,
                                                **data[attr][idx])
@@ -384,6 +388,3 @@ class Resource(ResourceBase, UserDict):
         if hasattr(self, 'data'):
             return str(self.data)
         return str({})
-
-    def __repr__(self):
-        return 'Resource(%s,%s)' % (self.path, self)

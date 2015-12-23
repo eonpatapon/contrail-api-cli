@@ -3,8 +3,36 @@ import os.path
 import hashlib
 from uuid import UUID
 from pathlib import PurePosixPath
+from six import string_types
+from collections import Sequence
 
 from prompt_toolkit import prompt
+
+
+class FQName(Sequence):
+
+    def __init__(self, init=None):
+        if isinstance(init, string_types):
+            self._data = init.split(':')
+        elif isinstance(init, list):
+            self._data = init
+        else:
+            self._data = []
+
+    def __getitem__(self, idx):
+        return self._data[idx]
+
+    def __len__(self):
+        return len(self._data)
+
+    def __eq__(self, other):
+        return self._data == other
+
+    def __repr__(self):
+        return repr(self._data)
+
+    def __str__(self):
+        return ':'.join(self._data)
 
 
 class Observable(object):

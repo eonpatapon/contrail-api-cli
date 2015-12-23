@@ -89,11 +89,10 @@ class TestResource(unittest.TestCase):
 
     @mock.patch('contrail_api_cli.resource.ResourceBase.session')
     def test_resource_fqname(self, mock_session):
-        r = Resource('foo')
-        r['fq_name'] = ['domain', 'foo', 'uuid']
-        self.assertEqual(r.fq_name, 'domain:foo:uuid')
+        r = Resource('foo', fq_name=['domain', 'foo', 'uuid'])
+        self.assertEqual(str(r.fq_name), 'domain:foo:uuid')
         r = Resource('foo', to=['domain', 'foo', 'uuid'])
-        self.assertEqual(r.fq_name, 'domain:foo:uuid')
+        self.assertEqual(str(r.fq_name), 'domain:foo:uuid')
 
     @mock.patch('contrail_api_cli.resource.ResourceBase.session')
     def test_resource(self, mock_session):
@@ -151,12 +150,12 @@ class TestResource(unittest.TestCase):
                 raise HttpError()
 
         mock_session.post_json.side_effect = post
-        r = Resource('foo', fq_name='domain:foo:uuid')
+        r = Resource('foo', fq_name='domain:foo:uuid', check_fq_name=True)
         self.assertEqual(r.uuid, 'ec1afeaa-8930-43b0-a60a-939f23a50724')
         self.assertEqual(r.path, Path('/foo/ec1afeaa-8930-43b0-a60a-939f23a50724'))
 
         with self.assertRaises(ValueError) as e:
-            r = Resource('bar', fq_name='domain:bar:nofound')
+            r = Resource('bar', fq_name='domain:bar:nofound', check_fq_name=True)
             self.assertEqual(str(e), "domain:bar:nofound doesn't exists")
 
     @mock.patch('contrail_api_cli.resource.ResourceBase.session')
@@ -165,9 +164,9 @@ class TestResource(unittest.TestCase):
         mock_session.id_to_fqname = ContrailAPISession.id_to_fqname.__get__(mock_session)
         mock_session.make_url = ContrailAPISession.make_url.__get__(mock_session)
 
-        # called by fqname_to_id
+        # called by id_to_fqname
         def post(url, json):
-            if json['type'] == "foo":
+            if json['uuid'] == 'a5a1b67b-4246-4e2d-aa24-479d8d47435d':
                 return {
                     'fq_name': [
                         'domain',
@@ -175,12 +174,12 @@ class TestResource(unittest.TestCase):
                         'uuid'
                     ]
                 }
-            if json['type'] == "bar":
+            else:
                 raise HttpError()
 
         mock_session.post_json.side_effect = post
         r = Resource('foo', uuid='a5a1b67b-4246-4e2d-aa24-479d8d47435d', check_uuid=True)
-        self.assertEqual(r.fq_name, 'domain:foo:uuid')
+        self.assertEqual(str(r.fq_name), 'domain:foo:uuid')
         self.assertEqual(r.path, Path('/foo/a5a1b67b-4246-4e2d-aa24-479d8d47435d'))
         with self.assertRaises(ValueError) as e:
             r = Resource('bar', uuid='d6e9fae3-628c-448c-bfc5-849d82a9a016', check_uuid=True)

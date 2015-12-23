@@ -26,10 +26,10 @@ from pygments.lexers import JsonLexer
 from pygments.formatters import Terminal256Formatter
 
 from .manager import CommandManager
-from .resource import ResourceEncoder, Resource, ResourceBase
+from .resource import Resource, ResourceBase
 from .resource import Collection, RootCollection
 from .client import ContrailAPISession
-from .utils import Path, classproperty, continue_prompt, to_json, md5
+from .utils import Path, classproperty, continue_prompt, md5
 from .style import PromptStyle
 from .exceptions import CommandError, CommandNotFound, BadPath
 
@@ -95,15 +95,17 @@ def expand_paths(paths=None, filters=None, parent_uuid=None):
                                  filters=filters,
                                  parent_uuid=parent_uuid)
             for r in col:
-                if (fnmatch(str(r.path), str(path)) or
-                        fnmatch(str(Path("/", r.type, r.fq_name)), str(path))):
+                # list of paths to match against
+                paths = [r.path,
+                         Path('/', r.type, str(r.fq_name))]
+                if any([fnmatch(str(p), str(path)) for p in paths]):
                     result[r.path] = r
         elif ':' in path.name:
             try:
-                r = Resource(path.base, fq_name=path.name)
+                r = Resource(path.base,
+                             fq_name=path.name,
+                             check_fq_name=True)
                 result[r.path] = r
-            except TypeError as e:
-                raise BadPath("Bad fq name format for in %s" % path)
             except ValueError as e:
                 raise BadPath(str(e))
         else:
@@ -316,7 +318,7 @@ class Cat(Command):
             if not isinstance(r, Resource):
                 raise CommandError('%s is not a resource' % self.current_path(r))
             r.fetch()
-            json_data = to_json(r.data, cls=ResourceEncoder)
+            json_data = r.json()
             if self.is_piped:
                 result.append(json_data)
             else:
@@ -436,7 +438,7 @@ class Edit(Command):
             raise CommandError('Provided JSON is not valid: ' + str(e))
         if template:
             # create new resource
-            resource = Resource(resource.type, check_fq_name=False, **data)
+            resource = Resource(resource.type, **data)
         else:
             resource.update(data)
         try:
@@ -503,7 +505,7 @@ class ResourceCompleter(Completer):
                 continue
             yield Completion(str(rel_path),
                              -len(path_before_cursor),
-                             display_meta=res.fq_name)
+                             display_meta=str(res.fq_name))
 
 
 class ShellContext(object):

@@ -6,7 +6,7 @@ from keystoneclient.auth import base
 from keystoneclient.session import Session
 from keystoneclient.exceptions import HTTPError
 
-from .utils import classproperty, to_json
+from .utils import FQName, classproperty, to_json
 from .resource import ResourceBase
 
 
@@ -124,37 +124,29 @@ class ContrailAPISession(Session):
 
         @param type: resource type
         @type type: str
-        @param fq_name: resource fq name (domain:project:identifier)
-        @type fq_name: str
+        @param fq_name: resource fq name
+        @type fq_name: FQName
 
         @rtype: UUIDv4 str
+        @raises HTTPError: fq_name not found
         """
         data = {
             "type": type,
-            "fq_name": fq_name.split(":")
+            "fq_name": fq_name
         }
-        try:
-            return self.post_json(self.make_url("/fqname-to-id"), data)["uuid"]
-        except HTTPError:
-            return None
+        return self.post_json(self.make_url("/fqname-to-id"), data)["uuid"]
 
-    def id_to_fqname(self, type, uuid):
+    def id_to_fqname(self, uuid):
         """
         Return fq_name for uuid
 
-        @param type: resource type
-        @type type: str
         @param uuid: resource uuid
         @type uuid: UUIDv4 str
 
-        @rtype: str (domain:project:identifier)
+        @rtype: FQName
+        @raises HTTPError: uuid not found
         """
         data = {
-            "type": type,
             "uuid": uuid
         }
-        try:
-            fq_name = self.post_json(self.make_url("/id-to-fqname"), data)['fq_name']
-            return ":".join(fq_name)
-        except HTTPError:
-            return None
+        return FQName(self.post_json(self.make_url("/id-to-fqname"), data)['fq_name'])
