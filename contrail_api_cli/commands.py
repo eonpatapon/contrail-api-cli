@@ -121,14 +121,6 @@ def expand_paths(paths=None, filters=None, parent_uuid=None):
     return list(result.values())
 
 
-class RelativeResourceEncoder(ResourceEncoder):
-
-    def default(self, obj):
-        if isinstance(obj, Path):
-            return str(obj.relative_to(ShellContext.current_path))
-        return super(RelativeResourceEncoder, self).default(obj)
-
-
 @add_metaclass(abc.ABCMeta)
 class BaseCommand(object):
     description = ""
@@ -324,7 +316,7 @@ class Cat(Command):
             if not isinstance(r, Resource):
                 raise CommandError('%s is not a resource' % self.current_path(r))
             r.fetch()
-            json_data = to_json(r.data, cls=RelativeResourceEncoder)
+            json_data = to_json(r.data, cls=ResourceEncoder)
             if self.is_piped:
                 result.append(json_data)
             else:

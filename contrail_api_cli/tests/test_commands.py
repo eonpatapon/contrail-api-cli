@@ -209,7 +209,7 @@ class TestCommands(unittest.TestCase):
                      href=BASE + '/bar/15315402-8a21-4116-aeaa-b6a77dceb191',
                      to=['bar', '15315402-8a21-4116-aeaa-b6a77dceb191'])
         ]
-        expected_json = client.to_json(expected_resource, cls=cmds.RelativeResourceEncoder)
+        expected_json = client.to_json(expected_resource, cls=cmds.ResourceEncoder)
         result = self.mgr.get('cat')(paths=['ec1afeaa-8930-43b0-a60a-939f23a50724'])
         self.assertEqual(expected_json, result)
 
