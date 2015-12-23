@@ -26,7 +26,8 @@ from pygments.lexers import JsonLexer
 from pygments.formatters import Terminal256Formatter
 
 from .manager import CommandManager
-from .resource import ResourceEncoder, Resource, ResourceBase, Collection, RootCollection
+from .resource import ResourceEncoder, Resource, ResourceBase
+from .resource import Collection, RootCollection
 from .client import ContrailAPISession
 from .utils import Path, classproperty, continue_prompt, to_json, md5
 from .style import PromptStyle
@@ -62,8 +63,10 @@ def expand_paths(paths=None, filters=None, parent_uuid=None):
     """Return an unique list of resources or collections from a list of paths.
     Supports fq_name and wilcards resolution.
 
-    >>> expand_paths(['virtual-network', 'floating-ip/2a0a54b4-a420-485e-8372-42f70a627ec9'])
-    [Collection('virtual-network'), Resource('floating-ip', uuid='2a0a54b4-a420-485e-8372-42f70a627ec9')]
+    >>> expand_paths(['virtual-network',
+                      'floating-ip/2a0a54b4-a420-485e-8372-42f70a627ec9'])
+    [Collection('virtual-network'),
+     Resource('floating-ip', uuid='2a0a54b4-a420-485e-8372-42f70a627ec9')]
 
     @param paths: list of paths relative to the current path
                   that may contain wildcards (*, ?) or fq_names
@@ -224,15 +227,15 @@ class Ls(Command):
     default_fields = [u'fq_name']
     aliases = ['ll']
 
-    def _field_val_to_str(self, field_value, field_key=None):
-        if field_key in ('fq_name', 'to'):
-            return ":".join(field_value)
-        elif isinstance(field_value, list) or isinstance(field_value, Collection):
-            return ",".join([self._field_val_to_str(i) for i in field_value])
-        elif isinstance(field_value, dict) or isinstance(field_value, Resource):
+    def _field_val_to_str(self, fval, fkey=None):
+        if fkey in ('fq_name', 'to'):
+            return ":".join(fval)
+        elif isinstance(fval, list) or isinstance(fval, Collection):
+            return ",".join([self._field_val_to_str(i) for i in fval])
+        elif isinstance(fval, dict) or isinstance(fval, Resource):
             return "|".join(["%s=%s" % (k, self._field_val_to_str(v, k))
-                             for k, v in field_value.items()])
-        return str(field_value)
+                             for k, v in fval.items()])
+        return str(fval)
 
     def _get_field(self, resource, field):
         # elif field.startswith('.'):
@@ -251,7 +254,8 @@ class Ls(Command):
         try:
             name, value = predicate.split('=')
         except ValueError:
-            raise CommandError('Invalid filter predicate %s. Use name=value format.' % predicate)
+            raise CommandError('Invalid filter predicate %s. '
+                               'Use name=value format.' % predicate)
         if value == 'False':
             value = False
         elif value == 'True':
@@ -342,7 +346,8 @@ class Count(Command):
         result = []
         for c in collections:
             if not isinstance(c, Collection):
-                raise CommandError('%s is not a collection' % self.current_path(c))
+                raise CommandError('%s is not a collection' %
+                                   self.current_path(c))
             result.append(str(len(c)))
         return "\n".join(result)
 
@@ -390,7 +395,8 @@ class Rm(Command):
                     try:
                         r.delete()
                     except HttpError as e:
-                        raise CommandError("Failed to delete resource: %s" % str(e))
+                        raise CommandError("Failed to delete resource: %s" %
+                                           str(e))
 
 
 @experimental
@@ -413,7 +419,8 @@ class Edit(Command):
             raise CommandError("Can't edit multiple resources")
         resource = resources[0]
         if not isinstance(resource, Resource):
-            raise CommandError('%s is not a resource' % path.relative_to(ShellContext.current_path))
+            raise CommandError('%s is not a resource' %
+                               path.relative_to(ShellContext.current_path))
         # don't show childs or back_refs
         resource.fetch(exclude_children=True, exclude_back_refs=True)
         resource.pop('id_perms')
@@ -535,9 +542,10 @@ class Shell(Command):
         commands = CommandManager()
         ShellContext.parent_uuid = parent_uuid
         if parent_uuid is None:
-            print('Warning: no parent_uuid specified. ls command will list resources '
-                  'of all parents by default. See set --help to set parent_uuid or '
-                  'start the shell with the --parent_uuid option.')
+            print('Warning: no parent_uuid specified. ls command will list '
+                  'resources of all parents by default. See set --help to '
+                  'set parent_uuid or start the shell with the --parent_uuid '
+                  'option.')
         # load home resources
         try:
             RootCollection(fetch=True)
@@ -632,7 +640,8 @@ class Help(ShellCommand):
 
     def __call__(self):
         commands = CommandManager()
-        return "Available commands: %s" % " ".join([c.name for c in commands.list])
+        return "Available commands: %s" % " ".join(
+            [c.name for c in commands.list])
 
 
 def make_api_session(options):
