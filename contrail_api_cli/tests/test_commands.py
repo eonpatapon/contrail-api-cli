@@ -119,11 +119,7 @@ class TestCommands(unittest.TestCase):
                 'prop': {
                     'foo': False,
                     'bar': [1, 2, 3]
-                },
-                'prop2': [
-                    {'a': 1, 'b': [1, 2]},
-                    {'c': 3}
-                ],
+                }
             }
         }
         ShellContext.current_path = Path('/')
@@ -135,14 +131,10 @@ class TestCommands(unittest.TestCase):
         ShellContext.current_path = Path('/foo')
         result = self.mgr.get('ls')(paths=['ec1afeaa-8930-43b0-a60a-939f23a50724'],
                                     long=True, fields=['prop'])
-        expected_result = "ec1afeaa-8930-43b0-a60a-939f23a50724  foo=False|bar=1,2,3"
-        self.assertEqual(result, expected_result)
+        expected_results = ["ec1afeaa-8930-43b0-a60a-939f23a50724  foo=False|bar=1,2,3",
+                            "ec1afeaa-8930-43b0-a60a-939f23a50724  bar=1,2,3|foo=False"]
 
-        ShellContext.current_path = Path('/foo')
-        result = self.mgr.get('ls')(paths=['ec1afeaa-8930-43b0-a60a-939f23a50724'],
-                                    long=True, fields=['prop2'])
-        expected_result = "ec1afeaa-8930-43b0-a60a-939f23a50724  a=1|b=1,2,c=3"
-        self.assertEqual(result, expected_result)
+        self.assertTrue(any([result == r for r in expected_results]))
 
     @mock.patch('contrail_api_cli.resource.ResourceBase.session')
     def test_resource_parent_uuid_ls(self, mock_session):
