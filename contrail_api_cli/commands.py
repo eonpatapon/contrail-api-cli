@@ -414,7 +414,7 @@ class Edit(Command):
         resource = resources[0]
         if not isinstance(resource, Resource):
             raise CommandError('%s is not a resource' %
-                               path.relative_to(ShellContext.current_path))
+                               self.current_path(resource))
         # don't show childs or back_refs
         resource.fetch(exclude_children=True, exclude_back_refs=True)
         resource.pop('id_perms')
