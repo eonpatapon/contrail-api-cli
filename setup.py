@@ -47,6 +47,7 @@ setup(
             'exit = contrail_api_cli.commands:Exit',
             'help = contrail_api_cli.commands:Help',
             'set = contrail_api_cli.commands:Set',
+            'tree = contrail_api_cli.commands:Tree',
         ]
     },
     classifiers=[

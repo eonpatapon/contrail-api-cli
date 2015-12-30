@@ -10,3 +10,7 @@ class CommandError(Exception):
 
 class BadPath(Exception):
     pass
+
+
+class ResourceNotFound(Exception):
+    pass

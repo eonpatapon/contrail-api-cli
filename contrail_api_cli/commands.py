@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+import copy
 import os
 import sys
 import tempfile
@@ -31,7 +33,7 @@ from .resource import Collection, RootCollection
 from .client import ContrailAPISession
 from .utils import Path, classproperty, continue_prompt, md5
 from .style import PromptStyle
-from .exceptions import CommandError, CommandNotFound, BadPath
+from .exceptions import CommandError, CommandNotFound, BadPath, ResourceNotFound
 
 
 class ArgumentParser(argparse.ArgumentParser):
@@ -445,6 +447,98 @@ class Edit(Command):
             resource.save()
         except HttpError as e:
             raise CommandError(str(e))
+
+
+class Tree(Command):
+    description = "Tree of resource references"
+    path = Arg(nargs="?", help="Resource path", default='')
+    reverse = Arg('-r', '--reverse',
+                  help="Show tree of back references",
+                  action="store_true", default=False)
+    parent = Arg('-p', '--parent',
+                 help="Show tree of parents",
+                 action="store_true", default=False)
+
+    def _get_tree(self, resource, tree, reverse=False, parent=False):
+        if parent:
+            try:
+                refs = [resource.parent]
+            except ResourceNotFound:
+                refs = []
+        elif reverse:
+            refs = list(resource.back_refs)
+        else:
+            refs = list(resource.refs)
+        nb_refs = len(refs)
+        for idx, ref in enumerate(refs):
+            ref.fetch()
+            tree['childs'][str(ref.path)] = {
+                'index': idx + 1,
+                'len': nb_refs,
+                'level': tree['level'] + 1,
+                'childs': OrderedDict(),
+                'parents': copy.copy(tree['parents']),
+                'meta': str(ref.fq_name)
+            }
+            if tree['len'] == tree['index']:
+                tree['childs'][str(ref.path)]['parents'].append(0)
+            else:
+                tree['childs'][str(ref.path)]['parents'].append(1)
+
+            self._get_tree(ref, tree['childs'][str(ref.path)], reverse, parent)
+
+    def _get_rows(self, tree, rows):
+        for idx, (path, infos) in enumerate(tree.items()):
+            col = u''
+
+            for parent in infos['parents'][1:]:
+                if parent == 1:
+                    col += u'│   '
+                else:
+                    col += u'    '
+
+            if infos['level'] == 0:
+                col += u''
+            elif infos['index'] == infos['len']:
+                col += u'└── '
+            else:
+                col += u'├── '
+
+            col += path
+            rows.append((col, infos['meta']))
+            self._get_rows(infos['childs'], rows)
+        return rows
+
+    def __call__(self, path=None, reverse=False, parent=False):
+        try:
+            resources = expand_paths([path])
+        except BadPath as e:
+            raise CommandError(str(e))
+        if not resources:
+            raise CommandError('No resource given')
+        if len(resources) > 1:
+            raise CommandError("Can't edit multiple resources")
+        resource = resources[0]
+        if not isinstance(resource, Resource):
+            raise CommandError('%s is not a resource' %
+                               self.current_path(resource))
+        resource.fetch()
+        tree = {
+            str(resource.path): {
+                'level': 0,
+                'index': 1,
+                'len': 1,
+                'childs': OrderedDict(),
+                'parents': [],
+                'meta': str(resource.fq_name)
+            }
+        }
+        self._get_tree(resource, tree[str(resource.path)],
+                       reverse=reverse, parent=parent)
+        rows = self._get_rows(tree, [])
+        max_path_length = reduce(lambda a, r: len(r[0]) if len(r[0]) > a else a, rows, 0)
+        for path, fq_name in rows:
+            print path + ' ' * (max_path_length - len(path)) + '  ' + fq_name
 
 
 class ResourceCompleter(Completer):

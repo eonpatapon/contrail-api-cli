@@ -10,6 +10,7 @@ except ImportError:
 from keystoneclient.exceptions import HTTPError
 
 from .utils import FQName, Path, Observable, to_json
+from .exceptions import ResourceNotFound
 
 
 class ResourceEncoder(json.JSONEncoder):
@@ -378,6 +379,28 @@ class Resource(ResourceBase, UserDict):
             if attr.endswith(('back_refs', 'loadbalancer_members')):
                 for back_ref in value:
                     yield back_ref
+
+    @property
+    def refs(self):
+        """Return refs resources of the resource
+
+        @rtype: Resource generator
+        """
+        for attr, value in self.data.items():
+            if attr.endswith('refs') and not attr.endswith('back_refs'):
+                for ref in value:
+                    yield ref
+
+    @property
+    def parent(self):
+        """Return parent resource of the resource
+
+        @rtype: Resource
+        """
+        try:
+            return Resource(self['parent_type'], uuid=self['parent_uuid'])
+        except KeyError:
+            raise ResourceNotFound()
 
     def json(self):
         """Return JSON representation of the resource

@@ -11,6 +11,9 @@ from .exceptions import CommandError
 from . import commands
 
 
+logger = logging.getLogger(__name__)
+
+
 def get_subcommand_kwargs(mgr, name, namespace):
     """Get subcommand options from global parsed
     arguments.
@@ -65,6 +68,7 @@ def main():
     commands.make_api_session(options)
     try:
         subcmd, subcmd_kwargs = get_subcommand_kwargs(mgr, options.subcmd, options)
+        logger.debug('Calling %s with %s' % (subcmd, subcmd_kwargs))
         result = subcmd(**subcmd_kwargs)
     except (HttpError, ClientException, CommandError) as e:
         print(e)
