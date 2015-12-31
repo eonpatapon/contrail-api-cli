@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 import base64
 from six import b
 

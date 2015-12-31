@@ -1,15 +1,16 @@
+from __future__ import unicode_literals
 import json
 import os.path
 import hashlib
 from uuid import UUID
 from pathlib import PurePosixPath
-from six import string_types
-from collections import Sequence
+from six import string_types, text_type, b
+import collections
 
 from prompt_toolkit import prompt
 
 
-class FQName(Sequence):
+class FQName(collections.Sequence):
 
     def __init__(self, init=None):
         if isinstance(init, string_types):
@@ -33,6 +34,9 @@ class FQName(Sequence):
 
     def __str__(self):
         return ':'.join(self._data)
+
+    def __bytes__(self):
+        return b(':'.join(self._data))
 
     def __lt__(self, b):
         return len(str(self)) < len(str(b))
@@ -141,7 +145,7 @@ class classproperty(object):
 
 def continue_prompt(message=""):
     answer = False
-    message = message + u"\n'Yes' or 'No' to continue: "
+    message = message + "\n'Yes' or 'No' to continue: "
     while answer not in ('Yes', 'No'):
         answer = prompt(message)
         if answer == "Yes":
@@ -172,3 +176,13 @@ def md5(fname):
         for chunk in iter(lambda: f.read(4096), b""):
             hash.update(chunk)
     return hash.hexdigest()
+
+
+def to_unicode(value):
+    if isinstance(value, string_types):
+        return text_type(value)
+    elif isinstance(value, collections.Mapping):
+        return dict(map(to_unicode, list(value.items())))
+    elif isinstance(value, collections.Iterable):
+        return type(value)(map(to_unicode, value))
+    return value

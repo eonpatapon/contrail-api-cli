@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 import sys
 import unittest
 import uuid
@@ -10,6 +11,7 @@ try:
 except ImportError:
     from io import StringIO
 from pkg_resources import EntryPoint
+
 from stevedore.extension import Extension
 
 import contrail_api_cli.commands as cmds
@@ -387,7 +389,7 @@ class TestCommands(unittest.TestCase):
         self.mgr.get('shell')(parent_uuid='6b6a7f47-807e-4c39-8ac6-3adcf2f5498f')
         sys.stdout = old_stdout
         result = out.getvalue().strip()
-        self.assertEqual(result, "piped\nnot piped")
+        self.assertEqual(result, "%s\n%s" % ('piped', 'not piped'))
 
 if __name__ == '__main__':
     unittest.main()

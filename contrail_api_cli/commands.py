@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
 import copy
 import os
 import sys
@@ -12,7 +13,7 @@ import abc
 import weakref
 from fnmatch import fnmatch
 from collections import OrderedDict
-from six import b, add_metaclass
+from six import b, add_metaclass, text_type
 try:
     from functools import reduce
 except ImportError:
@@ -478,20 +479,20 @@ class Tree(Command):
 
     def _get_rows(self, tree, rows):
         for idx, (path, infos) in enumerate(tree.items()):
-            col = u''
+            col = ''
 
             for parent in infos['parents'][1:]:
                 if parent == 1:
-                    col += u'│   '
+                    col += '│   '
                 else:
-                    col += u'    '
+                    col += '    '
 
             if infos['level'] == 0:
-                col += u''
+                col += ''
             elif infos['index'] == infos['len']:
-                col += u'└── '
+                col += '└── '
             else:
-                col += u'├── '
+                col += '├── '
 
             col += path
             rows.append((col, infos['meta']))
@@ -517,8 +518,11 @@ class Tree(Command):
                            reverse=reverse, parent=parent)
             rows = self._get_rows(tree, [])
             max_path_length = reduce(lambda a, r: len(r[0]) if len(r[0]) > a else a, rows, 0)
-            for path, fq_name in rows:
-                print(path + ' ' * (max_path_length - len(path)) + '  ' + fq_name)
+
+            def format_row(path, fq_name):
+                return path + ' ' * (max_path_length - len(path)) + '  ' + fq_name
+
+            return "\n".join([format_row(p, f) for p, f in rows])
 
 
 class ResourceCompleter(Completer):
@@ -679,14 +683,18 @@ class Set(ShellCommand):
         if option and value:
             if option == 'current_path':
                 value = Path(value)
+            if value == 'None':
+                value = None
             setattr(ShellContext, option, value)
         elif option:
-            print(getattr(ShellContext, option))
+            return text_type(getattr(ShellContext, option))
         else:
+            output = []
             for option, value in inspect.getmembers(ShellContext,
                                                     lambda a: not(inspect.isroutine(a))):
                 if not option.startswith('__'):
-                    print('%s = %s' % (option, value))
+                    output.append('%s = %s' % (option, value))
+            return "\n".join(output)
 
 
 class Cd(ShellCommand):

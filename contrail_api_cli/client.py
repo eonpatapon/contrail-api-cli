@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 import platform
 from argparse import Namespace
 from functools import wraps

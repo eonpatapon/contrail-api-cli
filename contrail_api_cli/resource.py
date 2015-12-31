@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 import json
 from uuid import UUID
 from six import string_types
