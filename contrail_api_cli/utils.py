@@ -26,13 +26,19 @@ class FQName(Sequence):
         return len(self._data)
 
     def __eq__(self, other):
-        return self._data == other
+        return self._data == other._data
 
     def __repr__(self):
         return repr(self._data)
 
     def __str__(self):
         return ':'.join(self._data)
+
+    def __lt__(self, b):
+        return len(str(self)) < len(str(b))
+
+    def __gt__(self, b):
+        return not self.__lt__(b)
 
 
 class Observable(object):

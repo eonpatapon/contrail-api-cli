@@ -107,7 +107,7 @@ class Collection(ResourceBase, UserList):
     @property
     def fq_name(self):
         # Needed for resource completion
-        return ''
+        return FQName()
 
     def __len__(self):
         """Return the number of items of the collection
@@ -268,6 +268,13 @@ class Resource(ResourceBase, UserDict):
         if self.path and self.path.is_resource and fetch:
             self.fetch(recursive=recursive)
         self.emit('created', self)
+
+    def __hash__(self):
+        if self.uuid:
+            return hash((self.type, self.uuid))
+        elif self.fq_name:
+            return hash((self.type, self.fq_name))
+        return hash(id(self))
 
     @property
     def href(self):

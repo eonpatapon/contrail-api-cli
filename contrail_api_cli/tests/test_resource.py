@@ -6,7 +6,7 @@ except ImportError:
 
 from keystoneclient.exceptions import HttpError
 
-from contrail_api_cli.utils import Path
+from contrail_api_cli.utils import Path, FQName
 from contrail_api_cli.resource import RootCollection, Collection, Resource
 from contrail_api_cli.client import ContrailAPISession
 
@@ -65,7 +65,7 @@ class TestResource(unittest.TestCase):
         collection = Collection('instance-ip', fetch=True)
 
         self.assertTrue(collection.href.endswith('s'))
-        self.assertEqual(collection.fq_name, '')
+        self.assertEqual(collection.fq_name, FQName())
 
         expected_collection = Collection('instance-ip', path=Path("/instance-ip"))
         expected_collection.data = [
