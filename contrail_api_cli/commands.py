@@ -13,6 +13,10 @@ import weakref
 from fnmatch import fnmatch
 from collections import OrderedDict
 from six import b, add_metaclass
+try:
+    from functools import reduce
+except ImportError:
+    pass
 
 from keystoneclient.exceptions import ClientException, HttpError
 
