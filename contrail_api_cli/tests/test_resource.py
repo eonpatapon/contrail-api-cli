@@ -85,7 +85,8 @@ class TestResource(unittest.TestCase):
     @mock.patch('contrail_api_cli.resource.ResourceBase.session')
     def test_resource_str(self, mock_session):
         r = Resource('foo', key='foo', key2='bar')
-        self.assertEqual(str(r), str({'key': 'foo', 'key2': 'bar'}))
+        self.assertTrue(str(r) in (str({'key': 'foo', 'key2': 'bar'}),
+                                   str({'key2': 'bar', 'key': 'foo'})))
 
     @mock.patch('contrail_api_cli.resource.ResourceBase.session')
     def test_resource_fqname(self, mock_session):
