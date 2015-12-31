@@ -209,7 +209,7 @@ class TestCommands(unittest.TestCase):
         fq_name = 'default-domain:foo'
         ShellContext.current_path = Path('foo')
         mock_session.fqname_to_id.side_effect = client.HTTPError()
-        with self.assertRaises(cmds.CommandError) as e:
+        with self.assertRaises(cmds.BadPath) as e:
             self.mgr.get('ls')(paths=[fq_name])
             self.assertEqual("%s doesn't exists" % fq_name, str(e))
         self.assertFalse(mock_session.get_json.called)
@@ -231,9 +231,8 @@ class TestCommands(unittest.TestCase):
         self.assertEqual(result, '3')
 
         ShellContext.current_path = Path('/foo/%s' % uuid.uuid4())
-        with self.assertRaises(cmds.CommandError) as e:
+        with self.assertRaises(cmds.NoResourceFound):
             self.mgr.get('count')()
-            self.assertEqual(". is not a collection", str(e))
 
     @mock.patch('contrail_api_cli.resource.ResourceBase.session')
     @mock.patch('contrail_api_cli.commands.continue_prompt')

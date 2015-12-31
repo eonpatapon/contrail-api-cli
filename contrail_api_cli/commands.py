@@ -33,7 +33,7 @@ from .resource import Collection, RootCollection
 from .client import ContrailAPISession
 from .utils import Path, classproperty, continue_prompt, md5
 from .style import PromptStyle
-from .exceptions import CommandError, CommandNotFound, BadPath, ResourceNotFound
+from .exceptions import CommandError, CommandNotFound, BadPath, ResourceNotFound, NoResourceFound
 
 
 class ArgumentParser(argparse.ArgumentParser):
@@ -61,7 +61,7 @@ def experimental(cls):
     return cls
 
 
-def expand_paths(paths=None, filters=None, parent_uuid=None):
+def expand_paths(paths=None, predicate=None, filters=None, parent_uuid=None):
     """Return an unique list of resources or collections from a list of paths.
     Supports fq_name and wilcards resolution.
 
@@ -97,6 +97,8 @@ def expand_paths(paths=None, filters=None, parent_uuid=None):
                                  filters=filters,
                                  parent_uuid=parent_uuid)
             for r in col:
+                if predicate and not predicate(r):
+                    continue
                 # list of paths to match against
                 paths = [r.path,
                          Path('/', r.type, str(r.fq_name))]
@@ -107,22 +109,34 @@ def expand_paths(paths=None, filters=None, parent_uuid=None):
                 r = Resource(path.base,
                              fq_name=path.name,
                              check_fq_name=True)
+                if predicate and not predicate(r):
+                    continue
                 result[r.path] = r
             except ValueError as e:
                 raise BadPath(str(e))
         else:
             if path.is_resource:
                 try:
-                    result[path] = Resource(path.base,
-                                            uuid=path.name,
-                                            check_uuid=True)
+                    r = Resource(path.base,
+                                 uuid=path.name,
+                                 check_uuid=True)
+                    if predicate and not predicate(r):
+                        continue
+                    result[path] = r
                 except ValueError as e:
                     raise BadPath(str(e))
             elif path.is_collection:
-                result[path] = Collection(path.base,
-                                          filters=filters,
-                                          parent_uuid=parent_uuid)
-    return list(result.values())
+                c = Collection(path.base,
+                               filters=filters,
+                               parent_uuid=parent_uuid)
+                if predicate and not predicate(c):
+                    continue
+                result[path] = c
+
+    paths = list(result.values())
+    if not paths:
+        raise NoResourceFound()
+    return paths
 
 
 @add_metaclass(abc.ABCMeta)
@@ -275,11 +289,8 @@ class Ls(Command):
             filters = [self._get_filter(p) for p in filters]
         if not parent_uuid:
             parent_uuid = ShellContext.parent_uuid
-        try:
-            resources = expand_paths(paths, filters=filters,
-                                     parent_uuid=parent_uuid)
-        except BadPath as e:
-            raise CommandError(str(e))
+        resources = expand_paths(paths, filters=filters,
+                                 parent_uuid=parent_uuid)
         result = []
         for r in resources:
             if isinstance(r, Collection):
@@ -309,16 +320,10 @@ class Cat(Command):
                          Terminal256Formatter(bg="dark"))
 
     def __call__(self, paths=None):
-        try:
-            resources = expand_paths(paths)
-        except BadPath as e:
-            raise CommandError(str(e))
-        if not resources:
-            raise CommandError('No resource given')
+        resources = expand_paths(paths,
+                                 predicate=lambda r: isinstance(r, Resource))
         result = []
         for r in resources:
-            if not isinstance(r, Resource):
-                raise CommandError('%s is not a resource' % self.current_path(r))
             r.fetch()
             json_data = r.json()
             if self.is_piped:
@@ -333,17 +338,10 @@ class Count(Command):
     paths = Arg(nargs="*", help="Resource path(s)")
 
     def __call__(self, paths=None):
-        try:
-            collections = expand_paths(paths)
-        except BadPath as e:
-            raise CommandError(str(e))
-        if not collections:
-            raise CommandError('No collection given')
+        collections = expand_paths(paths,
+                                   predicate=lambda r: isinstance(r, Collection))
         result = []
         for c in collections:
-            if not isinstance(c, Collection):
-                raise CommandError('%s is not a collection' %
-                                   self.current_path(c))
             result.append(str(len(c)))
         return "\n".join(result)
 
@@ -371,15 +369,8 @@ class Rm(Command):
         return back_refs
 
     def __call__(self, paths=None, recursive=False, force=False):
-        try:
-            resources = expand_paths(paths)
-        except BadPath as e:
-            raise CommandError(str(e))
-        for r in resources:
-            if not isinstance(r, Resource):
-                raise CommandError('%s is not a resource' % self.current_path(r))
-        if not resources:
-            raise CommandError("No resource to delete")
+        resources = expand_paths(paths,
+                                 predicate=lambda r: isinstance(r, Resource))
         if recursive:
             resources = self._get_back_refs(resources, [])
         if resources:
@@ -405,18 +396,11 @@ class Edit(Command):
     aliases = ['vim', 'emacs', 'nano']
 
     def __call__(self, path='', template=False):
-        try:
-            resources = expand_paths([path])
-        except BadPath as e:
-            raise CommandError(str(e))
-        if not resources:
-            raise CommandError('No resource given')
+        resources = expand_paths(path,
+                                 predicate=lambda r: isinstance(r, Resource))
         if len(resources) > 1:
             raise CommandError("Can't edit multiple resources")
         resource = resources[0]
-        if not isinstance(resource, Resource):
-            raise CommandError('%s is not a resource' %
-                               self.current_path(resource))
         # don't show childs or back_refs
         resource.fetch(exclude_children=True, exclude_back_refs=True)
         resource.pop('id_perms')
@@ -451,7 +435,8 @@ class Edit(Command):
 
 class Tree(Command):
     description = "Tree of resource references"
-    path = Arg(nargs="?", help="Resource path", default='')
+    paths = Arg(nargs="*", help="Resource path(s)",
+                metavar='path')
     reverse = Arg('-r', '--reverse',
                   help="Show tree of back references",
                   action="store_true", default=False)
@@ -509,36 +494,27 @@ class Tree(Command):
             self._get_rows(infos['childs'], rows)
         return rows
 
-    def __call__(self, path=None, reverse=False, parent=False):
-        try:
-            resources = expand_paths([path])
-        except BadPath as e:
-            raise CommandError(str(e))
-        if not resources:
-            raise CommandError('No resource given')
-        if len(resources) > 1:
-            raise CommandError("Can't edit multiple resources")
-        resource = resources[0]
-        if not isinstance(resource, Resource):
-            raise CommandError('%s is not a resource' %
-                               self.current_path(resource))
-        resource.fetch()
-        tree = {
-            str(resource.path): {
-                'level': 0,
-                'index': 1,
-                'len': 1,
-                'childs': OrderedDict(),
-                'parents': [],
-                'meta': str(resource.fq_name)
+    def __call__(self, paths=None, reverse=False, parent=False):
+        resources = expand_paths(paths,
+                                 predicate=lambda r: isinstance(r, Resource))
+        for resource in resources:
+            resource.fetch()
+            tree = {
+                str(resource.path): {
+                    'level': 0,
+                    'index': 1,
+                    'len': 1,
+                    'childs': OrderedDict(),
+                    'parents': [],
+                    'meta': str(resource.fq_name)
+                }
             }
-        }
-        self._get_tree(resource, tree[str(resource.path)],
-                       reverse=reverse, parent=parent)
-        rows = self._get_rows(tree, [])
-        max_path_length = reduce(lambda a, r: len(r[0]) if len(r[0]) > a else a, rows, 0)
-        for path, fq_name in rows:
-            print path + ' ' * (max_path_length - len(path)) + '  ' + fq_name
+            self._get_tree(resource, tree[str(resource.path)],
+                           reverse=reverse, parent=parent)
+            rows = self._get_rows(tree, [])
+            max_path_length = reduce(lambda a, r: len(r[0]) if len(r[0]) > a else a, rows, 0)
+            for path, fq_name in rows:
+                print(path + ' ' * (max_path_length - len(path)) + '  ' + fq_name)
 
 
 class ResourceCompleter(Completer):
@@ -668,7 +644,8 @@ class Shell(Command):
                 continue
             try:
                 result = cmd.parse_and_call(*args)
-            except (HttpError, ClientException, CommandError) as e:
+            except (HttpError, ClientException, CommandError,
+                    ResourceNotFound, NoResourceFound, BadPath) as e:
                 print(e)
                 continue
             except KeyboardInterrupt:

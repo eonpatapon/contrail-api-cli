@@ -13,4 +13,17 @@ class BadPath(Exception):
 
 
 class ResourceNotFound(Exception):
-    pass
+
+    def __init__(self, uuid=None, fq_name=None):
+        super(Exception, self).__init__()
+        self.uuid = uuid
+        self.fq_name = fq_name
+
+    def __str__(self):
+        return "Resource %s not found" % self.uuid or self.fq_name
+
+
+class NoResourceFound(Exception):
+
+    def __str__(self):
+        return "No resource found"
