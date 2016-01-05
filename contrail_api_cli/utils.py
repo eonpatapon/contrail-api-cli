@@ -6,8 +6,12 @@ from uuid import UUID
 from pathlib import PurePosixPath
 from six import string_types, text_type, b
 import collections
+import logging
 
 from prompt_toolkit import prompt
+
+
+logger = logging.getLogger(__name__)
 
 
 class FQName(collections.Sequence):
@@ -52,6 +56,7 @@ class Observable(object):
 
     @classmethod
     def register(cls, event, callback):
+        logger.debug("registering %s to %s" % (event, callback))
         if not hasattr(cls, "observers"):
             cls.observers = {}
         if event not in cls.observers:
@@ -67,6 +72,7 @@ class Observable(object):
 
     @classmethod
     def emit(cls, event, data):
+        logger.debug("emiting event %s with %s" % (event, repr(data)))
         if not hasattr(cls, "observers"):
             cls.observers = {}
         [cbk(data)

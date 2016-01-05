@@ -10,7 +10,6 @@ import pipes
 import subprocess
 import json
 import abc
-import weakref
 from fnmatch import fnmatch
 from collections import OrderedDict
 from six import b, add_metaclass, text_type
@@ -33,7 +32,7 @@ from pygments.lexers import JsonLexer
 from pygments.formatters import Terminal256Formatter
 
 from .manager import CommandManager
-from .resource import Resource, ResourceBase
+from .resource import Resource
 from .resource import Collection, RootCollection
 from .client import ContrailAPISession
 from .utils import Path, classproperty, continue_prompt, md5
@@ -525,6 +524,11 @@ class Tree(Command):
             return "\n".join([format_row(p, f) for p, f in rows])
 
 
+class Actions:
+    STORE = 'STORE'
+    DELETE = 'DELETE'
+
+
 class ResourceCompleter(Completer):
     """Resource completer for the shell command.
 
@@ -537,28 +541,36 @@ class ResourceCompleter(Completer):
     def __init__(self):
         self.resources = {}
         self.trie = {}
-        ResourceBase.register('created', self._add_resource)
-        ResourceBase.register('deleted', self._del_resource)
+        Resource.register('created', self._add_resource)
+        Resource.register('deleted', self._del_resource)
+        Collection.register('created', self._add_resource)
+        Collection.register('deleted', self._del_resource)
 
-    def _store_in_trie(self, value, resource):
+    def _action_in_trie(self, value, path, action):
         v = ""
         for c in value:
             v += c
             if v not in self.trie:
-                self.trie[v] = weakref.WeakSet()
-            self.trie[v].add(resource)
+                self.trie[v] = set()
+            if action == Actions.STORE:
+                self.trie[v].add(path)
+            elif action == Actions.DELETE:
+                self.trie[v].discard(path)
+
+    def _resource_action(self, resource, action):
+        if action == Actions.STORE:
+            self.resources[str(resource.path)] = resource
+        elif action == Actions.DELETE and str(resource.path) in self.resources:
+            self.resources.pop(str(resource.path))
+        path_str = str(resource.path)
+        for c in [path_str, resource.fq_name]:
+            self._action_in_trie(c, str(resource.path), action)
 
     def _add_resource(self, resource):
-        path_str = str(resource.path)
-        self.resources[path_str] = resource
-        for c in [path_str, resource.fq_name]:
-            self._store_in_trie(c, resource)
+        self._resource_action(resource, Actions.STORE)
 
     def _del_resource(self, resource):
-        try:
-            del self.resources[str(resource.path)]
-        except IndexError:
-            pass
+        self._resource_action(resource, Actions.DELETE)
 
     def _sort_results(self, resource):
         return (resource.type, resource.fq_name, len(str(resource.path)))
@@ -577,7 +589,9 @@ class ResourceCompleter(Completer):
         if not searches:
             return
 
-        for res in sorted(self.trie[searches[0]], key=self._sort_results):
+        resources = [self.resources[p] for p in self.trie[searches[0]]]
+
+        for res in sorted(resources, key=self._sort_results):
             rel_path = str(res.path.relative_to(ShellContext.current_path))
             if rel_path in ('.', '/', ''):
                 continue
