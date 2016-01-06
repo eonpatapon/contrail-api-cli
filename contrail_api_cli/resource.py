@@ -35,10 +35,41 @@ class ResourceBase(Observable):
         return super(ResourceBase, cls).__new__(cls, *args, **kwargs)
 
     def __repr__(self):
-        try:
-            return repr(self.data)
-        except AttributeError:
-            return self.__class__.__name__
+        return '%s(%s)' % (self.__class__.__name__, str(self.path))
+
+    def __hash__(self):
+        if self.uuid:
+            ident = (self.type, self.uuid)
+        else:
+            ident = (self.type,)
+        return hash(ident)
+
+    @property
+    def uuid(self):
+        return ''
+
+    @property
+    def fq_name(self):
+        return FQName()
+
+    @property
+    def path(self):
+        """Return Path of the resource
+
+        @rtype: Path
+        """
+        return Path("/") / self.type / self.uuid
+
+    @property
+    def href(self):
+        """Return URL of the resource
+
+        @rtype: str
+        """
+        url = self.session.base_url + str(self.path)
+        if self.path.is_collection and not self.path.is_root:
+            return url + 's'
+        return url
 
 
 class Collection(ResourceBase, UserList):
@@ -82,33 +113,6 @@ class Collection(ResourceBase, UserList):
         if fetch:
             self.fetch(recursive=recursive)
         self.emit('created', self)
-
-    def __hash__(self):
-        return hash(self.type)
-
-    @property
-    def path(self):
-        """Return Path of the resource
-
-        @rtype: Path
-        """
-        return Path('/') / self.type
-
-    @property
-    def href(self):
-        """Return collection URL
-
-        @rtype: str
-        """
-        url = self.session.base_url + str(self.path)
-        if self.type:
-            url = url + 's'
-        return url
-
-    @property
-    def fq_name(self):
-        # Needed for resource completion
-        return FQName()
 
     def __len__(self):
         """Return the number of items of the collection
@@ -270,41 +274,13 @@ class Resource(ResourceBase, UserDict):
             self.fetch(recursive=recursive)
         self.emit('created', self)
 
-    def __hash__(self):
-        if self.uuid:
-            return hash((self.type, self.uuid))
-        elif self.fq_name:
-            return hash((self.type, self.fq_name))
-        return hash(id(self))
-
-    @property
-    def href(self):
-        """Return URL of the resource
-
-        @rtype: str
-        """
-        if self.get('href') is not None:
-            return self['href']
-        return self.session.base_url + str(self.path)
-
-    @property
-    def path(self):
-        """Return Path of the resource
-
-        @rtype: Path
-        """
-        p = Path("/") / self.type
-        if self.uuid:
-            return p / self.uuid
-        return p
-
     @property
     def uuid(self):
         """Return UUID of the resource
 
-        @rtype: v4UUID str | None
+        @rtype: str
         """
-        return self.get("uuid")
+        return self.get('uuid', super(Resource, self).uuid)
 
     @property
     def fq_name(self):
@@ -312,7 +288,7 @@ class Resource(ResourceBase, UserDict):
 
         @rtype: FQName
         """
-        return self.get('fq_name', FQName())
+        return self.get('fq_name', super(Resource, self).fq_name)
 
     def save(self):
         """Save the resource to the API server

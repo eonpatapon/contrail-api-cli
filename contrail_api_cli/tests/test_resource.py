@@ -21,6 +21,30 @@ class TestResource(unittest.TestCase):
         self.maxDiff = None
 
     @mock.patch('contrail_api_cli.resource.ResourceBase.session')
+    def test_resource_base(self, mock_session):
+        mock_session.configure_mock(base_url=BASE)
+
+        c = RootCollection()
+        self.assertEqual(c.uuid, '')
+        self.assertEqual(c.fq_name, FQName())
+        self.assertEqual(c.href, BASE + '/')
+
+        c = Collection('foo')
+        self.assertEqual(c.uuid, '')
+        self.assertEqual(c.fq_name, FQName())
+        self.assertEqual(c.href, BASE + '/foos')
+
+        r = Resource('foo', uuid='x')
+        self.assertEqual(r.uuid, 'x')
+        self.assertEqual(r.fq_name, FQName())
+        self.assertEqual(r.href, BASE + '/foo/x')
+
+        r = Resource('foo')
+        self.assertEqual(r.uuid, '')
+        self.assertEqual(r.fq_name, FQName())
+        self.assertEqual(r.href, BASE + '/foos')
+
+    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
     def test_root_collection(self, mock_session):
         mock_session.configure_mock(base_url=BASE)
         mock_session.get_json.return_value = {
