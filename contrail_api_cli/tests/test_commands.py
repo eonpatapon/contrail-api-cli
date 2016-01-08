@@ -2,14 +2,11 @@ from __future__ import unicode_literals
 import sys
 import unittest
 import uuid
+import io
 try:
     import mock
 except ImportError:
     import unittest.mock as mock
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
 from pkg_resources import EntryPoint
 
 from stevedore.extension import Extension
@@ -379,7 +376,7 @@ class TestCommands(unittest.TestCase):
     @mock.patch('contrail_api_cli.commands.prompt')
     def test_pipes(self, mock_prompt, mock_session):
         old_stdout = sys.stdout
-        out = StringIO()
+        out = io.BytesIO()
         sys.stdout = out
         mock_prompt.side_effect = [
             "cmd | grep piped",
@@ -388,8 +385,8 @@ class TestCommands(unittest.TestCase):
         ]
         self.mgr.get('shell')(parent_uuid='6b6a7f47-807e-4c39-8ac6-3adcf2f5498f')
         sys.stdout = old_stdout
-        result = out.getvalue().strip()
-        self.assertEqual(result, "%s\n%s" % ('piped', 'not piped'))
+        result = out.getvalue()
+        self.assertEqual(result, b'piped\nnot piped\n')
 
 if __name__ == '__main__':
     unittest.main()

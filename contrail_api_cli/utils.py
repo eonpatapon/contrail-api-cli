@@ -195,19 +195,28 @@ def to_unicode(value):
     return value
 
 
-def printo(msg):
-    try:
-        encoding = sys.stdout.encoding
-    except:
-        encoding = None
+def printo(msg, encoding=None, errors='replace'):
+    """Write msg on stdout. If no encoding is specified
+    the detected encoding of stdout is used. If the encoding
+    can't encode some chars they are replaced by '?'
+
+    @param msg: message
+    @type msg: unicode on python2 | str on python3
+    """
+    if encoding is None:
+        try:
+            encoding = sys.stdout.encoding
+        except:
+            encoding = None
+    # Fallback to ascii if no encoding is found
     if encoding is None:
         encoding = 'ascii'
     # https://docs.python.org/3/library/sys.html#sys.stdout
+    # write in the binary buffer directly in python3
     if hasattr(sys.stdout, 'buffer'):
         stdout = sys.stdout.buffer
-        stdout.write(msg.encode(encoding, errors='replace') + b("\n"))
-    # StringIO has no buffer attribute and expect str and not bytes
     else:
         stdout = sys.stdout
-        stdout.write(msg + "\n")
+    stdout.write(msg.encode(encoding, errors=errors))
+    stdout.write(b'\n')
     stdout.flush()
