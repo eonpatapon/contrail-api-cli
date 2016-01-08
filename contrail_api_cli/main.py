@@ -9,6 +9,7 @@ from keystoneclient.exceptions import ClientException, HttpError
 
 from .manager import CommandManager
 from .exceptions import CommandError, ResourceNotFound, NoResourceFound, BadPath
+from .utils import printo
 from . import commands
 
 
@@ -80,7 +81,7 @@ def main():
         pass
     else:
         if result:
-            print(result)
+            printo(result)
 
 
 if __name__ == "__main__":

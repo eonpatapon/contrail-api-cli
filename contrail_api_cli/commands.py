@@ -35,7 +35,7 @@ from .manager import CommandManager
 from .resource import Resource
 from .resource import Collection, RootCollection
 from .client import ContrailAPISession
-from .utils import Path, classproperty, continue_prompt, md5
+from .utils import Path, classproperty, continue_prompt, md5, printo
 from .style import PromptStyle
 from .exceptions import CommandError, CommandNotFound, BadPath, ResourceNotFound, NoResourceFound
 
@@ -681,9 +681,9 @@ class Shell(Command):
                     t = tempfile.NamedTemporaryFile('r')
                     with p.open(t.name, 'w') as f:
                         f.write(result)
-                    print(t.read().strip())
+                    printo(t.read().strip())
                 else:
-                    print(result)
+                    printo(result)
 
 
 class Set(ShellCommand):

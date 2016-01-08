@@ -1,4 +1,5 @@
 from __future__ import unicode_literals
+import sys
 import json
 import os.path
 import hashlib
@@ -192,3 +193,21 @@ def to_unicode(value):
     elif isinstance(value, collections.Iterable):
         return type(value)(map(to_unicode, value))
     return value
+
+
+def printo(msg):
+    try:
+        encoding = sys.stdout.encoding
+    except:
+        encoding = None
+    if encoding is None:
+        encoding = 'ascii'
+    # https://docs.python.org/3/library/sys.html#sys.stdout
+    if hasattr(sys.stdout, 'buffer'):
+        stdout = sys.stdout.buffer
+        stdout.write(msg.encode(encoding, errors='replace') + b("\n"))
+    # StringIO has no buffer attribute and expect str and not bytes
+    else:
+        stdout = sys.stdout
+        stdout.write(msg + "\n")
+    stdout.flush()
