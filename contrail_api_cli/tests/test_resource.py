@@ -1,5 +1,6 @@
 from __future__ import unicode_literals
 import unittest
+import json
 try:
     import mock
 except ImportError:
@@ -166,18 +167,22 @@ class TestResource(unittest.TestCase):
     def test_resource_fqname_validation(self, mock_session):
         # bind original method to mock_session
         mock_session.fqname_to_id = ContrailAPISession.fqname_to_id.__get__(mock_session)
+        mock_session.post_json = ContrailAPISession.post_json.__get__(mock_session)
         mock_session.make_url = ContrailAPISession.make_url.__get__(mock_session)
 
         # called by fqname_to_id
-        def post(url, json):
-            if json['type'] == "foo":
-                return {
+        def post(url, data=None, headers=None):
+            data = json.loads(data)
+            result = mock.Mock()
+            if data['type'] == "foo":
+                result.json.return_value = {
                     "uuid": "ec1afeaa-8930-43b0-a60a-939f23a50724"
                 }
-            if json['type'] == "bar":
+                return result
+            if data['type'] == "bar":
                 raise HttpError()
 
-        mock_session.post_json.side_effect = post
+        mock_session.post.side_effect = post
         r = Resource('foo', fq_name='domain:foo:uuid', check_fq_name=True)
         self.assertEqual(r.uuid, 'ec1afeaa-8930-43b0-a60a-939f23a50724')
         self.assertEqual(r.path, Path('/foo/ec1afeaa-8930-43b0-a60a-939f23a50724'))

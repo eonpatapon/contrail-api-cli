@@ -133,7 +133,7 @@ class ContrailAPISession(Session):
         """
         data = {
             "type": type,
-            "fq_name": fq_name
+            "fq_name": list(fq_name)
         }
         return self.post_json(self.make_url("/fqname-to-id"), data)["uuid"]
 
