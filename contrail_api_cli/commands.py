@@ -77,6 +77,8 @@ def expand_paths(paths=None, predicate=None, filters=None, parent_uuid=None):
     @param paths: list of paths relative to the current path
                   that may contain wildcards (*, ?) or fq_names
     @type paths: [str]
+    @param predicate: function to filter found resources
+    @type predicate: f(resource) -> bool
     @param filters: list of filters for Collections
     @type filters: [(name, value), ...]
     @rtype: [Resource|Collection]
