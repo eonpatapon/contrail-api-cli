@@ -3,6 +3,7 @@ import os
 import sys
 import argparse
 import logging
+from six import text_type
 
 from keystoneclient import session as ksession, auth
 from keystoneclient.exceptions import ClientException, HttpError
@@ -74,7 +75,7 @@ def main():
         result = subcmd(**subcmd_kwargs)
     except (HttpError, ClientException, CommandError,
             ResourceNotFound, NoResourceFound, BadPath) as e:
-        print(e)
+        printo(text_type(e))
     except KeyboardInterrupt:
         pass
     except EOFError:

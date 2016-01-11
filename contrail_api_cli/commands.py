@@ -582,7 +582,7 @@ class ResourceCompleter(Completer):
 
         searches = [
             # full path search
-            str(Path(ShellContext.current_path, path_before_cursor)),
+            text_type(Path(ShellContext.current_path, path_before_cursor)),
             # fq_name search
             path_before_cursor
         ]
@@ -664,13 +664,13 @@ class Shell(Command):
             except IndexError:
                 continue
             except CommandNotFound as e:
-                print(e)
+                printo(text_type(e))
                 continue
             try:
                 result = cmd.parse_and_call(*args)
             except (HttpError, ClientException, CommandError,
                     ResourceNotFound, NoResourceFound, BadPath) as e:
-                print(e)
+                printo(text_type(e))
                 continue
             except KeyboardInterrupt:
                 continue
