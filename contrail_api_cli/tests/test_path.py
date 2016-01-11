@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals
 import unittest
 from uuid import uuid4
 
@@ -34,6 +36,10 @@ class TestPath(unittest.TestCase):
         self.assertEqual(p.base, "foo")
         p = Path("/")
         self.assertEqual(p.base, "")
+
+    def test_unicode(self):
+        p = Path("/éà")
+        self.assertEqual(p.base, "??")
 
 
 if __name__ == "__main__":

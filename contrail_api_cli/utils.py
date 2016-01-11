@@ -4,7 +4,7 @@ import json
 import os.path
 import hashlib
 from uuid import UUID
-from pathlib import PurePosixPath
+from pathlib import PurePosixPath, _PosixFlavour
 from six import string_types, text_type, b
 import collections
 import logging
@@ -93,7 +93,17 @@ class Singleton(type):
         return cls.instance
 
 
+class APIFlavour(_PosixFlavour):
+
+    def parse_parts(self, parts):
+        # Handle non ascii chars for python2
+        parts = [p.encode('ascii', errors='replace').decode('ascii')
+                 for p in parts]
+        return super(APIFlavour, self).parse_parts(parts)
+
+
 class Path(PurePosixPath):
+    _flavour = APIFlavour()
 
     @classmethod
     def _from_parsed_parts(cls, drv, root, parts, init=True):
