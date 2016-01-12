@@ -158,7 +158,13 @@ class BaseCommand(object):
 
     @classproperty
     def name(cls):
-        return cls.__name__.lower()
+        """Compute the name of the command from the class name
+
+        Tree -> tree
+        AddBGPRouter -> add-bgp-router
+        """
+        return reduce(lambda a, x: a + '-' + x if (x.isupper() and a and a[-1].islower()) else a + x,
+                      cls.__name__, '').lower()
 
     def current_path(self, resource):
         """Return current path for resource
