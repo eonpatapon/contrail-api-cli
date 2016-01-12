@@ -220,23 +220,26 @@ class RootCollection(Collection):
 class Resource(ResourceBase, UserDict):
     """Class for interacting with an API resource
 
-    r = Resource('virtual-network', uuid='4c45e89b-7780-4b78-8508-314fe04a7cbd', fetch=True)
+    r = Resource('virtual-network',
+                 uuid='4c45e89b-7780-4b78-8508-314fe04a7cbd',
+                 fetch=True)
     back_refs = list(r.back_refs)
     r['display_name'] = 'foo'
     r.save()
     r.delete()
     """
 
-    def __init__(self, type, fetch=False, check_uuid=False, check_fq_name=False, recursive=1, **kwargs):
+    def __init__(self, type, fetch=False, check_uuid=False,
+                 check_fq_name=False, recursive=1, **kwargs):
         """Base class for API resources
 
         @param type: type of the resource
         @type type: str
         @param fetch: immediately fetch resource from the server
         @type fetch: bool
-        @param check_uuid: check that uuid exists on the API (makes an extra call)
+        @param check_uuid: check that uuid exists on the API
         @type check_uuid: bool
-        @param check_fq_name: check that fq_name exists on the API (makes an extra call)
+        @param check_fq_name: check that fq_name exists on the API
         @type check_fq_name: bool
         @param recursive: level of recursion
         @param recursion: int
@@ -246,7 +249,8 @@ class Resource(ResourceBase, UserDict):
         @type uuid: v4UUID str
         Or:
         @param fq_name: fq name of the resource
-        @type fq_name: str (domain:project:identifier) or list ['domain', 'project', 'identifier']
+        @type fq_name: str (domain:project:identifier)
+                       or list ['domain', 'project', 'identifier']
 
         @raises ValueError: bad uuid or fq_name is given
         """

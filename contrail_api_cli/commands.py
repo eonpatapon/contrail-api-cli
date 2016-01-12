@@ -37,7 +37,8 @@ from .resource import Collection, RootCollection
 from .client import ContrailAPISession
 from .utils import Path, classproperty, continue_prompt, md5, printo
 from .style import PromptStyle
-from .exceptions import CommandError, CommandNotFound, BadPath, ResourceNotFound, NoResourceFound
+from .exceptions import CommandError, CommandNotFound, BadPath, \
+    ResourceNotFound, NoResourceFound
 
 
 class ArgumentParser(argparse.ArgumentParser):
@@ -524,7 +525,8 @@ class Tree(Command):
             self._get_tree(resource, tree[str(resource.path)],
                            reverse=reverse, parent=parent)
             rows = self._get_rows(tree, [])
-            max_path_length = reduce(lambda a, r: len(r[0]) if len(r[0]) > a else a, rows, 0)
+            max_path_length = reduce(lambda a, r: len(r[0]) if len(r[0]) > a else a,
+                                     rows, 0)
 
             def format_row(path, fq_name):
                 return path + ' ' * (max_path_length - len(path)) + '  ' + fq_name

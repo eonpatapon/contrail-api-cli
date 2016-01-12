@@ -108,7 +108,8 @@ class Path(PurePosixPath):
     @classmethod
     def _from_parsed_parts(cls, drv, root, parts, init=True):
         if parts:
-            parts = [root] + os.path.relpath(os.path.join(*parts), start=root).split(os.path.sep)
+            parts = [root] + os.path.relpath(os.path.join(*parts),
+                                             start=root).split(os.path.sep)
             parts = [p for p in parts if p not in (".", "")]
         return super(cls, Path)._from_parsed_parts(drv, root, parts, init)
 
