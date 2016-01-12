@@ -236,6 +236,8 @@ class Resource(ResourceBase, UserDict):
         @type fetch: bool
         @param check_uuid: check that uuid exists on the API (makes an extra call)
         @type check_uuid: bool
+        @param check_fq_name: check that fq_name exists on the API (makes an extra call)
+        @type check_fq_name: bool
         @param recursive: level of recursion
         @param recursion: int
 
