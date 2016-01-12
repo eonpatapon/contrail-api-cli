@@ -9,7 +9,7 @@ except ImportError:
 from keystoneclient.exceptions import HttpError
 
 from contrail_api_cli.utils import Path, FQName
-from contrail_api_cli.resource import RootCollection, Collection, Resource
+from contrail_api_cli.resource import RootCollection, Collection, Resource, ResourceBase, ResourceEncoder
 from contrail_api_cli.client import ContrailAPISession
 
 
@@ -218,17 +218,25 @@ class TestResource(unittest.TestCase):
             r = Resource('bar', uuid='d6e9fae3-628c-448c-bfc5-849d82a9a016', check_uuid=True)
             self.assertEqual(str(e), "d6e9fae3-628c-448c-bfc5-849d82a9a016 doesn't exists")
 
-    # @mock.patch('contrail_api_cli.client.Session')
-    # @mock.patch('contrail_api_cli.resource.ResourceBase.session')
-    # def test_resource_save(self, mock_session, mock_ksession):
-        # mock_session.configure_mock(base_url=BASE)
-        # mock_session.post_json = ContrailAPISession.post.__get__(mock_session)
-        # mock_session.make_url = ContrailAPISession.make_url.__get__(mock_session)
-        # r = Resource('foo')
-        # r['foo'] = 'bar'
-        # r.save()
-        # mock_session.post_json.assert_called_with(BASE + '/foo', data={'foo': 'bar', 'path': Path('/foo')})
-        # print(mock_ksession.post.mock_calls)
+    @mock.patch('contrail_api_cli.client.Session')
+    def test_resource_save(self, mock_session):
+        mock_session.configure_mock(base_url=BASE)
+        ResourceBase.session = mock_session
+        r = Resource('foo')
+        r['foo'] = 'bar'
+        r.save()
+        mock_session.post_json.assert_called_with(BASE + '/foos',
+                                                  {'foo': {'foo': 'bar'}},
+                                                  cls=ResourceEncoder)
+        r = Resource('foo', uuid='4c7dc905-3322-49c8-be5d-d4adb5571d41')
+        r['foo'] = 'bar'
+        r.save()
+        mock_session.put_json.assert_called_with(BASE + '/foo/4c7dc905-3322-49c8-be5d-d4adb5571d41',
+                                                 {'foo': {
+                                                     'foo': 'bar',
+                                                     'uuid': '4c7dc905-3322-49c8-be5d-d4adb5571d41'
+                                                 }},
+                                                 cls=ResourceEncoder)
 
 
 class TestCollection(unittest.TestCase):

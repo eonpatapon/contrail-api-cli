@@ -303,7 +303,7 @@ class Resource(ResourceBase, UserDict):
         If uuid is present the resource is updated.
         """
         if self.path.is_collection:
-            data = self.session.post_json(self.href + 's',
+            data = self.session.post_json(self.href,
                                           {self.type: self.data},
                                           cls=ResourceEncoder)
         else:
