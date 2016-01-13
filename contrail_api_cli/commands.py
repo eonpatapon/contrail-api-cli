@@ -151,21 +151,10 @@ class BaseCommand(object):
     description = ""
     aliases = []
 
-    def __init__(self):
-        self.parser = ArgumentParser(prog=self.name,
-                                     description=self.description)
+    def __init__(self, name):
+        self.parser = ArgumentParser(prog=name, description=self.description)
         self.add_arguments_to_parser(self.parser)
         self._is_piped = False
-
-    @classproperty
-    def name(cls):
-        """Compute the name of the command from the class name
-
-        Tree -> tree
-        AddBGPRouter -> add-bgp-router
-        """
-        return reduce(lambda a, x: a + '-' + x if (x.isupper() and a and a[-1].islower()) else a + x,
-                      cls.__name__, '').lower()
 
     def current_path(self, resource):
         """Return current path for resource
@@ -742,7 +731,7 @@ class Help(ShellCommand):
     def __call__(self):
         commands = CommandManager()
         return "Available commands: %s" % " ".join(
-            [c.name for c in commands.list])
+            [name for name, cmd in commands.list])
 
 
 def make_api_session(options):

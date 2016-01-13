@@ -15,8 +15,14 @@ class CommandManager(object):
         """
         self.mgr = extension.ExtensionManager(namespace=namespace,
                                               verify_requirements=True,
-                                              on_load_failure_callback=self._on_failure,
-                                              invoke_on_load=True)
+                                              on_load_failure_callback=self._on_failure)
+        for ext in self.mgr.extensions:
+            try:
+                obj = ext.plugin(ext.name)
+            except Exception as err:
+                self._on_failure(self, ext, err)
+                obj = None
+            ext.obj = obj
 
     def _on_failure(self, mgr, entrypoint, exc):
         print('Cannot load command %s: %s' % (entrypoint.name,
@@ -31,13 +37,15 @@ class CommandManager(object):
         """
         for ext in self.mgr.extensions:
             cmd = ext.obj
-            if name in [cmd.name] + cmd.aliases:
+            if name in [ext.name] + cmd.aliases:
                 return cmd
         raise CommandNotFound('Command %s not found. Type help for all commands' % name)
 
     @property
     def list(self):
         """Generator of command instances
+
+        @rtype: (name, Command)
         """
         for ext in self.mgr.extensions:
-            yield ext.obj
+            yield (ext.name, ext.obj)

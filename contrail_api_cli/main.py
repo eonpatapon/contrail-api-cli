@@ -60,10 +60,10 @@ def main():
     auth.register_argparse_arguments(parser, argv, default="http")
 
     subparsers = parser.add_subparsers(dest='subcmd')
-    for cmd in mgr.list:
+    for cmd_name, cmd in mgr.list:
         if not isinstance(cmd, commands.Command):
             continue
-        subparser = subparsers.add_parser(cmd.name, help=cmd.description)
+        subparser = subparsers.add_parser(cmd_name, help=cmd.description)
         cmd.add_arguments_to_parser(subparser)
 
     options = parser.parse_args()

@@ -37,7 +37,7 @@ class TestCommands(unittest.TestCase):
         self.mgr = cmds.CommandManager()
         ep = EntryPoint('cmd', 'contrail_api_cli.tests.test_commands', attrs=('Cmd',))
         cls = ep.load(require=False)
-        ext = Extension('cmd', ep, cls, cls())
+        ext = Extension('cmd', ep, cls, cls('cmd'))
         self.mgr.mgr.extensions.append(ext)
 
     def test_cd(self):
@@ -51,28 +51,6 @@ class TestCommands(unittest.TestCase):
         self.assertEqual(ShellContext.current_path, Path('/foo'))
         self.mgr.get('cd')('/')
         self.assertEqual(ShellContext.current_path, Path('/'))
-
-    def test_command_name(self):
-
-        class AddFooToBar(cmds.Command):
-            def __call__():
-                pass
-
-        class Foo(cmds.Command):
-            def __call__():
-                pass
-
-        class SetFOO(cmds.Command):
-            def __call__():
-                pass
-
-        add_foo_bar = AddFooToBar()
-        foo = Foo()
-        set_foo = SetFOO()
-
-        self.assertEqual(add_foo_bar.name, 'add-foo-to-bar')
-        self.assertEqual(foo.name, 'foo')
-        self.assertEqual(set_foo.name, 'set-foo')
 
     @mock.patch('contrail_api_cli.resource.ResourceBase.session')
     def test_root_collection(self, mock_session):
