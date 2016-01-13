@@ -52,7 +52,7 @@ class TestCompleter(unittest.TestCase):
     def test_fq_name_completion(self, mock_session):
         ShellContext.current_path = Path('/')
         mock_document = mock.Mock()
-        mock_document.get_word_before_cursor.return_value = 'default-domain'
+        mock_document.get_word_before_cursor.return_value = 'default-dom'
 
         comp = ResourceCompleter()
         r1 = Resource('bar', fq_name='default-domain:project:resource')
