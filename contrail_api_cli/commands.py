@@ -561,7 +561,7 @@ class ResourceCompleter(Completer):
         elif action == Actions.DELETE and str(resource.path) in self.resources:
             self.resources.pop(str(resource.path))
         path_str = str(resource.path)
-        for c in [path_str, resource.fq_name]:
+        for c in [path_str, text_type(resource.fq_name)]:
             self._action_in_trie(c, str(resource.path), action)
 
     def _add_resource(self, resource):
