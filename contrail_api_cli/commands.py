@@ -44,8 +44,7 @@ from .exceptions import CommandError, CommandNotFound, BadPath, \
 class ArgumentParser(argparse.ArgumentParser):
 
     def exit(self, status=0, message=None):
-        print(message)
-        raise CommandError()
+        raise CommandError(message or '')
 
 
 class Arg(object):
