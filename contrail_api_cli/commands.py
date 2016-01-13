@@ -397,7 +397,7 @@ class Edit(Command):
     aliases = ['vim', 'emacs', 'nano']
 
     def __call__(self, path='', template=False):
-        resources = expand_paths(path,
+        resources = expand_paths([path],
                                  predicate=lambda r: isinstance(r, Resource))
         if len(resources) > 1:
             raise CommandError("Can't edit multiple resources")
