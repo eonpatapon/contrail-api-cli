@@ -56,7 +56,7 @@ class ResourceBase(Observable):
     def path(self):
         """Return Path of the resource
 
-        @rtype: Path
+        :rtype: Path
         """
         return Path("/") / self.type / self.uuid
 
@@ -64,7 +64,7 @@ class ResourceBase(Observable):
     def href(self):
         """Return URL of the resource
 
-        @rtype: str
+        :rtype: str
         """
         url = self.session.base_url + str(self.path)
         if self.path.is_collection and not self.path.is_root:
@@ -75,14 +75,14 @@ class ResourceBase(Observable):
 class Collection(ResourceBase, UserList):
     """Class for interacting with an API collection
 
-    c = Collection('virtual-network', fetch=True)
-    # iterate over the resources
-    for r in c:
-        print(r.path)
-    # filter support
-    c.filter("router_external", False)
-    c.fetch()
-    assert all([r.get('router_external') for r in c]) == False
+    >>> c = Collection('virtual-network', fetch=True)
+    >>> # iterate over the resources
+    >>> for r in c:
+    >>>     print(r.path)
+    >>> # filter support
+    >>> c.filter("router_external", False)
+    >>> c.fetch()
+    >>> assert all([r.get('router_external') for r in c]) == False
     """
 
     def __init__(self, type, fetch=False, recursive=1,
@@ -91,18 +91,18 @@ class Collection(ResourceBase, UserList):
         """
         Base class for API collections
 
-        @param type: name of the collection
-        @type type: str
-        @param fetch: immediately fetch collection from the server
-        @type fetch: bool
-        @param recursive: level of recursion
-        @type recursive: int
-        @param fields: list of field names to fetch
-        @type fields: [str]
-        @param filters: list of filters
-        @type filters: [(name, value), ...]
-        @param parent_uuid: filter by parent_uuid
-        @type parent_uuid: v4UUID str or list of v4UUID str
+        :param type: name of the collection
+        :type type: str
+        :param fetch: immediately fetch collection from the server
+        :type fetch: bool
+        :param recursive: level of recursion
+        :type recursive: int
+        :param fields: list of field names to fetch
+        :type fields: [str]
+        :param filters: list of filters
+        :type filters: [(name, value), ...]
+        :param parent_uuid: filter by parent_uuid
+        :type parent_uuid: v4UUID str or list of v4UUID str
         """
         UserList.__init__(self)
         self.type = type
@@ -117,7 +117,7 @@ class Collection(ResourceBase, UserList):
     def __len__(self):
         """Return the number of items of the collection
 
-        @rtype: int
+        :rtype: int
         """
         if not self.data:
             res = self.session.get_json(self.href, count=True)
@@ -145,9 +145,9 @@ class Collection(ResourceBase, UserList):
     def filter(self, field_name, field_value):
         """Add permanent filter on the collection
 
-        @param field_name: name of the field to filter on
-        @type field_name: str
-        @param field_value: value to filter on
+        :param field_name: name of the field to filter on
+        :type field_name: str
+        :param field_value: value to filter on
         """
         self.filters.append((field_name, field_value))
 
@@ -179,14 +179,14 @@ class Collection(ResourceBase, UserList):
         """
         Fetch collection from API server
 
-        @param recursive: level of recursion
-        @type recursive: int
-        @param fields: list of field names to fetch
-        @type fields: [str]
-        @param filters: list of filters
-        @tpye filters: [(name, value), ...]
-        @param parent_uuid: filter by parent_uuid
-        @type parent_uuid: v4UUID str or list of v4UUID str
+        :param recursive: level of recursion
+        :type recursive: int
+        :param fields: list of field names to fetch
+        :type fields: [str]
+        :param filters: list of filters
+        :type filters: [(name, value), ...]
+        :param parent_uuid: filter by parent_uuid
+        :type parent_uuid: v4UUID str or list of v4UUID str
         """
 
         params = self._format_fetch_params(fields, filters, parent_uuid)
@@ -220,39 +220,39 @@ class RootCollection(Collection):
 class Resource(ResourceBase, UserDict):
     """Class for interacting with an API resource
 
-    r = Resource('virtual-network',
-                 uuid='4c45e89b-7780-4b78-8508-314fe04a7cbd',
-                 fetch=True)
-    back_refs = list(r.back_refs)
-    r['display_name'] = 'foo'
-    r.save()
-    r.delete()
+    >>> r = Resource('virtual-network',
+                     uuid='4c45e89b-7780-4b78-8508-314fe04a7cbd',
+                     fetch=True)
+    >>> back_refs = list(r.back_refs)
+    >>> r['display_name'] = 'foo'
+    >>> r.save()
+    >>> r.delete()
     """
 
     def __init__(self, type, fetch=False, check_uuid=False,
                  check_fq_name=False, recursive=1, **kwargs):
         """Base class for API resources
 
-        @param type: type of the resource
-        @type type: str
-        @param fetch: immediately fetch resource from the server
-        @type fetch: bool
-        @param check_uuid: check that uuid exists on the API
-        @type check_uuid: bool
-        @param check_fq_name: check that fq_name exists on the API
-        @type check_fq_name: bool
-        @param recursive: level of recursion
-        @param recursion: int
+        :param type: type of the resource
+        :type type: str
+        :param fetch: immediately fetch resource from the server
+        :type fetch: bool
+        :param check_uuid: check that uuid exists on the API
+        :type check_uuid: bool
+        :param check_fq_name: check that fq_name exists on the API
+        :type check_fq_name: bool
+        :param recursive: level of recursion
+        :param recursion: int
 
         Either:
-        @param uuid: uuid of the resource
-        @type uuid: v4UUID str
+        :param uuid: uuid of the resource
+        :type uuid: v4UUID str
         Or:
-        @param fq_name: fq name of the resource
-        @type fq_name: str (domain:project:identifier)
+        :param fq_name: fq name of the resource
+        :type fq_name: str (domain:project:identifier)
                        or list ['domain', 'project', 'identifier']
 
-        @raises ValueError: bad uuid or fq_name is given
+        :raises ValueError: bad uuid or fq_name is given
         """
         self.type = type
         fq_name = FQName(kwargs.get('fq_name'))
@@ -284,7 +284,7 @@ class Resource(ResourceBase, UserDict):
     def uuid(self):
         """Return UUID of the resource
 
-        @rtype: str
+        :rtype: str
         """
         return self.get('uuid', super(Resource, self).uuid)
 
@@ -292,7 +292,7 @@ class Resource(ResourceBase, UserDict):
     def fq_name(self):
         """Return FQDN of the resource
 
-        @rtype: FQName
+        :rtype: FQName
         """
         return self.get('fq_name', super(Resource, self).fq_name)
 
@@ -323,12 +323,12 @@ class Resource(ResourceBase, UserDict):
     def fetch(self, recursive=1, exclude_children=False, exclude_back_refs=False):
         """Fetch resource from the API server
 
-        @param recursive: level of recursion for fetching resources
-        @type recursive: int
-        @param exclude_children: don't get children references
-        @type exclude_children: bool
-        @param exclude_back_refs: don't get back_refs references
-        @type exclude_back_refs: bool
+        :param recursive: level of recursion for fetching resources
+        :type recursive: int
+        :param exclude_children: don't get children references
+        :type exclude_children: bool
+        :param exclude_back_refs: don't get back_refs references
+        :type exclude_back_refs: bool
         """
         data = self.session.get_json(self.href,
                                      exclude_children=exclude_children,
@@ -338,8 +338,8 @@ class Resource(ResourceBase, UserDict):
     def from_dict(self, data, recursive=1):
         """Populate the resource from a python dict
 
-        @param recursive: level of recursion for fetching resources
-        @type recursive: int
+        :param recursive: level of recursion for fetching resources
+        :type recursive: int
         """
         # Find other linked resources
         data = self._encode_resource(data, recursive=recursive)
@@ -363,7 +363,7 @@ class Resource(ResourceBase, UserDict):
     def back_refs(self):
         """Return back_refs resources of the resource
 
-        @rtype: Resource generator
+        :rtype: Resource generator
         """
         for attr, value in self.data.items():
             if attr.endswith(('back_refs', 'loadbalancer_members')):
@@ -374,7 +374,7 @@ class Resource(ResourceBase, UserDict):
     def refs(self):
         """Return refs resources of the resource
 
-        @rtype: Resource generator
+        :rtype: Resource generator
         """
         for attr, value in self.data.items():
             if attr.endswith('refs') and not attr.endswith('back_refs'):
@@ -385,7 +385,7 @@ class Resource(ResourceBase, UserDict):
     def parent(self):
         """Return parent resource of the resource
 
-        @rtype: Resource
+        :rtype: Resource
         """
         try:
             return Resource(self['parent_type'], uuid=self['parent_uuid'])

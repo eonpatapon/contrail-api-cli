@@ -32,8 +32,8 @@ class CommandManager(object):
         """Return command instance of loaded
         commands by name
 
-        @param name: name of the command
-        @type name: str
+        :param name: name of the command
+        :type name: str
         """
         for ext in self.mgr.extensions:
             cmd = ext.obj
@@ -45,7 +45,7 @@ class CommandManager(object):
     def list(self):
         """Generator of command instances
 
-        @rtype: (name, Command)
+        :rtype: (name, Command)
         """
         for ext in self.mgr.extensions:
             yield (ext.name, ext.obj)

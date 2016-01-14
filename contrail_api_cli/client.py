@@ -54,20 +54,20 @@ class ContrailAPISession(Session):
     def make(cls, plugin_name, protocol="http", host="localhost", port=8082, **kwargs):
         """Initialize a session to Contrail API server
 
-        @param plugin_name: auth plugin to use:
+        :param plugin_name: auth plugin to use:
             - http: basic HTTP authentification
             - v2password: keystone v2 auth
             - v3password: keystone v3 auth
-        @type plugin_name: str
+        :type plugin_name: str
 
-        @param protocol: protocol used to connect to the API server (default: http)
-        @type protocol: str
-        @param host: API server host (default: localhost)
-        @type host: str
-        @param port: API server port (default: 8082)
-        @type port: int
+        :param protocol: protocol used to connect to the API server (default: http)
+        :type protocol: str
+        :param host: API server host (default: localhost)
+        :type host: str
+        :param port: API server port (default: 8082)
+        :type port: int
 
-        @param kwargs: plugin arguments
+        :param kwargs: plugin arguments
         """
         cls.protocol = protocol
         cls.host = host
@@ -96,10 +96,10 @@ class ContrailAPISession(Session):
         """
         POST data to the api-server
 
-        @param url: resource location (eg: "/type/uuid")
-        @type url: str
-        @param cls: JSONEncoder class
-        @type cls: JSONEncoder
+        :param url: resource location (eg: "/type/uuid")
+        :type url: str
+        :param cls: JSONEncoder class
+        :type cls: JSONEncoder
         """
         kwargs['data'] = to_json(data, cls=cls)
         kwargs['headers'] = self.default_headers
@@ -110,10 +110,10 @@ class ContrailAPISession(Session):
         """
         PUT data to the api-server
 
-        @param url: resource location (eg: "/type/uuid")
-        @type url: str
-        @param cls: JSONEncoder class
-        @type cls: JSONEncoder
+        :param url: resource location (eg: "/type/uuid")
+        :type url: str
+        :param cls: JSONEncoder class
+        :type cls: JSONEncoder
         """
         kwargs['data'] = to_json(data, cls=cls)
         kwargs['headers'] = self.default_headers
@@ -123,13 +123,13 @@ class ContrailAPISession(Session):
         """
         Return uuid for fq_name
 
-        @param type: resource type
-        @type type: str
-        @param fq_name: resource fq name
-        @type fq_name: FQName
+        :param type: resource type
+        :type type: str
+        :param fq_name: resource fq name
+        :type fq_name: FQName
 
-        @rtype: UUIDv4 str
-        @raises HTTPError: fq_name not found
+        :rtype: UUIDv4 str
+        :raises HTTPError: fq_name not found
         """
         data = {
             "type": type,
@@ -141,11 +141,11 @@ class ContrailAPISession(Session):
         """
         Return fq_name for uuid
 
-        @param uuid: resource uuid
-        @type uuid: UUIDv4 str
+        :param uuid: resource uuid
+        :type uuid: UUIDv4 str
 
-        @rtype: FQName
-        @raises HTTPError: uuid not found
+        :rtype: FQName
+        :raises HTTPError: uuid not found
         """
         data = {
             "uuid": uuid

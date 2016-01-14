@@ -211,8 +211,8 @@ def printo(msg, encoding=None, errors='replace'):
     the detected encoding of stdout is used. If the encoding
     can't encode some chars they are replaced by '?'
 
-    @param msg: message
-    @type msg: unicode on python2 | str on python3
+    :param msg: message
+    :type msg: unicode on python2 | str on python3
     """
     if encoding is None:
         try:

@@ -74,15 +74,15 @@ def expand_paths(paths=None, predicate=None, filters=None, parent_uuid=None):
     [Collection('virtual-network'),
      Resource('floating-ip', uuid='2a0a54b4-a420-485e-8372-42f70a627ec9')]
 
-    @param paths: list of paths relative to the current path
+    :param paths: list of paths relative to the current path
                   that may contain wildcards (*, ?) or fq_names
-    @type paths: [str]
-    @param predicate: function to filter found resources
-    @type predicate: f(resource) -> bool
-    @param filters: list of filters for Collections
-    @type filters: [(name, value), ...]
-    @rtype: [Resource|Collection]
-    @raises BadPath: path cannot be resolved
+    :type paths: [str]
+    :param predicate: function to filter found resources
+    :type predicate: f(resource) -> bool
+    :param filters: list of filters for Collections
+    :type filters: [(name, value), ...]
+    :rtype: [Resource or Collection]
+    :raises BadPath: path cannot be resolved
     """
     if not paths:
         paths = [ShellContext.current_path]
@@ -158,10 +158,10 @@ class BaseCommand(object):
     def current_path(self, resource):
         """Return current path for resource
 
-        @param resource: resource or collection
-        @type resource: Resource|Collection
+        :param resource: resource or collection
+        :type resource: Resource|Collection
 
-        @rtype: str
+        :rtype: str
         """
         return str(resource.path.relative_to(ShellContext.current_path))
 
@@ -170,7 +170,7 @@ class BaseCommand(object):
         """Return True if the command result is beeing piped
         to another command.
 
-        @rtype: bool
+        :rtype: bool
         """
         return not sys.stdout.isatty() or self._is_piped
 
