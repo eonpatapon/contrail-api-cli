@@ -75,6 +75,7 @@ class ResourceBase(Observable):
 class Collection(ResourceBase, UserList):
     """Class for interacting with an API collection
 
+    >>> from contrail_api_cli.resource import Collection
     >>> c = Collection('virtual-network', fetch=True)
     >>> # iterate over the resources
     >>> for r in c:
@@ -83,27 +84,24 @@ class Collection(ResourceBase, UserList):
     >>> c.filter("router_external", False)
     >>> c.fetch()
     >>> assert all([r.get('router_external') for r in c]) == False
+
+    :param type: name of the collection
+    :type type: str
+    :param fetch: immediately fetch collection from the server
+    :type fetch: bool
+    :param recursive: level of recursion
+    :type recursive: int
+    :param fields: list of field names to fetch
+    :type fields: [str]
+    :param filters: list of filters
+    :type filters: [(name, value), ...]
+    :param parent_uuid: filter by parent_uuid
+    :type parent_uuid: v4UUID str or list of v4UUID str
     """
 
     def __init__(self, type, fetch=False, recursive=1,
                  fields=None, filters=None, parent_uuid=None,
                  **kwargs):
-        """
-        Base class for API collections
-
-        :param type: name of the collection
-        :type type: str
-        :param fetch: immediately fetch collection from the server
-        :type fetch: bool
-        :param recursive: level of recursion
-        :type recursive: int
-        :param fields: list of field names to fetch
-        :type fields: [str]
-        :param filters: list of filters
-        :type filters: [(name, value), ...]
-        :param parent_uuid: filter by parent_uuid
-        :type parent_uuid: v4UUID str or list of v4UUID str
-        """
         UserList.__init__(self)
         self.type = type
         self.fields = fields or []
@@ -220,40 +218,44 @@ class RootCollection(Collection):
 class Resource(ResourceBase, UserDict):
     """Class for interacting with an API resource
 
+    >>> from contrail_api_cli.resource import Resource
     >>> r = Resource('virtual-network',
                      uuid='4c45e89b-7780-4b78-8508-314fe04a7cbd',
                      fetch=True)
-    >>> back_refs = list(r.back_refs)
     >>> r['display_name'] = 'foo'
     >>> r.save()
-    >>> r.delete()
+
+    >>> p = Resource('project', fq_name='default-domain:admin')
+    >>> r = Resource('virtual-network', fq_name='default-domain:admin:net1',
+                     parent=p)
+    >>> r.save()
+
+    :param type: type of the resource
+    :type type: str
+    :param fetch: immediately fetch resource from the server
+    :type fetch: bool
+    :param uuid: uuid of the resource
+    :type uuid: v4UUID str
+    :param fq_name: fq name of the resource
+    :type fq_name: str (domain:project:identifier)
+                   or list ['domain', 'project', 'identifier']
+    :param check: check that the resource exists
+    :type check: bool
+    :param parent: parent resource
+    :type parent: Resource
+    :param recursive: level of recursion
+    :type recursive: int
+
+    :raises ResourceNotFound: bad uuid or fq_name is given
+    :raises HttpError: when save(), fetch() or delete() fail
+
+    .. note::
+
+        Either fq_name or uuid must be provided.
     """
 
     def __init__(self, type, fetch=False, check=False,
                  parent=None, recursive=1, **kwargs):
-        """Base class for API resources
-
-        :param type: type of the resource
-        :type type: str
-        :param fetch: immediately fetch resource from the server
-        :type fetch: bool
-        :param check: check that the resource exists
-        :type check: bool
-        :param recursive: level of recursion
-        :param recursion: int
-        :param parent: parent resource
-        :type parent: Resource
-
-        Either:
-        :param uuid: uuid of the resource
-        :type uuid: v4UUID str
-        Or:
-        :param fq_name: fq name of the resource
-        :type fq_name: str (domain:project:identifier)
-                       or list ['domain', 'project', 'identifier']
-
-        :raises ValueError: bad uuid or fq_name is given
-        """
         assert('fq_name' in kwargs or 'uuid' in kwargs or 'to' in kwargs)
         self.type = type
 

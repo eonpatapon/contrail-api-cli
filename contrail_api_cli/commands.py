@@ -150,7 +150,7 @@ class Command(object):
     """Base class for commands
     """
     description = ""
-    """Command description"""
+    """Description of the command"""
     aliases = []
     """Command aliases"""
 
@@ -204,7 +204,14 @@ class Command(object):
 
     @abc.abstractmethod
     def __call__(self, **kwargs):
-        """The actual command operations
+        """Command must implement this method.
+
+        The command must return an unicode string
+        (unicode in python2 or str in python3)
+
+        :param **kwargs: options of the command
+
+        :rtype: unicode | str
         """
 
 
