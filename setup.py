@@ -43,11 +43,13 @@ setup(
             'rm = contrail_api_cli.commands:Rm',
             'edit = contrail_api_cli.commands:Edit',
             'shell = contrail_api_cli.commands:Shell',
+            'tree = contrail_api_cli.commands:Tree',
+        ],
+        'contrail_api_cli.shell_command': [
             'cd = contrail_api_cli.commands:Cd',
+            'set = contrail_api_cli.commands:Set',
             'exit = contrail_api_cli.commands:Exit',
             'help = contrail_api_cli.commands:Help',
-            'set = contrail_api_cli.commands:Set',
-            'tree = contrail_api_cli.commands:Tree',
         ]
     },
     classifiers=[

@@ -37,9 +37,6 @@ def main():
     if '-d' in argv or '--debug' in argv:
         logging.basicConfig(level=logging.DEBUG)
 
-    # load available extensions
-    mgr = CommandManager()
-
     parser = argparse.ArgumentParser()
     parser.add_argument('--host', '-H',
                         default=os.environ.get('CONTRAIL_API_HOST', 'localhost'),
@@ -58,13 +55,8 @@ def main():
     ksession.Session.register_cli_options(parser)
     # Default auth plugin will be http unless OS_AUTH_PLUGIN envvar is set
     auth.register_argparse_arguments(parser, argv, default="http")
-
-    subparsers = parser.add_subparsers(dest='subcmd')
-    for cmd_name, cmd in mgr.list:
-        if not isinstance(cmd, commands.Command):
-            continue
-        subparser = subparsers.add_parser(cmd_name, help=cmd.description)
-        cmd.add_arguments_to_parser(subparser)
+    # Add commands to the parser given the namespaces list
+    mgr = CommandManager.register_argparse_commands(parser, argv)
 
     options = parser.parse_args()
 

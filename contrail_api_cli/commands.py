@@ -146,9 +146,13 @@ def expand_paths(paths=None, predicate=None, filters=None, parent_uuid=None):
 
 
 @add_metaclass(abc.ABCMeta)
-class BaseCommand(object):
+class Command(object):
+    """Base class for commands
+    """
     description = ""
+    """Command description"""
     aliases = []
+    """Command aliases"""
 
     def __init__(self, name):
         self.parser = ArgumentParser(prog=name, description=self.description)
@@ -202,18 +206,6 @@ class BaseCommand(object):
     def __call__(self, **kwargs):
         """The actual command operations
         """
-
-
-class Command(BaseCommand):
-    """ Class for commands that can be used outside the shell
-    """
-    pass
-
-
-class ShellCommand(BaseCommand):
-    """ Class for commands used only in the shell
-    """
-    pass
 
 
 class Ls(Command):
@@ -624,6 +616,7 @@ class Shell(Command):
         history = InMemoryHistory()
         completer = ResourceCompleter()
         commands = CommandManager()
+        commands.load_namespace('contrail_api_cli.shell_command')
         ShellContext.parent_uuid = parent_uuid
         if parent_uuid is None:
             print('Warning: no parent_uuid specified. ls command will list '
@@ -684,7 +677,7 @@ class Shell(Command):
                     printo(result)
 
 
-class Set(ShellCommand):
+class Set(Command):
     description = "Set or show shell options"
     option = Arg('-o', '--option')
     value = Arg(nargs='?',
@@ -709,7 +702,7 @@ class Set(ShellCommand):
             return "\n".join(output)
 
 
-class Cd(ShellCommand):
+class Cd(Command):
     description = "Change resource context"
     path = Arg(nargs="?", help="Resource path", default='',
                metavar='path')
@@ -718,14 +711,14 @@ class Cd(ShellCommand):
         ShellContext.current_path = ShellContext.current_path / path
 
 
-class Exit(ShellCommand):
+class Exit(Command):
     description = "Exit from cli"
 
     def __call__(self):
         raise EOFError
 
 
-class Help(ShellCommand):
+class Help(Command):
 
     def __call__(self):
         commands = CommandManager()
