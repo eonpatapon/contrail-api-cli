@@ -67,7 +67,8 @@ def main():
         result = subcmd(**subcmd_kwargs)
     except (HttpError, ClientException, CommandError,
             ResourceNotFound, NoResourceFound, BadPath) as e:
-        printo(text_type(e))
+        printo(text_type(e), std_type='stderr')
+        exit(1)
     except KeyboardInterrupt:
         pass
     except EOFError:

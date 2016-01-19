@@ -206,7 +206,7 @@ def to_unicode(value):
     return value
 
 
-def printo(msg, encoding=None, errors='replace'):
+def printo(msg, encoding=None, errors='replace', std_type='stdout'):
     """Write msg on stdout. If no encoding is specified
     the detected encoding of stdout is used. If the encoding
     can't encode some chars they are replaced by '?'
@@ -214,9 +214,10 @@ def printo(msg, encoding=None, errors='replace'):
     :param msg: message
     :type msg: unicode on python2 | str on python3
     """
+    std = getattr(sys, std_type, sys.stdout)
     if encoding is None:
         try:
-            encoding = sys.stdout.encoding
+            encoding = std.encoding
         except:
             encoding = None
     # Fallback to ascii if no encoding is found
@@ -224,10 +225,8 @@ def printo(msg, encoding=None, errors='replace'):
         encoding = 'ascii'
     # https://docs.python.org/3/library/sys.html#sys.stdout
     # write in the binary buffer directly in python3
-    if hasattr(sys.stdout, 'buffer'):
-        stdout = sys.stdout.buffer
-    else:
-        stdout = sys.stdout
-    stdout.write(msg.encode(encoding, errors=errors))
-    stdout.write(b'\n')
-    stdout.flush()
+    if hasattr(std, 'buffer'):
+        std = std.buffer
+    std.write(msg.encode(encoding, errors=errors))
+    std.write(b'\n')
+    std.flush()
