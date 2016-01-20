@@ -114,22 +114,22 @@ def expand_paths(paths=None, predicate=None, filters=None, parent_uuid=None):
             try:
                 r = Resource(path.base,
                              fq_name=path.name,
-                             check_fq_name=True)
+                             check=True)
                 if predicate and not predicate(r):
                     continue
                 result[r.path] = r
-            except ValueError as e:
+            except ResourceNotFound as e:
                 raise BadPath(str(e))
         else:
             if path.is_resource:
                 try:
                     r = Resource(path.base,
                                  uuid=path.name,
-                                 check_uuid=True)
+                                 check=True)
                     if predicate and not predicate(r):
                         continue
                     result[path] = r
-                except ValueError as e:
+                except ResourceNotFound as e:
                     raise BadPath(str(e))
             elif path.is_collection:
                 c = Collection(path.base,
@@ -372,11 +372,7 @@ class Rm(Command):
             if force or continue_prompt(message=message):
                 for r in reversed(resources):
                     print("Deleting %s" % self.current_path(r))
-                    try:
-                        r.delete()
-                    except HttpError as e:
-                        raise CommandError("Failed to delete resource: %s" %
-                                           str(e))
+                    r.delete()
 
 
 @experimental
@@ -420,10 +416,7 @@ class Edit(Command):
             resource = Resource(resource.type, **data)
         else:
             resource.update(data)
-        try:
-            resource.save()
-        except HttpError as e:
-            raise CommandError(str(e))
+        resource.save()
 
 
 class Tree(Command):

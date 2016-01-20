@@ -9,8 +9,9 @@ except ImportError:
 from keystoneclient.exceptions import HttpError
 
 from contrail_api_cli.utils import Path, FQName
-from contrail_api_cli.resource import RootCollection, Collection, Resource, ResourceBase, ResourceEncoder
+from contrail_api_cli.resource import RootCollection, Collection, Resource, ResourceEncoder
 from contrail_api_cli.client import ContrailAPISession
+from contrail_api_cli.exceptions import ResourceNotFound
 
 
 BASE = "http://localhost:8082"
@@ -40,10 +41,18 @@ class TestResource(unittest.TestCase):
         self.assertEqual(r.fq_name, FQName())
         self.assertEqual(r.href, BASE + '/foo/x')
 
-        r = Resource('foo')
+        r = Resource('foo', fq_name='foo:bar')
         self.assertEqual(r.uuid, '')
-        self.assertEqual(r.fq_name, FQName())
+        self.assertEqual(r.fq_name, FQName('foo:bar'))
         self.assertEqual(r.href, BASE + '/foos')
+
+        r = Resource('foo', to='foo:bar')
+        self.assertEqual(r.uuid, '')
+        self.assertEqual(r.fq_name, FQName('foo:bar'))
+        self.assertEqual(r.href, BASE + '/foos')
+
+        with self.assertRaises(AssertionError):
+            r = Resource('bar')
 
     @mock.patch('contrail_api_cli.resource.ResourceBase.session')
     def test_root_collection(self, mock_session):
@@ -183,13 +192,13 @@ class TestResource(unittest.TestCase):
                 raise HttpError()
 
         mock_session.post.side_effect = post
-        r = Resource('foo', fq_name='domain:foo:uuid', check_fq_name=True)
+        r = Resource('foo', fq_name='domain:foo:uuid', check=True)
         self.assertEqual(r.uuid, 'ec1afeaa-8930-43b0-a60a-939f23a50724')
         self.assertEqual(r.path, Path('/foo/ec1afeaa-8930-43b0-a60a-939f23a50724'))
 
-        with self.assertRaises(ValueError) as e:
-            r = Resource('bar', fq_name='domain:bar:nofound', check_fq_name=True)
-            self.assertEqual(str(e), "domain:bar:nofound doesn't exists")
+        with self.assertRaises(ResourceNotFound) as e:
+            r = Resource('bar', fq_name='domain:bar:nofound', check=True)
+            self.assertEqual(str(e), "Resource domain:bar:nofound doesn't exists")
 
     @mock.patch('contrail_api_cli.resource.ResourceBase.session')
     def test_resource_uuid_validation(self, mock_session):
@@ -211,23 +220,34 @@ class TestResource(unittest.TestCase):
                 raise HttpError()
 
         mock_session.post_json.side_effect = post
-        r = Resource('foo', uuid='a5a1b67b-4246-4e2d-aa24-479d8d47435d', check_uuid=True)
+        r = Resource('foo', uuid='a5a1b67b-4246-4e2d-aa24-479d8d47435d', check=True)
         self.assertEqual(str(r.fq_name), 'domain:foo:uuid')
         self.assertEqual(r.path, Path('/foo/a5a1b67b-4246-4e2d-aa24-479d8d47435d'))
-        with self.assertRaises(ValueError) as e:
-            r = Resource('bar', uuid='d6e9fae3-628c-448c-bfc5-849d82a9a016', check_uuid=True)
-            self.assertEqual(str(e), "d6e9fae3-628c-448c-bfc5-849d82a9a016 doesn't exists")
+        with self.assertRaises(ResourceNotFound) as e:
+            r = Resource('bar', uuid='d6e9fae3-628c-448c-bfc5-849d82a9a016', check=True)
+            self.assertEqual(str(e), "Resource d6e9fae3-628c-448c-bfc5-849d82a9a016 doesn't exists")
 
-    @mock.patch('contrail_api_cli.client.Session')
+    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
     def test_resource_save(self, mock_session):
         mock_session.configure_mock(base_url=BASE)
-        ResourceBase.session = mock_session
-        r = Resource('foo')
+        mock_session.post_json.return_value = {
+            'foo': {
+                'uuid': '8240f9c7-0f28-4ca7-b92e-2f6441a0a6dd'
+            }
+        }
+        r = Resource('foo', fq_name='domain:bar:foo')
         r['foo'] = 'bar'
         r.save()
         mock_session.post_json.assert_called_with(BASE + '/foos',
-                                                  {'foo': {'foo': 'bar'}},
+                                                  {'foo': {'foo': 'bar',
+                                                           'fq_name': ['domain', 'bar', 'foo']}},
                                                   cls=ResourceEncoder)
+
+        mock_session.put_json.return_value = {
+            'foo': {
+                'uuid': '8240f9c7-0f28-4ca7-b92e-2f6441a0a6dd'
+            }
+        }
         r = Resource('foo', uuid='4c7dc905-3322-49c8-be5d-d4adb5571d41')
         r['foo'] = 'bar'
         r.save()

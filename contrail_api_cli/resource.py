@@ -229,18 +229,16 @@ class Resource(ResourceBase, UserDict):
     >>> r.delete()
     """
 
-    def __init__(self, type, fetch=False, check_uuid=False,
-                 check_fq_name=False, recursive=1, **kwargs):
+    def __init__(self, type, fetch=False, check=False,
+                 recursive=1, **kwargs):
         """Base class for API resources
 
         :param type: type of the resource
         :type type: str
         :param fetch: immediately fetch resource from the server
         :type fetch: bool
-        :param check_uuid: check that uuid exists on the API
-        :type check_uuid: bool
-        :param check_fq_name: check that fq_name exists on the API
-        :type check_fq_name: bool
+        :param check: check that the resource exists
+        :type check: bool
         :param recursive: level of recursion
         :param recursion: int
 
@@ -254,37 +252,60 @@ class Resource(ResourceBase, UserDict):
 
         :raises ValueError: bad uuid or fq_name is given
         """
+        assert('fq_name' in kwargs or 'uuid' in kwargs or 'to' in kwargs)
         self.type = type
-        fq_name = FQName(kwargs.get('fq_name'))
-        to = FQName(kwargs.get('to'))
-        uuid = kwargs.get('uuid', None)
 
-        if uuid and check_uuid:
-            try:
-                fq_name = self.session.id_to_fqname(uuid)
-            except HTTPError:
-                raise ValueError("%s doesn't exists" % uuid)
-        elif fq_name and check_fq_name:
-            try:
-                uuid = self.session.fqname_to_id(type, fq_name)
-            except HTTPError:
-                raise ValueError("%s doesn't exists" % fq_name)
-        elif to and check_fq_name:
-            try:
-                uuid = self.session.fqname_to_id(type, to)
-            except HTTPError:
-                raise ValueError("%s doesn't exists" % to)
+        for key in ('fq_name', 'to'):
+            if key in kwargs:
+                kwargs[key] = FQName(kwargs[key])
 
-        if fq_name:
-            kwargs["fq_name"] = fq_name
-        if to:
-            kwargs["to"] = to
-        if uuid:
-            kwargs["uuid"] = uuid
         UserDict.__init__(self, **kwargs)
-        if self.path and self.path.is_resource and fetch:
+
+        if check:
+            self.check()
+
+        if fetch:
             self.fetch(recursive=recursive)
+
         self.emit('created', self)
+
+    def check(self):
+        """Check that the resource exists.
+
+        :raises ResourceNotFound: if the resource doesn't exists
+        """
+        if self.fq_name:
+            self['uuid'] = self._check_fq_name(self.fq_name)
+        elif self.uuid:
+            self['fq_name'] = self._check_uuid(self.uuid)
+        return True
+
+    def _check_uuid(self, uuid):
+        try:
+            fq_name = self.session.id_to_fqname(uuid)
+        except HTTPError:
+            raise ResourceNotFound(uuid=uuid)
+        return fq_name
+
+    def _check_fq_name(self, fq_name):
+        try:
+            uuid = self.session.fqname_to_id(self.type, fq_name)
+        except HTTPError:
+            raise ResourceNotFound(fq_name=fq_name)
+        return uuid
+
+    @property
+    def exists(self):
+        """Returns True if the resource exists on the API server,
+        or returns False.
+
+        :rtype: bool
+        """
+        try:
+            self.check()
+        except ResourceNotFound:
+            return False
+        return True
 
     @property
     def uuid(self):
@@ -310,12 +331,13 @@ class Resource(ResourceBase, UserDict):
         """
         if self.path.is_collection:
             data = self.session.post_json(self.href,
-                                          {self.type: self.data},
+                                          {self.type: dict(self.data)},
                                           cls=ResourceEncoder)
         else:
-            data = self.session.put_json(self.href, {self.type: self.data},
+            data = self.session.put_json(self.href,
+                                         {self.type: dict(self.data)},
                                          cls=ResourceEncoder)
-        self.update(data[self.type])
+        self.from_dict(data[self.type])
         self.fetch(exclude_children=True, exclude_back_refs=True)
 
     def delete(self):
@@ -336,6 +358,8 @@ class Resource(ResourceBase, UserDict):
         :param exclude_back_refs: don't get back_refs references
         :type exclude_back_refs: bool
         """
+        if not self.path.is_resource:
+            self.check()
         data = self.session.get_json(self.href,
                                      exclude_children=exclude_children,
                                      exclude_back_refs=exclude_back_refs)[self.type]

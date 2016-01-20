@@ -32,7 +32,7 @@ class FQName(collections.Sequence):
         return len(self._data)
 
     def __eq__(self, other):
-        return self._data == other._data
+        return self._data == other
 
     def __repr__(self):
         return repr(self._data)
