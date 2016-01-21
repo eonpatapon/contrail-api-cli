@@ -256,8 +256,7 @@ class Resource(ResourceBase, UserDict):
         """
         self.type = type
         fq_name = FQName(kwargs.get('fq_name'))
-        if 'to' in kwargs:
-            fq_name = FQName(kwargs.pop('to'))
+        to = FQName(kwargs.get('to'))
         uuid = kwargs.get('uuid', None)
 
         if uuid and check_uuid:
@@ -270,9 +269,16 @@ class Resource(ResourceBase, UserDict):
                 uuid = self.session.fqname_to_id(type, fq_name)
             except HTTPError:
                 raise ValueError("%s doesn't exists" % fq_name)
+        elif to and check_fq_name:
+            try:
+                uuid = self.session.fqname_to_id(type, to)
+            except HTTPError:
+                raise ValueError("%s doesn't exists" % to)
 
         if fq_name:
             kwargs["fq_name"] = fq_name
+        if to:
+            kwargs["to"] = to
         if uuid:
             kwargs["uuid"] = uuid
         UserDict.__init__(self, **kwargs)
@@ -294,7 +300,7 @@ class Resource(ResourceBase, UserDict):
 
         :rtype: FQName
         """
-        return self.get('fq_name', super(Resource, self).fq_name)
+        return self.get('fq_name', self.get('to', super(Resource, self).fq_name))
 
     def save(self):
         """Save the resource to the API server
