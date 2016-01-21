@@ -11,7 +11,7 @@ except ImportError:
 from keystoneclient.exceptions import HTTPError
 
 from .utils import FQName, Path, Observable, to_json
-from .exceptions import ResourceNotFound
+from .exceptions import ResourceNotFound, ResourceMissing
 
 
 class ResourceEncoder(json.JSONEncoder):
@@ -230,7 +230,7 @@ class Resource(ResourceBase, UserDict):
     """
 
     def __init__(self, type, fetch=False, check=False,
-                 recursive=1, **kwargs):
+                 parent=None, recursive=1, **kwargs):
         """Base class for API resources
 
         :param type: type of the resource
@@ -241,6 +241,8 @@ class Resource(ResourceBase, UserDict):
         :type check: bool
         :param recursive: level of recursion
         :param recursion: int
+        :param parent: parent resource
+        :type parent: Resource
 
         Either:
         :param uuid: uuid of the resource
@@ -260,6 +262,9 @@ class Resource(ResourceBase, UserDict):
                 kwargs[key] = FQName(kwargs[key])
 
         UserDict.__init__(self, **kwargs)
+
+        if parent:
+            self.parent = parent
 
         if check:
             self.check()
@@ -322,6 +327,32 @@ class Resource(ResourceBase, UserDict):
         :rtype: FQName
         """
         return self.get('fq_name', self.get('to', super(Resource, self).fq_name))
+
+    @property
+    def parent(self):
+        """Return parent resource
+
+        :rtype: Resource
+        :raises ResourceNotFound: parent resource doesn't exists
+        :raises ResourceMissing: parent resource is not defined
+        """
+        try:
+            return Resource(self['parent_type'], uuid=self['parent_uuid'], check=True)
+        except KeyError:
+            raise ResourceMissing('%s has no parent resource' % self)
+
+    @parent.setter
+    def parent(self, resource):
+        """Set parent resource
+
+        :param resource: parent resource
+        :type resource: Resource
+
+        :raises ResourceNotFound: resource not found on the API
+        """
+        resource.check()
+        self['parent_type'] = resource.type
+        self['parent_uuid'] = resource.uuid
 
     def save(self):
         """Save the resource to the API server
@@ -410,17 +441,6 @@ class Resource(ResourceBase, UserDict):
             if attr.endswith('refs') and not attr.endswith('back_refs'):
                 for ref in value:
                     yield ref
-
-    @property
-    def parent(self):
-        """Return parent resource of the resource
-
-        :rtype: Resource
-        """
-        try:
-            return Resource(self['parent_type'], uuid=self['parent_uuid'])
-        except KeyError:
-            raise ResourceNotFound()
 
     def json(self):
         """Return JSON representation of the resource

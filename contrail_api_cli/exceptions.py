@@ -13,6 +13,10 @@ class BadPath(Exception):
     pass
 
 
+class ResourceMissing(Exception):
+    pass
+
+
 class ResourceNotFound(Exception):
 
     def __init__(self, uuid=None, fq_name=None):

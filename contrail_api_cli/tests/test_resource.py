@@ -258,6 +258,19 @@ class TestResource(unittest.TestCase):
                                                  }},
                                                  cls=ResourceEncoder)
 
+    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
+    def test_resource_parent(self, mock_session):
+        mock_session.configure_mock(base_url=BASE)
+
+        p = Resource('bar', uuid='57ef609c-6c9b-4b91-a542-26c61420c37b')
+        r = Resource('foo', fq_name='domain:foo', parent=p)
+        self.assertEqual(p, r.parent)
+
+        mock_session.id_to_fqname.side_effect = HttpError()
+        with self.assertRaises(ResourceNotFound):
+            p = Resource('not-found', uuid='1fe29f52-28dc-44a5-90d0-43de1b02cbd8')
+            Resource('foo', fq_name='domain:foo', parent=p)
+
 
 class TestCollection(unittest.TestCase):
 
