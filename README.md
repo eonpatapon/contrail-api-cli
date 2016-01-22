@@ -1,5 +1,6 @@
 [![Build Status](https://travis-ci.org/eonpatapon/contrail-api-cli.svg?branch=master)](https://travis-ci.org/eonpatapon/contrail-api-cli)
 [![Doc Status](https://readthedocs.org/projects/contrail-api-cli/badge/?version=latest)](http://contrail-api-cli.readthedocs.org/en/latest/)
+[![Coverage Status](https://coveralls.io/repos/github/eonpatapon/contrail-api-cli/badge.svg?branch=master)](https://coveralls.io/github/eonpatapon/contrail-api-cli?branch=master)
 [![Join the chat at https://gitter.im/eonpatapon/contrail-api-cli](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/eonpatapon/contrail-api-cli?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 contrail-api-cli
