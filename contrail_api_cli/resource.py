@@ -393,9 +393,13 @@ class Resource(ResourceBase, UserDict):
         """
         if not self.path.is_resource:
             self.check()
-        data = self.session.get_json(self.href,
-                                     exclude_children=exclude_children,
-                                     exclude_back_refs=exclude_back_refs)[self.type]
+        params = {}
+        # even if the param is False the API will exclude resources 
+        if exclude_children:
+            params['exclude_children'] = True
+        if exclude_back_refs:
+            params['exclude_back_refs'] = True
+        data = self.session.get_json(self.href, **params)[self.type]
         self.from_dict(data)
 
     def from_dict(self, data, recursive=1):
