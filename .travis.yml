@@ -9,8 +9,13 @@ virtualenv:
     system_site_packages: false
 install:
     - pip install flake8
+    - pip install python-coveralls
+    - pip install coverage
+    - pip install nose
     - pip install .
 before_script:
     - flake8 --ignore E501 contrail_api_cli
 script:
-    - python setup.py test
+    - nosetests --with-coverage
+after_success:
+    - coveralls
