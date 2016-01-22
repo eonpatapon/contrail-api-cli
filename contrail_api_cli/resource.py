@@ -394,7 +394,7 @@ class Resource(ResourceBase, UserDict):
         if not self.path.is_resource:
             self.check()
         params = {}
-        # even if the param is False the API will exclude resources 
+        # even if the param is False the API will exclude resources
         if exclude_children:
             params['exclude_children'] = True
         if exclude_back_refs:
