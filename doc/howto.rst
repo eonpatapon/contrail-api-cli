@@ -1,6 +1,8 @@
 Howto write a command
 =====================
 
+The code presented here is available at https://github.com/eonpatapon/contrail-api-cli-howto.
+
 Setup your project
 ------------------
 
