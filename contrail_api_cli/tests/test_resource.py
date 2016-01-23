@@ -306,8 +306,19 @@ class TestResource(unittest.TestCase):
         r = Resource('bar', uuid='57ef609c-6c9b-4b91-a542-26c61420c37b')
         self.assertFalse(r.exists)
 
-        mock_session.id_to_fqname.side_effect = FQName('domain:bar')
+        mock_session.id_to_fqname.side_effect = [
+            FQName('domain:bar')
+        ]
         r = Resource('bar', uuid='57ef609c-6c9b-4b91-a542-26c61420c37b')
+        self.assertTrue(r.exists)
+
+        mock_session.fqname_to_id.side_effect = HttpError()
+        r = Resource('bar', fq_name='domain:foo')
+        self.assertFalse(r.exists)
+
+        mock_session.fqname_to_id.side_effect = [
+            '588e1a17-ae50-4b67-8078-95f061d833ca'
+        ]
         self.assertTrue(r.exists)
 
 
