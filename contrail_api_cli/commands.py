@@ -541,11 +541,14 @@ class ResourceCompleter(Completer):
         for c in value:
             v += c
             if v not in self.trie:
-                self.trie[v] = set()
+                self.trie[v] = []
             if action == Actions.STORE:
-                self.trie[v].add(path)
+                if path not in self.trie[v]:
+                    self.trie[v].append(path)
+                    self.trie[v].sort()
             elif action == Actions.DELETE:
-                self.trie[v].discard(path)
+                if path in self.trie[v]:
+                    self.trie[v].remove(path)
 
     def _resource_action(self, resource, action):
         if action == Actions.STORE:
@@ -561,9 +564,6 @@ class ResourceCompleter(Completer):
 
     def _del_resource(self, resource):
         self._resource_action(resource, Actions.DELETE)
-
-    def _sort_results(self, resource):
-        return (resource.type, resource.fq_name, len(text_type(resource.path)))
 
     def get_completions(self, document, complete_event):
         path_before_cursor = document.get_word_before_cursor(WORD=True)
@@ -582,7 +582,7 @@ class ResourceCompleter(Completer):
         # limit list to 50 entries
         resources = [self.resources[p] for p in self.trie[searches[0]]][:50]
 
-        for res in sorted(resources, key=self._sort_results):
+        for res in resources:
             rel_path = text_type(res.path.relative_to(ShellContext.current_path))
             if rel_path in ('.', '/', ''):
                 continue
