@@ -11,7 +11,7 @@ from keystoneclient.exceptions import HttpError
 from contrail_api_cli.utils import Path, FQName
 from contrail_api_cli.resource import RootCollection, Collection, Resource, ResourceEncoder
 from contrail_api_cli.client import ContrailAPISession
-from contrail_api_cli.exceptions import ResourceNotFound
+from contrail_api_cli.exceptions import ResourceNotFound, ResourceMissing
 
 
 BASE = "http://localhost:8082"
@@ -228,6 +228,29 @@ class TestResource(unittest.TestCase):
             self.assertEqual(str(e), "Resource d6e9fae3-628c-448c-bfc5-849d82a9a016 doesn't exists")
 
     @mock.patch('contrail_api_cli.resource.ResourceBase.session')
+    def test_resource_fetch(self, mock_session):
+        mock_session.configure_mock(base_url=BASE)
+
+        mock_session.fqname_to_id.side_effect = HttpError()
+        r = Resource('foo', fq_name='domain:bar:foo')
+        with self.assertRaises(ResourceNotFound):
+            r.fetch()
+
+        mock_session.fqname_to_id.side_effect = [
+            "07eeb3c0-42f5-427c-9409-6ae45b376aa2"
+        ]
+        r = Resource('foo', fq_name='domain:bar:foo')
+        r.fetch()
+        self.assertEqual(r.uuid, '07eeb3c0-42f5-427c-9409-6ae45b376aa2')
+        mock_session.get_json.assert_called_with(r.href)
+
+        r.fetch(exclude_children=True)
+        mock_session.get_json.assert_called_with(r.href, exclude_children=True)
+
+        r.fetch(exclude_back_refs=True)
+        mock_session.get_json.assert_called_with(r.href, exclude_back_refs=True)
+
+    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
     def test_resource_save(self, mock_session):
         mock_session.configure_mock(base_url=BASE)
         mock_session.post_json.return_value = {
@@ -270,6 +293,22 @@ class TestResource(unittest.TestCase):
         with self.assertRaises(ResourceNotFound):
             p = Resource('not-found', uuid='1fe29f52-28dc-44a5-90d0-43de1b02cbd8')
             Resource('foo', fq_name='domain:foo', parent=p)
+
+        with self.assertRaises(ResourceMissing):
+            r = Resource('foo', fq_name='domain:foo')
+            r.parent
+
+    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
+    def test_resource_check(self, mock_session):
+        mock_session.configure_mock(base_url=BASE)
+
+        mock_session.id_to_fqname.side_effect = HttpError()
+        r = Resource('bar', uuid='57ef609c-6c9b-4b91-a542-26c61420c37b')
+        self.assertFalse(r.exists)
+
+        mock_session.id_to_fqname.side_effect = FQName('domain:bar')
+        r = Resource('bar', uuid='57ef609c-6c9b-4b91-a542-26c61420c37b')
+        self.assertTrue(r.exists)
 
 
 class TestCollection(unittest.TestCase):
