@@ -549,12 +549,12 @@ class ResourceCompleter(Completer):
 
     def _resource_action(self, resource, action):
         if action == Actions.STORE:
-            self.resources[str(resource.path)] = resource
-        elif action == Actions.DELETE and str(resource.path) in self.resources:
-            self.resources.pop(str(resource.path))
-        path_str = str(resource.path)
-        for c in [path_str, text_type(resource.fq_name)]:
-            self._action_in_trie(c, str(resource.path), action)
+            self.resources[text_type(resource.path)] = resource
+        elif action == Actions.DELETE and text_type(resource.path) in self.resources:
+            self.resources.pop(text_type(resource.path))
+        path_text_type = text_type(resource.path)
+        for c in [path_text_type, text_type(resource.fq_name)]:
+            self._action_in_trie(c, text_type(resource.path), action)
 
     def _add_resource(self, resource):
         self._resource_action(resource, Actions.STORE)
@@ -563,7 +563,7 @@ class ResourceCompleter(Completer):
         self._resource_action(resource, Actions.DELETE)
 
     def _sort_results(self, resource):
-        return (resource.type, resource.fq_name, len(str(resource.path)))
+        return (resource.type, resource.fq_name, len(text_type(resource.path)))
 
     def get_completions(self, document, complete_event):
         path_before_cursor = document.get_word_before_cursor(WORD=True)
@@ -579,15 +579,16 @@ class ResourceCompleter(Completer):
         if not searches:
             return
 
-        resources = [self.resources[p] for p in self.trie[searches[0]]]
+        # limit list to 50 entries
+        resources = [self.resources[p] for p in self.trie[searches[0]]][:50]
 
         for res in sorted(resources, key=self._sort_results):
-            rel_path = str(res.path.relative_to(ShellContext.current_path))
+            rel_path = text_type(res.path.relative_to(ShellContext.current_path))
             if rel_path in ('.', '/', ''):
                 continue
-            yield Completion(str(rel_path),
+            yield Completion(text_type(rel_path),
                              -len(path_before_cursor),
-                             display_meta=str(res.fq_name))
+                             display_meta=text_type(res.fq_name))
 
 
 class ShellContext(object):
