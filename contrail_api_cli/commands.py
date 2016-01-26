@@ -437,7 +437,7 @@ class Tree(Command):
                  help="Show tree of parents",
                  action="store_true", default=False)
 
-    def _get_tree(self, resource, tree, reverse=False, parent=False):
+    def _get_tree(self, resource, tree, parent_path=None, reverse=False, parent=False):
         if parent:
             try:
                 refs = [resource.parent]
@@ -449,6 +449,9 @@ class Tree(Command):
             refs = list(resource.refs)
         nb_refs = len(refs)
         for idx, ref in enumerate(refs):
+            # avoid refs loops (parent -> ref -> parent)
+            if str(ref.path) in parent_path:
+                continue
             ref.fetch()
             tree['childs'][str(ref.path)] = {
                 'index': idx + 1,
@@ -463,7 +466,9 @@ class Tree(Command):
             else:
                 tree['childs'][str(ref.path)]['parents'].append(1)
 
-            self._get_tree(ref, tree['childs'][str(ref.path)], reverse, parent)
+            self._get_tree(ref, tree['childs'][str(ref.path)],
+                           parent_path=str(resource.path),
+                           reverse=reverse, parent=parent)
 
     def _get_rows(self, tree, rows):
         for idx, (path, infos) in enumerate(tree.items()):
@@ -503,6 +508,7 @@ class Tree(Command):
                 }
             }
             self._get_tree(resource, tree[str(resource.path)],
+                           parent_path=str(resource.path),
                            reverse=reverse, parent=parent)
             rows = self._get_rows(tree, [])
             max_path_length = reduce(lambda a, r: len(r[0]) if len(r[0]) > a else a,
