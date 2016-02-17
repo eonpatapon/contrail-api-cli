@@ -16,7 +16,7 @@ if sys.version_info[0] == 2:
 
 setup(
     name='contrail-api-cli',
-    version='0.1b1',
+    version='0.1b2',
     description="Simple CLI program to browse Contrail API server",
     long_description=open('README.md').read(),
     author="Jean-Philippe Braun",
