@@ -12,6 +12,7 @@ to browse or modify API resources and collections.
 
     usage
     howto
+    howto_api
     api
 
 Indices and tables

@@ -231,3 +231,17 @@ The wildcards * and ? can be used in paths. All matching resources will be resol
     admin@localhost:/> ls -l virtual-network/default-domain:admin:*
     virtual-network/49d00de8-4351-446f-b6ee-d16dec3de413  default-domain:admin:net2
     virtual-network/5a9fbd42-a730-42f7-9947-be8a5d808b70  default-domain:admin:net1
+
+loading commands from other namespaces
+-------------------------------------
+
+Say you have a collection of commands in the ``contrail_api_cli.mycommands``
+entrypoint, run:
+
+.. code-block:: bash
+
+    $ contrail_api_cli --ns contrail_api_cli.mycommands shell
+
+The namespace ``contrail_api_cli.mycommands`` commands will
+be loaded as well as the commands of the default ``contrail_api_cli.command``
+namespace.
