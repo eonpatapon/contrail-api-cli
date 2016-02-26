@@ -100,13 +100,14 @@ class Collection(ResourceBase, UserList):
     """
 
     def __init__(self, type, fetch=False, recursive=1,
-                 fields=None, filters=None, parent_uuid=None,
-                 **kwargs):
+                 fields=None, detail=None, filters=None,
+                 parent_uuid=None, **kwargs):
         UserList.__init__(self)
         self.type = type
         self.fields = fields or []
         self.filters = filters or []
         self.parent_uuid = list(self._sanitize_parent_uuid(parent_uuid))
+        self.detail = detail
         self.meta = dict(kwargs)
         if fetch:
             self.fetch(recursive=recursive)
@@ -149,13 +150,16 @@ class Collection(ResourceBase, UserList):
         """
         self.filters.append((field_name, field_value))
 
-    def _format_fetch_params(self, fields, filters, parent_uuid):
+    def _format_fetch_params(self, fields, detail, filters, parent_uuid):
         params = {}
+        detail = detail or self.detail
         fields_str = ",".join(self._fetch_fields(fields))
         filters_str = ",".join(['%s==%s' % (f, json.dumps(v))
                                 for f, v in self._fetch_filters(filters)])
         parent_uuid_str = ",".join(self._fetch_parent_uuid(parent_uuid))
-        if fields_str:
+        if detail is True:
+            params['detail'] = detail
+        elif fields_str:
             params['fields'] = fields_str
         if filters_str:
             params['filters'] = filters_str
@@ -173,21 +177,24 @@ class Collection(ResourceBase, UserList):
     def _fetch_fields(self, fields=None):
         return self.fields + (fields or [])
 
-    def fetch(self, recursive=1, fields=None, filters=None, parent_uuid=None):
+    def fetch(self, recursive=1, fields=None, detail=None, filters=None, parent_uuid=None):
         """
         Fetch collection from API server
 
         :param recursive: level of recursion
         :type recursive: int
-        :param fields: list of field names to fetch
+        :param fields: fetch only listed fields.
+                       contrail 3.0 required
         :type fields: [str]
+        :param detail: fetch all fields
+        :type detail: bool
         :param filters: list of filters
         :type filters: [(name, value), ...]
         :param parent_uuid: filter by parent_uuid
         :type parent_uuid: v4UUID str or list of v4UUID str
         """
 
-        params = self._format_fetch_params(fields, filters, parent_uuid)
+        params = self._format_fetch_params(fields, detail, filters, parent_uuid)
         data = self.session.get_json(self.href, **params)
 
         if not self.type:
@@ -195,16 +202,19 @@ class Collection(ResourceBase, UserList):
                                     fetch=recursive - 1 > 0,
                                     recursive=recursive - 1,
                                     fields=self._fetch_fields(fields),
+                                    detail=detail or self.detail,
                                     filters=self._fetch_filters(filters),
                                     parent_uuid=self._fetch_parent_uuid(parent_uuid),
                                     **col["link"])
                          for col in data['links']
                          if col["link"]["rel"] == "collection"]
         else:
+            # when detail=False, res == {resource_attrs}
+            # when detail=True, res == {'type': {resource_attrs}}
             self.data = [Resource(self.type,
                                   fetch=recursive - 1 > 0,
                                   recursive=recursive - 1,
-                                  **res)
+                                  **res.get(self.type, res))
                          for res_type, res_list in data.items()
                          for res in res_list]
 

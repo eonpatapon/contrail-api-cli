@@ -348,6 +348,40 @@ class TestCollection(unittest.TestCase):
         mock_session.get_json.assert_called_with(BASE + '/foos', filters='foo=="bar",bar==42')
 
     @mock.patch('contrail_api_cli.resource.ResourceBase.session')
+    def test_collection_detail(self, mock_session):
+        mock_session.configure_mock(base_url=BASE)
+        c = Collection('foo', fields=['foo', 'bar'], detail=True, fetch=True)
+        mock_session.get_json.assert_called_with(BASE + '/foos', detail=True)
+        c.fetch(fields=['baz'])
+        mock_session.get_json.assert_called_with(BASE + '/foos', detail=True)
+        c.fetch()
+        mock_session.get_json.assert_called_with(BASE + '/foos', detail=True)
+        c = Collection('foo', detail=True, fetch=True)
+        mock_session.get_json.assert_called_with(c.href, detail=True)
+        c = Collection('foo', detail=False, fetch=True)
+        mock_session.get_json.assert_called_with(c.href)
+        c = Collection('foo', detail='other', fetch=True)
+        mock_session.get_json.assert_called_with(c.href)
+
+        mock_session.get_json.return_value = {
+            'foos': [
+                {
+                    'foo': {
+                        'uuid': 'dd2f4111-abda-405f-bce9-c6c24181dd14',
+                    }
+                },
+                {
+                    'foo': {
+                        'uuid': '9fe7094d-f54e-4284-a813-9ca4df866019',
+                    }
+                }
+            ]
+        }
+        c = Collection('foo', detail=True, fetch=True)
+        self.assertEqual(c.data[0], Resource('foo', uuid='dd2f4111-abda-405f-bce9-c6c24181dd14'))
+        self.assertEqual(c.data[1], Resource('foo', uuid='9fe7094d-f54e-4284-a813-9ca4df866019'))
+
+    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
     def test_collection_parent_uuid(self, mock_session):
         mock_session.configure_mock(base_url=BASE)
         c = Collection('foo', parent_uuid='aa')
