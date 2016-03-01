@@ -1,14 +1,46 @@
 import curses
-
-from prompt_toolkit.styles import DefaultStyle
-
-from pygments.style import Style
 from pygments.token import Token
 
+try:
+    # prompt_toolkit >= 0.55
+    from prompt_toolkit.styles import style_from_dict
+except ImportError:
+    # prompt_toolkit <= 0.54
+    from prompt_toolkit.styles import default_style_extensions
+    from pygments.style import Style
+    from pygments.styles.default import DefaultStyle
 
-class Prompt256Style(Style):
-    styles = DefaultStyle.styles.copy()
-    styles.update({
+    def style_from_dict(d):
+        styles = default_style_extensions.copy()
+        styles.update(DefaultStyle.styles)
+        styles.update(d)
+        PromptStyle = type('PromptStyle', (Style,), {'styles': styles})
+        return PromptStyle
+
+try:
+    curses.setupterm()
+    nb_colors = curses.tigetnum("colors")
+except:
+    nb_colors = 256
+
+if nb_colors == 8:
+    default = style_from_dict({
+        Token.Path: 'bold #00ff00',
+        Token.Pound: 'bold',
+        Token.At: 'bold',
+        Token.Host: '#0000ff',
+        Token.Username: '#0000ff',
+
+        Token.Menu.Completions.Completion: 'bg:#ffffff #000000',
+        Token.Menu.Completions.Completion.Current: 'bold bg:#000000 #ffffff',
+        Token.Menu.Completions.Meta: 'bg:#ffffff #000000',
+        Token.Menu.Completions.Meta.Current: 'bold bg:#000000 #ffffff',
+        Token.Menu.Completions.MultiColumnMeta: 'bg:#000000 #ffffff',
+        Token.Menu.Completions.ProgressBar: 'bg:#ffffff',
+        Token.Menu.Completions.ProgressButton: 'bg:#000000',
+    })
+else:
+    default = style_from_dict({
         Token.Path: 'bold #009AC7',
         Token.Pound: 'bold #FFFFFF',
         Token.At: 'bold #dadada',
@@ -24,33 +56,4 @@ class Prompt256Style(Style):
         Token.Menu.Completions.ProgressButton: 'bg:#274B7A',
     })
 
-
-class Prompt8Style(Style):
-    styles = DefaultStyle.styles.copy()
-    styles.update({
-        Token.Path: 'bold #00ff00',
-        Token.Pound: 'bold',
-        Token.At: 'bold',
-        Token.Host: '#0000ff',
-        Token.Username: '#0000ff',
-
-        Token.Menu.Completions.Completion: 'bg:#ffffff #000000',
-        Token.Menu.Completions.Completion.Current: 'bold bg:#000000 #ffffff',
-        Token.Menu.Completions.Meta: 'bg:#ffffff #000000',
-        Token.Menu.Completions.Meta.Current: 'bold bg:#000000 #ffffff',
-        Token.Menu.Completions.MultiColumnMeta: 'bg:#000000 #ffffff',
-        Token.Menu.Completions.ProgressBar: 'bg:#ffffff',
-        Token.Menu.Completions.ProgressButton: 'bg:#000000',
-    })
-
-
-try:
-    curses.setupterm()
-    nb_colors = curses.tigetnum("colors")
-except:
-    nb_colors = 256
-
-if nb_colors == 8:
-    PromptStyle = type('PromptStyle', (Prompt8Style,), {})
-else:
-    PromptStyle = type('PromptStyle', (Prompt256Style,), {})
+# print default.styles

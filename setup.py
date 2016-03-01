@@ -2,7 +2,7 @@ import sys
 from setuptools import setup, find_packages
 
 install_requires = [
-    'prompt_toolkit==0.54',
+    'prompt_toolkit',
     'python-keystoneclient',
     'tabulate'
 ]

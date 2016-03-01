@@ -36,7 +36,7 @@ from .resource import Resource
 from .resource import Collection, RootCollection
 from .client import ContrailAPISession
 from .utils import Path, classproperty, continue_prompt, md5, printo
-from .style import PromptStyle
+from .style import default as default_style
 from .exceptions import CommandError, CommandNotFound, BadPath, \
     ResourceNotFound, NoResourceFound
 
@@ -641,7 +641,7 @@ class Shell(Command):
                 action = prompt(get_prompt_tokens=get_prompt_tokens,
                                 history=history,
                                 completer=completer,
-                                style=PromptStyle)
+                                style=default_style)
             except (EOFError, KeyboardInterrupt):
                 break
             try:
