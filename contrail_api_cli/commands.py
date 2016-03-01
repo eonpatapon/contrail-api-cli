@@ -733,6 +733,18 @@ class Help(Command):
             [name for name, cmd in commands.list])
 
 
+class Code(Command):
+
+    def __call__(self):
+        try:
+            from ptpython.repl import embed
+            embed(globals(), None)
+        except ImportError:
+            printo('Install ptpython for a better repl')
+            import code
+            code.interact(banner="Launching strandard python repl", readfunc=None, local=globals())
+
+
 def make_api_session(options):
     ContrailAPISession.make(options.os_auth_plugin,
                             **vars(options))
