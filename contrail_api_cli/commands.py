@@ -733,7 +733,8 @@ class Help(Command):
             [name for name, cmd in commands.list])
 
 
-class Code(Command):
+class Python(Command):
+    description = 'Run a python interpreter'
 
     def __call__(self):
         try:

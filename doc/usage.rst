@@ -233,7 +233,7 @@ The wildcards * and ? can be used in paths. All matching resources will be resol
     virtual-network/5a9fbd42-a730-42f7-9947-be8a5d808b70  default-domain:admin:net1
 
 loading commands from other namespaces
--------------------------------------
+--------------------------------------
 
 Say you have a collection of commands in the ``contrail_api_cli.mycommands``
 entrypoint, run:
@@ -245,3 +245,25 @@ entrypoint, run:
 The namespace ``contrail_api_cli.mycommands`` commands will
 be loaded as well as the commands of the default ``contrail_api_cli.command``
 namespace.
+
+python from the shell
+---------------------
+
+You can directly use contrail-api-cli API in a python console that can be
+run with the ``python`` command. If ptpython [1]_ is installed it will be used in place
+of the standard python console.
+
+.. code-block:: python
+
+    admin@localhost:/> python
+    >>> c = Collection('virtual-network', fetch=True)
+
+    >>> for vn in c:
+    ...     print(vn.uuid)
+    0287b4d1-3aea-4a82-b1be-be524995d1a8
+    73fc0e08-b542-483e-86e7-f4a5aad2750f
+    bf91b645-f7aa-4ab3-88cf-dc7a6358c08c
+    a3694461-c4e0-4f54-a6fa-a11ae0472e04
+    6afc9f77-607f-424c-8188-996c9513467a
+
+.. [1] https://github.com/jonathanslenders/ptpython
