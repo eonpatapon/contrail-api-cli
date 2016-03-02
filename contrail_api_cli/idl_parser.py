@@ -121,4 +121,4 @@ if __name__ == '__main__':
     if not os.path.exists(sys.argv[1]):
         sys.exit('Error: %s not found' % sys.argv[1])
     idl_parser = IDLParser()
-    idl_parser.Parse(sys.argv[1])
+    idl_parser.Parse(open(sys.argv[1]))
