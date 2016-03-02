@@ -239,6 +239,12 @@ class TestResource(unittest.TestCase):
         mock_session.fqname_to_id.side_effect = [
             "07eeb3c0-42f5-427c-9409-6ae45b376aa2"
         ]
+        mock_session.get_json.return_value = {
+            'foo': {
+                'uuid': '07eeb3c0-42f5-427c-9409-6ae45b376aa2',
+                'fq_name': ['domain', 'bar', 'foo']
+            }
+        }
         r = Resource('foo', fq_name='domain:bar:foo')
         r.fetch()
         self.assertEqual(r.uuid, '07eeb3c0-42f5-427c-9409-6ae45b376aa2')
@@ -253,33 +259,45 @@ class TestResource(unittest.TestCase):
     @mock.patch('contrail_api_cli.resource.ResourceBase.session')
     def test_resource_save(self, mock_session):
         mock_session.configure_mock(base_url=BASE)
-        mock_session.post_json.return_value = {
-            'foo': {
-                'uuid': '8240f9c7-0f28-4ca7-b92e-2f6441a0a6dd'
+        mock_session.fqname_to_id.return_value = '8240f9c7-0f28-4ca7-b92e-2f6441a0a6dd'
+        mock_session.get_json.side_effect = [
+            {
+                'foo': {
+                    'uuid': '8240f9c7-0f28-4ca7-b92e-2f6441a0a6dd',
+                    'attr': 'bar',
+                    'fq_name': ['domain', 'bar', 'foo']
+                }
+            },
+            {
+                'foo': {
+                    'uuid': '8240f9c7-0f28-4ca7-b92e-2f6441a0a6dd',
+                    'attr': 'foo',
+                    'fq_name': ['domain', 'bar', 'foo']
+                }
             }
-        }
-        r = Resource('foo', fq_name='domain:bar:foo')
-        r['foo'] = 'bar'
-        r.save()
-        mock_session.post_json.assert_called_with(BASE + '/foos',
-                                                  {'foo': {'foo': 'bar',
-                                                           'fq_name': ['domain', 'bar', 'foo']}},
-                                                  cls=ResourceEncoder)
+        ]
 
-        mock_session.put_json.return_value = {
-            'foo': {
-                'uuid': '8240f9c7-0f28-4ca7-b92e-2f6441a0a6dd'
-            }
-        }
-        r = Resource('foo', uuid='4c7dc905-3322-49c8-be5d-d4adb5571d41')
-        r['foo'] = 'bar'
-        r.save()
-        mock_session.put_json.assert_called_with(BASE + '/foo/4c7dc905-3322-49c8-be5d-d4adb5571d41',
+        r1 = Resource('foo', fq_name='domain:bar:foo')
+        r1['attr'] = 'bar'
+        r1.save()
+        mock_session.post_json.assert_called_with(BASE + '/foos',
+                                                  {'foo': {
+                                                      'attr': 'bar',
+                                                      'fq_name': ['domain', 'bar', 'foo']
+                                                  }},
+                                                  cls=ResourceEncoder)
+        self.assertEqual(r1['attr'], 'bar')
+
+        r1['attr'] = 'foo'
+        r1.save()
+        mock_session.put_json.assert_called_with(BASE + '/foo/8240f9c7-0f28-4ca7-b92e-2f6441a0a6dd',
                                                  {'foo': {
-                                                     'foo': 'bar',
-                                                     'uuid': '4c7dc905-3322-49c8-be5d-d4adb5571d41'
+                                                     'attr': 'foo',
+                                                     'fq_name': ['domain', 'bar', 'foo'],
+                                                     'uuid': '8240f9c7-0f28-4ca7-b92e-2f6441a0a6dd'
                                                  }},
                                                  cls=ResourceEncoder)
+        self.assertEqual(r1['attr'], 'foo')
 
     @mock.patch('contrail_api_cli.resource.ResourceBase.session')
     def test_resource_parent(self, mock_session):
@@ -320,6 +338,68 @@ class TestResource(unittest.TestCase):
             '588e1a17-ae50-4b67-8078-95f061d833ca'
         ]
         self.assertTrue(r.exists)
+
+    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
+    def test_resource_ref_update(self, mock_session):
+        mock_session.configure_mock(base_url=BASE)
+        mock_session.make_url = ContrailAPISession.make_url.__get__(mock_session)
+        mock_session.add_ref = ContrailAPISession.add_ref.__get__(mock_session)
+        mock_session.remove_ref = ContrailAPISession.remove_ref.__get__(mock_session)
+        mock_session._ref_update = ContrailAPISession._ref_update.__get__(mock_session)
+
+        r1 = Resource('foo', uuid='2caf30aa-d197-40be-82dc-3bac4ca91adb',
+                      fq_name='domain:foo')
+        r2 = Resource('bar', uuid='5d085b74-2dcc-4180-8284-10a56f9ed318',
+                      fq_name='domain:bar')
+
+        mock_session.get_json.return_value = {
+            'foo': {
+                'uuid': '2caf30aa-d197-40be-82dc-3bac4ca91adb',
+                'fq_name': ['domain', 'foo'],
+                'bar_refs': [
+                    {
+                        'attr': {
+                            'prop': 'value'
+                        },
+                        'to': ['domain', 'bar'],
+                        'uuid': '5d085b74-2dcc-4180-8284-10a56f9ed318'
+                    }
+                ]
+            }
+        }
+        r1.add_ref(r2, attr={'prop': 'value'})
+        data = {
+            'type': r1.type,
+            'uuid': r1.uuid,
+            'ref-type': r2.type,
+            'ref-fq-name': list(r2.fq_name),
+            'ref-uuid': r2.uuid,
+            'operation': 'ADD',
+            'attr': {
+                'prop': 'value'
+            }
+        }
+        mock_session.post_json.assert_called_with(BASE + '/ref-update', data)
+        self.assertTrue(r1['bar_refs'][0].uuid, r2.uuid)
+
+        mock_session.get_json.return_value = {
+            'foo': {
+                'uuid': '2caf30aa-d197-40be-82dc-3bac4ca91adb',
+                'fq_name': ['domain', 'foo']
+            }
+        }
+        r1.remove_ref(r2)
+        data = {
+            'type': r1.type,
+            'uuid': r1.uuid,
+            'ref-type': r2.type,
+            'ref-fq-name': list(r2.fq_name),
+            'ref-uuid': r2.uuid,
+            'operation': 'DELETE',
+            'attr': None
+        }
+        mock_session.post_json.assert_called_with(BASE + '/ref-update', data)
+        self.assertTrue('bar_refs' not in r1)
 
 
 class TestCollection(unittest.TestCase):
