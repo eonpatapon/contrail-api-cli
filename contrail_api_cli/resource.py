@@ -373,14 +373,13 @@ class Resource(ResourceBase, UserDict):
         If uuid is present the resource is updated.
         """
         if self.path.is_collection:
-            data = self.session.post_json(self.href,
-                                          {self.type: dict(self.data)},
-                                          cls=ResourceEncoder)
+            self.session.post_json(self.href,
+                                   {self.type: dict(self.data)},
+                                   cls=ResourceEncoder)
         else:
-            data = self.session.put_json(self.href,
-                                         {self.type: dict(self.data)},
-                                         cls=ResourceEncoder)
-        self.from_dict(data[self.type])
+            self.session.put_json(self.href,
+                                  {self.type: dict(self.data)},
+                                  cls=ResourceEncoder)
         self.fetch(exclude_children=True, exclude_back_refs=True)
 
     def delete(self):
@@ -420,7 +419,7 @@ class Resource(ResourceBase, UserDict):
         """
         # Find other linked resources
         data = self._encode_resource(data, recursive=recursive)
-        self.data.update(data)
+        self.data = data
 
     def _encode_resource(self, data, recursive=1):
         for attr, value in list(data.items()):
@@ -429,11 +428,11 @@ class Resource(ResourceBase, UserDict):
             if attr.endswith('refs'):
                 ref_type = "-".join([c for c in attr.split('_')
                                      if c not in ('back', 'refs')])
-                for idx, r in enumerate(data[attr]):
+                for idx, res in enumerate(data[attr]):
                     data[attr][idx] = Resource(ref_type,
                                                fetch=recursive - 1 > 0,
                                                recursive=recursive - 1,
-                                               **data[attr][idx])
+                                               **res)
         return data
 
     @property
@@ -457,6 +456,50 @@ class Resource(ResourceBase, UserDict):
             if attr.endswith('refs') and not attr.endswith('back_refs'):
                 for ref in value:
                     yield ref
+
+    def remove_ref(self, ref):
+        """Remove reference from self to ref
+
+        >>> iip = Resource('instance-ip',
+                           uuid='30213cf9-4b03-4afc-b8f9-c9971a216978',
+                           fetch=True)
+        >>> for vmi in iip['virtual_machine_interface_refs']:
+                iip.remove_ref(vmi)
+        >>> iip['virtual_machine_interface_refs']
+        KeyError: u'virtual_machine_interface_refs'
+
+        :param ref: reference to remove
+        :type ref: Resource
+        """
+        self.session.remove_ref(self, ref)
+        self.fetch()
+
+    def remove_back_ref(self, back_ref):
+        """Remove reference from back_ref to self
+
+        :param back_ref: back_ref to remove
+        :type back_ref: Resource
+        """
+        back_ref.remove_ref(self)
+        self.fetch()
+
+    def add_ref(self, ref, attr=None):
+        """Add reference to resource
+
+        :param ref: reference to add
+        :type ref: Resource
+        """
+        self.session.add_ref(self, ref, attr)
+        self.fetch()
+
+    def add_back_ref(self, back_ref, attr=None):
+        """Add reference from back_ref to self
+
+        :param back_ref: back_ref to add
+        :type back_ref: Resource
+        """
+        back_ref.add_ref(self, attr)
+        self.fetch()
 
     def json(self):
         """Return JSON representation of the resource

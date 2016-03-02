@@ -314,6 +314,7 @@ class TestCommands(unittest.TestCase):
             {
                 'foo': {
                     'href': BASE + '/foo/6b6a7f47-807e-4c39-8ac6-3adcf2f5498f',
+                    'uuid': '6b6a7f47-807e-4c39-8ac6-3adcf2f5498f',
                     'bar_back_refs': [
                         {
                             'href': BASE + '/bar/22916187-5b6f-40f1-b7b6-fc6fe9f23bce',

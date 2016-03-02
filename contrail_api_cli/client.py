@@ -151,3 +151,21 @@ class ContrailAPISession(Session):
             "uuid": uuid
         }
         return FQName(self.post_json(self.make_url("/id-to-fqname"), data)['fq_name'])
+
+    def add_ref(self, r1, r2, attr=None):
+        self._ref_update(r1, r2, 'ADD', attr)
+
+    def remove_ref(self, r1, r2):
+        self._ref_update(r1, r2, 'DELETE')
+
+    def _ref_update(self, r1, r2, action, attr=None):
+        data = {
+            'type': r1.type,
+            'uuid': r1.uuid,
+            'ref-type': r2.type,
+            'ref-uuid': r2.uuid,
+            'ref-fq-name': list(r2.fq_name),
+            'operation': action,
+            'attr': attr
+        }
+        return self.post_json(self.make_url("/ref-update"), data)
