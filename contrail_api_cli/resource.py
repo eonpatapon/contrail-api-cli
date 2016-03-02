@@ -443,7 +443,7 @@ class Resource(ResourceBase, UserDict):
         :rtype: Resource generator
         """
         for attr, value in self.data.items():
-            if attr.endswith(('back_refs', 'loadbalancer_members')):
+            if attr.endswith('back_refs'):
                 for back_ref in value:
                     yield back_ref
 
