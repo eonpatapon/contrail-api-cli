@@ -1,7 +1,8 @@
 """This module creates schema data structure by parsing Contrail
 schema files.
 
->>> schema = create_schema_from_xsd_directory("schema-directory")
+>>> list_available_schema_version()
+>>> schema = create_schema_from_version("2.21")
 >>> schema.all_resources()
 >>> schema.resource('virtual-network').children
 
@@ -9,12 +10,15 @@ schema files.
 
 from os import listdir
 from os.path import isfile, join
+import logging
 
 import contrail_api_cli.idl_parser
 
-default_schemas_directory_name = "./schemas"
+logger = logging.getLogger(__name__)
+
+default_schemas_directory_name = "schemas"
 default_schemas_directory_path = join(contrail_api_cli.__path__[0],
-                                     default_schemas_directory_name)
+                                      default_schemas_directory_name)
 
 
 class SchemaVersionNotAvailable(Exception):
@@ -25,6 +29,7 @@ class SchemaVersionNotAvailable(Exception):
 
 
 def list_available_schema_version():
+    """To discover available schema versions."""
     return listdir(default_schemas_directory_path)
 
 
@@ -50,11 +55,14 @@ def _parse_xsd_file(filename):
         # idl parser should return empty dict
         if ifmap_statements is None:
             ifmap_statements = {}
-            print "Nothing to parse"
         return ifmap_statements
 
 
 def create_schema_from_version(version):
+    """Provide a version of the schema to create it. Use
+    list_available_schema_version to discover available versions.
+
+    """
     schema_directory = _get_schema_version_path(version)
     return create_schema_from_xsd_directory(schema_directory)
 
@@ -67,9 +75,8 @@ def create_schema_from_xsd_directory(directory):
     """
     schema = Schema()
     for f in _get_xsd_from_directory(directory):
-        print "Loading schema %s" % f
+        logger.info("Loading schema %s" % f)
         fill_schema_from_xsd_file(f, schema)
-        print schema.all_resources()
     return schema
 
 
