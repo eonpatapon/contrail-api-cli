@@ -46,6 +46,7 @@ class IDLParser(object):
                     logger = logging.getLogger('idl_parser')
                     logger.debug('ERROR statement: %s', stmt)
                 #self._ParseExpression(stmt)
+        return self._ElementDict
 
     def Find(self, element):
         return self._ElementDict.get(element)
@@ -102,12 +103,12 @@ class IDLParser(object):
         mch = re.match(r'(.*):(.*)', from_name)
         if mch:
             from_ns = mch.group(1)
-            from_name = mch.group(2)
+            # from_name = mch.group(2)
 
         mch = re.match(r'(.*):(.*)', to_name)
         if mch:
             to_ns = mch.group(1)
-            to_name = mch.group(2)
+            # to_name = mch.group(2)
 
         # TODO store and handle namespace in identifiers
 
@@ -121,4 +122,5 @@ if __name__ == '__main__':
     if not os.path.exists(sys.argv[1]):
         sys.exit('Error: %s not found' % sys.argv[1])
     idl_parser = IDLParser()
-    idl_parser.Parse(open(sys.argv[1]))
+    for v, k in idl_parser.Parse(open(sys.argv[1])).items():
+        print v, ":", k

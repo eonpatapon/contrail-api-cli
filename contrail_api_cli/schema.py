@@ -12,6 +12,28 @@ from os.path import isfile, join
 
 import contrail_api_cli.idl_parser
 
+default_schemas_directory_name = "./schemas"
+default_schemas_directory_path = join(contrail_api_cli.__path__[0],
+                                     default_schemas_directory_name)
+
+
+class SchemaVersionNotAvailable(Exception):
+    def __init__(self, version):
+        self.version = version
+        msg = "Schema version %s is not available" % self.version
+        Exception.__init__(self, msg)
+
+
+def list_available_schema_version():
+    return listdir(default_schemas_directory_path)
+
+
+def _get_schema_version_path(version):
+    if version in list_available_schema_version():
+        return join(default_schemas_directory_path, version)
+    else:
+        raise SchemaVersionNotAvailable(version)
+
 
 def _get_xsd_from_directory(pathname):
     xsd_files = []
@@ -25,7 +47,16 @@ def _get_xsd_from_directory(pathname):
 def _parse_xsd_file(filename):
     with open(filename) as f:
         ifmap_statements = contrail_api_cli.idl_parser.IDLParser().Parse(f)
+        # idl parser should return empty dict
+        if ifmap_statements is None:
+            ifmap_statements = {}
+            print "Nothing to parse"
         return ifmap_statements
+
+
+def create_schema_from_version(version):
+    schema_directory = _get_schema_version_path(version)
+    return create_schema_from_xsd_directory(schema_directory)
 
 
 def create_schema_from_xsd_directory(directory):
@@ -36,7 +67,9 @@ def create_schema_from_xsd_directory(directory):
     """
     schema = Schema()
     for f in _get_xsd_from_directory(directory):
+        print "Loading schema %s" % f
         fill_schema_from_xsd_file(f, schema)
+        print schema.all_resources()
     return schema
 
 
