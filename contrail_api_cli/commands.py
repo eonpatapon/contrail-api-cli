@@ -743,7 +743,7 @@ class Python(Command):
         except ImportError:
             printo('Install ptpython for a better repl')
             import code
-            code.interact(banner="Launching strandard python repl", readfunc=None, local=globals())
+            code.interact(banner="Launching standard python repl", readfunc=None, local=globals())
 
 
 def make_api_session(options):
