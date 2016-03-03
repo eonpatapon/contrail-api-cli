@@ -26,7 +26,7 @@ setup(
     maintainer_email="eon@patapon.info",
     url="http://www.github.com/eonpatapon/contrail-api-cli",
     packages=find_packages(),
-    include_package_data=True,
+    package_data={'contrail_api_cli': ['schemas/*/*']},
     install_requires=install_requires,
     scripts=[],
     license="MIT",
