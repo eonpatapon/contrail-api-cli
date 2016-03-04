@@ -250,8 +250,8 @@ python from the shell
 ---------------------
 
 You can directly use contrail-api-cli API in a python console that can be
-run with the ``python`` command. If ptpython [1]_ is installed it will be used in place
-of the standard python console.
+run with the ``python`` command. If ptpython [1]_ or IPython [2]_ are
+installed they will be used instead of the standard python repl.
 
 .. code-block:: python
 
@@ -267,3 +267,4 @@ of the standard python console.
     6afc9f77-607f-424c-8188-996c9513467a
 
 .. [1] https://github.com/jonathanslenders/ptpython
+.. [2] https://ipython.org/

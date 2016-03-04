@@ -741,9 +741,12 @@ class Python(Command):
             from ptpython.repl import embed
             embed(globals(), None)
         except ImportError:
-            printo('Install ptpython for a better repl')
-            import code
-            code.interact(banner="Launching standard python repl", readfunc=None, local=globals())
+            try:
+                from IPython import embed
+                embed()
+            except ImportError:
+                import code
+                code.interact(banner="Launching standard python repl", readfunc=None, local=globals())
 
 
 def make_api_session(options):
