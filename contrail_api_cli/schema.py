@@ -28,6 +28,13 @@ class SchemaVersionNotAvailable(Exception):
         Exception.__init__(self, msg)
 
 
+class ResourceNotDefined(Exception):
+    def __init__(self, resource_name):
+        self.resource_name = resource_name
+        msg = "Resource '%s' is not defined in the schema" % self.resource_name
+        Exception.__init__(self, msg)
+
+
 def list_available_schema_version():
     """To discover available schema versions."""
     return listdir(default_schemas_directory_path)
@@ -108,7 +115,10 @@ class Schema(object):
         self._schema = {}
 
     def resource(self, resource_name):
-        return self._schema[resource_name]
+        try:
+            return self._schema[resource_name]
+        except KeyError:
+            raise ResourceNotDefined(resource_name)
 
     def all_resources(self):
         return self._schema.keys()
