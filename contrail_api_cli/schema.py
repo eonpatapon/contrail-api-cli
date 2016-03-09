@@ -13,6 +13,7 @@ from os.path import isfile, join
 import logging
 
 import contrail_api_cli.idl_parser
+from .utils import to_json
 
 logger = logging.getLogger(__name__)
 
@@ -135,3 +136,10 @@ class Resource(object):
         self.parent = None
         self.refs = []
         self.back_refs = []
+
+    def json(self):
+        data = {'children': self.children,
+                'parent': self.parent,
+                'refs': self.refs,
+                'back_refs': self.back_refs}
+        return to_json(data)
