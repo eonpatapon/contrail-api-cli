@@ -38,20 +38,20 @@ setup(
             'http = contrail_api_cli.auth:HTTPAuth'
         ],
         'contrail_api_cli.command': [
-            'ls = contrail_api_cli.commands:Ls',
-            'cat = contrail_api_cli.commands:Cat',
-            'count = contrail_api_cli.commands:Count',
-            'rm = contrail_api_cli.commands:Rm',
-            'edit = contrail_api_cli.commands:Edit',
-            'shell = contrail_api_cli.commands:Shell',
-            'tree = contrail_api_cli.commands:Tree',
-            'python = contrail_api_cli.commands:Python',
+            'ls = contrail_api_cli.command:Ls',
+            'cat = contrail_api_cli.command:Cat',
+            'count = contrail_api_cli.command:Count',
+            'rm = contrail_api_cli.command:Rm',
+            'edit = contrail_api_cli.command:Edit',
+            'shell = contrail_api_cli.command:Shell',
+            'tree = contrail_api_cli.command:Tree',
+            'code = contrail_api_cli.command:Python',
         ],
         'contrail_api_cli.shell_command': [
-            'cd = contrail_api_cli.commands:Cd',
-            'set = contrail_api_cli.commands:Set',
-            'exit = contrail_api_cli.commands:Exit',
-            'help = contrail_api_cli.commands:Help',
+            'cd = contrail_api_cli.command:Cd',
+            'set = contrail_api_cli.command:Set',
+            'exit = contrail_api_cli.command:Exit',
+            'help = contrail_api_cli.command:Help',
         ]
     },
     classifiers=[

@@ -11,10 +11,10 @@ from pkg_resources import EntryPoint
 
 from stevedore.extension import Extension
 
-import contrail_api_cli.commands as cmds
+import contrail_api_cli.command as cmds
 from contrail_api_cli import client
 from contrail_api_cli.utils import Path, FQName
-from contrail_api_cli.commands import ShellContext
+from contrail_api_cli.command import ShellContext
 from contrail_api_cli.resource import Resource
 
 
@@ -31,12 +31,12 @@ class Cmd(cmds.Command):
             return "not piped"
 
 
-class TestCommands(unittest.TestCase):
+class TestCommand(unittest.TestCase):
 
     def setUp(self):
         self.mgr = cmds.CommandManager(namespaces=['contrail_api_cli.command',
                                                    'contrail_api_cli.shell_command'])
-        ep = EntryPoint('cmd', 'contrail_api_cli.tests.test_commands', attrs=('Cmd',))
+        ep = EntryPoint('cmd', 'contrail_api_cli.tests.test_command', attrs=('Cmd',))
         cls = ep.load(require=False)
         ext = Extension('cmd', ep, cls, cls('cmd'))
         self.mgr.mgrs[0].extensions.append(ext)
@@ -148,7 +148,7 @@ class TestCommands(unittest.TestCase):
         self.mgr.get('ls')(paths=['foo'], parent_uuid='1ad831be-3b21-4870-aadf-8efc2b0a480d')
         mock_session.get_json.assert_called_with(BASE + '/foos', parent_id='1ad831be-3b21-4870-aadf-8efc2b0a480d')
 
-    @mock.patch('contrail_api_cli.commands.Cat.colorize')
+    @mock.patch('contrail_api_cli.command.Cat.colorize')
     @mock.patch('contrail_api_cli.resource.ResourceBase.session')
     def test_resource_cat(self, mock_session, mock_colorize):
         # bind original method to mock_session
@@ -240,7 +240,7 @@ class TestCommands(unittest.TestCase):
             self.mgr.get('count')()
 
     @mock.patch('contrail_api_cli.resource.ResourceBase.session')
-    @mock.patch('contrail_api_cli.commands.continue_prompt')
+    @mock.patch('contrail_api_cli.command.continue_prompt')
     def test_rm(self, mock_continue_prompt, mock_session):
         mock_session.configure_mock(base_url=BASE)
         ShellContext.current_path = Path('/')
@@ -300,7 +300,7 @@ class TestCommands(unittest.TestCase):
         ])
 
     @mock.patch('contrail_api_cli.resource.ResourceBase.session')
-    @mock.patch('contrail_api_cli.commands.continue_prompt')
+    @mock.patch('contrail_api_cli.command.continue_prompt')
     def test_rm_noconfirm(self, mock_continue_prompt, mock_session):
         ShellContext.current_path = Path('/')
         mock_continue_prompt.return_value = False
@@ -309,7 +309,7 @@ class TestCommands(unittest.TestCase):
         self.assertFalse(mock_session.delete.called)
 
     @mock.patch('contrail_api_cli.resource.ResourceBase.session')
-    @mock.patch('contrail_api_cli.commands.continue_prompt')
+    @mock.patch('contrail_api_cli.command.continue_prompt')
     def test_rm_recursive(self, mock_continue_prompt, mock_session):
         ShellContext.current_path = Path('/')
         t = ['foo/6b6a7f47-807e-4c39-8ac6-3adcf2f5498f']
@@ -380,7 +380,7 @@ class TestCommands(unittest.TestCase):
         mock_session.delete.assert_has_calls(expected_calls)
 
     @mock.patch('contrail_api_cli.resource.ResourceBase.session')
-    @mock.patch('contrail_api_cli.commands.prompt')
+    @mock.patch('contrail_api_cli.command.prompt')
     def test_pipes(self, mock_prompt, mock_session):
         old_stdout = sys.stdout
         out = io.BytesIO()
