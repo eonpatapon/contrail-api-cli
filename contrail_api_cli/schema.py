@@ -36,6 +36,19 @@ class ResourceNotDefined(Exception):
         Exception.__init__(self, msg)
 
 
+def get_last_schema_version():
+    """Return the last available schema version. Version are
+    lexicographically sorted. If no version is available, return None.
+
+    :rtype: str or None
+    """
+    versions = list_available_schema_version()
+    if len(versions) > 0:
+        return sorted(versions)[-1]
+    else:
+        return None
+
+
 def list_available_schema_version():
     """To discover available schema versions."""
     return listdir(default_schemas_directory_path)

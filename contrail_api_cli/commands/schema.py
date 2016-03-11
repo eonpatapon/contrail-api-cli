@@ -1,5 +1,5 @@
 from ..command import Command, Arg, CommandError
-from ..schema import create_schema_from_version, list_available_schema_version, SchemaVersionNotAvailable, ResourceNotDefined
+from ..schema import create_schema_from_version, list_available_schema_version, SchemaVersionNotAvailable, ResourceNotDefined, get_last_schema_version
 
 from pygments import highlight
 from pygments.lexers import JsonLexer
@@ -10,7 +10,7 @@ class Schema(Command):
     description = "Explore schema resources"
     schema_version = Arg('-v', '--schema-version',
                          type=str,
-                         default='2.21',
+                         default=get_last_schema_version(),
                          help="schema version to use (default='%(default)s')")
     list_version = Arg('-l', '--list-version',
                        action="store_true",
