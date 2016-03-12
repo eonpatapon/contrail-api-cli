@@ -110,7 +110,10 @@ class TestCommands(unittest.TestCase):
 
     @mock.patch('contrail_api_cli.resource.ResourceBase.session')
     def test_resource_long_ls(self, mock_session):
-        mock_session.id_to_fqname.return_value = FQName('default-project:foo:ec1afeaa-8930-43b0-a60a-939f23a50724')
+        mock_session.id_to_fqname.return_value = {
+            'type': 'foo',
+            'fq_name': FQName('default-project:foo:ec1afeaa-8930-43b0-a60a-939f23a50724')
+        }
         mock_session.get_json.return_value = {
             'foo': {
                 'href': BASE + '/foo/ec1afeaa-8930-43b0-a60a-939f23a50724',
@@ -156,6 +159,7 @@ class TestCommands(unittest.TestCase):
         def post(url, json=None):
             if json['uuid'] == "ec1afeaa-8930-43b0-a60a-939f23a50724":
                 return {
+                    "type": "foo",
                     "fq_name": [
                         "foo",
                         "ec1afeaa-8930-43b0-a60a-939f23a50724"
@@ -163,6 +167,7 @@ class TestCommands(unittest.TestCase):
                 }
             if json['uuid'] == "15315402-8a21-4116-aeaa-b6a77dceb191":
                 return {
+                    "type": "bar",
                     "fq_name": [
                         "bar",
                         "15315402-8a21-4116-aeaa-b6a77dceb191"

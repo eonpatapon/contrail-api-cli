@@ -119,14 +119,14 @@ class ContrailAPISession(Session):
         kwargs['headers'] = self.default_headers
         return self.put(url, **kwargs).json()
 
-    def fqname_to_id(self, type, fq_name):
+    def fqname_to_id(self, fq_name, type):
         """
         Return uuid for fq_name
 
-        :param type: resource type
-        :type type: str
         :param fq_name: resource fq name
         :type fq_name: FQName
+        :param type: resource type
+        :type type: str
 
         :rtype: UUIDv4 str
         :raises HTTPError: fq_name not found
@@ -137,20 +137,30 @@ class ContrailAPISession(Session):
         }
         return self.post_json(self.make_url("/fqname-to-id"), data)["uuid"]
 
-    def id_to_fqname(self, uuid):
+    def id_to_fqname(self, uuid, type=None):
         """
-        Return fq_name for uuid
+        Return fq_name and type for uuid
+
+        If `type` is provided check that uuid is actually
+        a resource of type `type`. Raise HttpError if it's
+        not the case.
 
         :param uuid: resource uuid
         :type uuid: UUIDv4 str
+        :param type: resource type
+        :type type: str
 
-        :rtype: FQName
+        :rtype: dict {'type': str, 'fq_name': FQName}
         :raises HTTPError: uuid not found
         """
         data = {
             "uuid": uuid
         }
-        return FQName(self.post_json(self.make_url("/id-to-fqname"), data)['fq_name'])
+        result = self.post_json(self.make_url("/id-to-fqname"), data)
+        result['fq_name'] = FQName(result['fq_name'])
+        if type is not None and not result['type'] == type:
+            raise HTTPError('uuid %s not found for type %s' % (uuid, type))
+        return result
 
     def add_ref(self, r1, r2, attr=None):
         self._ref_update(r1, r2, 'ADD', attr)

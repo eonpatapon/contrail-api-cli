@@ -299,14 +299,14 @@ class Resource(ResourceBase, UserDict):
 
     def _check_uuid(self, uuid):
         try:
-            fq_name = self.session.id_to_fqname(uuid)
+            fq_name = self.session.id_to_fqname(uuid, type=self.type)['fq_name']
         except HTTPError:
             raise ResourceNotFound(uuid=uuid)
         return fq_name
 
     def _check_fq_name(self, fq_name):
         try:
-            uuid = self.session.fqname_to_id(self.type, fq_name)
+            uuid = self.session.fqname_to_id(fq_name, self.type)
         except HTTPError:
             raise ResourceNotFound(fq_name=fq_name)
         return uuid

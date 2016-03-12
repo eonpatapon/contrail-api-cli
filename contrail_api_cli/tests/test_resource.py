@@ -210,6 +210,7 @@ class TestResource(unittest.TestCase):
         def post(url, json):
             if json['uuid'] == 'a5a1b67b-4246-4e2d-aa24-479d8d47435d':
                 return {
+                    'type': 'foo',
                     'fq_name': [
                         'domain',
                         'foo',
@@ -324,9 +325,10 @@ class TestResource(unittest.TestCase):
         r = Resource('bar', uuid='57ef609c-6c9b-4b91-a542-26c61420c37b')
         self.assertFalse(r.exists)
 
-        mock_session.id_to_fqname.side_effect = [
-            FQName('domain:bar')
-        ]
+        mock_session.id_to_fqname.side_effect = [{
+            'type': 'bar',
+            'fq_name': FQName('domain:bar')
+        }]
         r = Resource('bar', uuid='57ef609c-6c9b-4b91-a542-26c61420c37b')
         self.assertTrue(r.exists)
 
