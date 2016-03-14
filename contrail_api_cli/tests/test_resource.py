@@ -210,7 +210,7 @@ class TestResource(unittest.TestCase):
         def post(url, json):
             if json['uuid'] == 'a5a1b67b-4246-4e2d-aa24-479d8d47435d':
                 return {
-                    'type': 'foo',
+                    'type': 'foo_bar',
                     'fq_name': [
                         'domain',
                         'foo',
@@ -221,9 +221,9 @@ class TestResource(unittest.TestCase):
                 raise HttpError()
 
         mock_session.post_json.side_effect = post
-        r = Resource('foo', uuid='a5a1b67b-4246-4e2d-aa24-479d8d47435d', check=True)
+        r = Resource('foo-bar', uuid='a5a1b67b-4246-4e2d-aa24-479d8d47435d', check=True)
         self.assertEqual(str(r.fq_name), 'domain:foo:uuid')
-        self.assertEqual(r.path, Path('/foo/a5a1b67b-4246-4e2d-aa24-479d8d47435d'))
+        self.assertEqual(r.path, Path('/foo-bar/a5a1b67b-4246-4e2d-aa24-479d8d47435d'))
         with self.assertRaises(ResourceNotFound) as e:
             r = Resource('bar', uuid='d6e9fae3-628c-448c-bfc5-849d82a9a016', check=True)
             self.assertEqual(str(e), "Resource d6e9fae3-628c-448c-bfc5-849d82a9a016 doesn't exists")
