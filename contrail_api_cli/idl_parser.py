@@ -102,13 +102,13 @@ class IDLParser(object):
 
         mch = re.match(r'(.*):(.*)', from_name)
         if mch:
-            from_ns = mch.group(1)
-            # from_name = mch.group(2)
+            # from_ns = mch.group(1)
+            from_name = mch.group(2)
 
         mch = re.match(r'(.*):(.*)', to_name)
         if mch:
-            to_ns = mch.group(1)
-            # to_name = mch.group(2)
+            # to_ns = mch.group(1)
+            to_name = mch.group(2)
 
         # TODO store and handle namespace in identifiers
 
