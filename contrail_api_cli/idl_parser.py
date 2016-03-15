@@ -123,4 +123,4 @@ if __name__ == '__main__':
         sys.exit('Error: %s not found' % sys.argv[1])
     idl_parser = IDLParser()
     for v, k in idl_parser.Parse(open(sys.argv[1])).items():
-        print v, ":", k
+        print("%s : %s" % (v, ":", k))
