@@ -9,18 +9,18 @@ Copyright (c) 2013 Contrail Systems. All rights reserved.
 import logging
 import os
 import re
-import string
 import sys
+
 
 class IDLParser(object):
     class Property(object):
-        #def __init__(self, prop_name):
+        # def __init__(self, prop_name):
         def __init__(self, prop_name, is_list=False):
             self.name = prop_name
             self.is_list = is_list
 
         def IsList(self):
-            return self.is_list == True
+            return self.is_list is True
     # end class Property
 
     class Link(object):
@@ -41,11 +41,11 @@ class IDLParser(object):
             for stmt in statements:
                 # Oper in idl becomes method
                 try:
-                    eval("self._%s" %(stmt))
+                    eval("self._%s" % (stmt))
                 except TypeError:
                     logger = logging.getLogger('idl_parser')
                     logger.debug('ERROR statement: %s', stmt)
-                #self._ParseExpression(stmt)
+                # self._ParseExpression(stmt)
         return self._ElementDict
 
     def Find(self, element):
@@ -79,7 +79,7 @@ class IDLParser(object):
             idl_prop, idents = self._ElementDict[prop_name]
             idents.append(ident_name)
         except KeyError:
-            #idl_prop = IDLParser.Property(prop_name)
+            # idl_prop = IDLParser.Property(prop_name)
             idl_prop = IDLParser.Property(prop_name, is_list=False)
             self._ElementDict[prop_name] = (idl_prop, [ident_name])
 
