@@ -35,7 +35,7 @@ from .manager import CommandManager
 from .resource import Resource
 from .resource import Collection, RootCollection
 from .client import ContrailAPISession
-from .utils import Path, classproperty, continue_prompt, md5, printo
+from .utils import Path, classproperty, continue_prompt, md5, printo, print_tree
 from .style import default as default_style
 from .exceptions import CommandError, CommandNotFound, BadPath, \
     ResourceNotFound, NoResourceFound
@@ -437,87 +437,28 @@ class Tree(Command):
                  help="Show tree of parents",
                  action="store_true", default=False)
 
-    def _get_tree(self, resource, tree, parent_path=None, reverse=False, parent=False):
+    def _create_tree(self, resource, reverse, parent):
+        tree = {}
+        resource.fetch()
+        tree['node'] = str(self.current_path(resource))
         if parent:
-            try:
-                refs = [resource.parent]
-            except ResourceNotFound:
-                refs = []
+            childs = [resource.parent]
         elif reverse:
-            refs = list(resource.back_refs)
+            childs = resource.back_refs
         else:
-            refs = list(resource.refs)
-        nb_refs = len(refs)
-        for idx, ref in enumerate(refs):
-            # avoid refs loops (parent -> ref -> parent)
-            if str(ref.path) in parent_path:
-                continue
-            ref.fetch()
-            tree['childs'][str(ref.path)] = {
-                'index': idx + 1,
-                'len': nb_refs,
-                'level': tree['level'] + 1,
-                'childs': OrderedDict(),
-                'parents': copy.copy(tree['parents']),
-                'meta': str(ref.fq_name)
-            }
-            if tree['len'] == tree['index']:
-                tree['childs'][str(ref.path)]['parents'].append(0)
-            else:
-                tree['childs'][str(ref.path)]['parents'].append(1)
-
-            self._get_tree(ref, tree['childs'][str(ref.path)],
-                           parent_path=str(resource.path),
-                           reverse=reverse, parent=parent)
-
-    def _get_rows(self, tree, rows):
-        for idx, (path, infos) in enumerate(tree.items()):
-            col = ''
-
-            for parent in infos['parents'][1:]:
-                if parent == 1:
-                    col += '│   '
-                else:
-                    col += '    '
-
-            if infos['level'] == 0:
-                col += ''
-            elif infos['index'] == infos['len']:
-                col += '└── '
-            else:
-                col += '├── '
-
-            col += path
-            rows.append((col, infos['meta']))
-            self._get_rows(infos['childs'], rows)
-        return rows
+            childs = resource.refs
+        if childs:
+            tree['childs'] = []
+            for child in childs:
+                tree['childs'].append(self._create_tree(child, reverse, parent))
+        return tree
 
     def __call__(self, paths=None, reverse=False, parent=False):
         resources = expand_paths(paths,
                                  predicate=lambda r: isinstance(r, Resource))
         for resource in resources:
-            resource.fetch()
-            tree = {
-                str(resource.path): {
-                    'level': 0,
-                    'index': 1,
-                    'len': 1,
-                    'childs': OrderedDict(),
-                    'parents': [],
-                    'meta': str(resource.fq_name)
-                }
-            }
-            self._get_tree(resource, tree[str(resource.path)],
-                           parent_path=str(resource.path),
-                           reverse=reverse, parent=parent)
-            rows = self._get_rows(tree, [])
-            max_path_length = reduce(lambda a, r: len(r[0]) if len(r[0]) > a else a,
-                                     rows, 0)
-
-            def format_row(path, fq_name):
-                return path + ' ' * (max_path_length - len(path)) + '  ' + fq_name
-
-            return "\n".join([format_row(p, f) for p, f in rows])
+            tree = self._create_tree(resource, reverse, parent)
+            print_tree(tree)
 
 
 class Actions:
