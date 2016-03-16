@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 import sys
 import json
@@ -230,3 +231,91 @@ def printo(msg, encoding=None, errors='replace', std_type='stdout'):
     std.write(msg.encode(encoding, errors=errors))
     std.write(b'\n')
     std.flush()
+
+
+def print_tree(tree):
+    """Print a python tree on stdout like the old DOS tree command.
+
+    Given the python tree::
+
+    tree = {
+        'node': 'ROOT',
+        'childs': [{
+            'node': 'A1',
+            'childs': [{
+                'node': 'B1',
+                'childs': [{
+                    'node': 'C1'
+                }]
+            },
+            {
+                'node': 'B2'
+            }]
+        },
+        {
+            'node': 'A2',
+            'childs': [{
+                'node': 'B3',
+                'childs': [{
+                    'node': 'C2'
+                },
+                {
+                    'node': 'C3'
+                }]
+            }]
+        },
+        {
+            'node': 'A3',
+            'childs': [{
+                'node': 'B2'
+            }]
+        }]
+    }
+
+    `print_tree` will output::
+
+    ROOT
+    ├── A1
+    │   ├── B1
+    │   │   └── C1
+    │   └── B2
+    ├── A2
+    │   └── B3
+    │       ├── C2
+    │       └── C3
+    └── A3
+        └── B2
+    """
+
+    def _traverse_tree(tree, parents=None):
+        tree['parents'] = parents
+        childs = tree.get('childs', [])
+        nb_childs = len(childs)
+        for index, child in enumerate(childs):
+            child_parents = list(parents) + [index == nb_childs - 1]
+            tree['childs'][index] = _traverse_tree(
+                tree['childs'][index],
+                parents=child_parents)
+        return tree
+
+    tree = _traverse_tree(tree, parents=[])
+
+    def _print_tree(tree):
+        prefix = ''
+        for p in tree['parents'][:-1]:
+            if p is False:
+                prefix += '│   '
+            else:
+                prefix += '    '
+        if not tree['parents']:
+            pass
+        elif tree['parents'][-1] is True:
+            prefix += '└── '
+        else:
+            prefix += '├── '
+        data = tree['node']
+        printo('%s%s' % (prefix, data))
+        for child in tree.get('childs', []):
+            _print_tree(child)
+
+    _print_tree(tree)
