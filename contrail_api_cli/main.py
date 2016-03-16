@@ -11,7 +11,7 @@ from keystoneclient.exceptions import ClientException, HttpError
 from .manager import CommandManager
 from .exceptions import CommandError, ResourceNotFound, NoResourceFound, BadPath
 from .utils import printo
-from . import commands
+from . import command
 
 
 logger = logging.getLogger(__name__)
@@ -60,7 +60,7 @@ def main():
 
     options = parser.parse_args()
 
-    commands.make_api_session(options)
+    command.make_api_session(options)
     try:
         subcmd, subcmd_kwargs = get_subcommand_kwargs(mgr, options.subcmd, options)
         logger.debug('Calling %s with %s' % (subcmd, subcmd_kwargs))

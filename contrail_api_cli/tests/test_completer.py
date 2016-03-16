@@ -5,7 +5,7 @@ try:
 except ImportError:
     import unittest.mock as mock
 
-from contrail_api_cli.commands import ShellContext, ResourceCompleter
+from contrail_api_cli.command import ShellContext, ResourceCompleter
 from contrail_api_cli.resource import Resource
 from contrail_api_cli.utils import Path
 
