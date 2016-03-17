@@ -440,7 +440,7 @@ class Tree(Command):
     def _create_tree(self, resource, reverse, parent):
         tree = {}
         resource.fetch()
-        tree['node'] = str(self.current_path(resource))
+        tree['node'] = [str(self.current_path(resource)), str(resource.fq_name)]
         if parent:
             childs = [resource.parent]
         elif reverse:

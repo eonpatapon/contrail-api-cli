@@ -239,7 +239,7 @@ def print_tree(tree):
     Given the python tree::
 
     tree = {
-        'node': 'ROOT',
+        'node': ['ROOT', 'This is the root of the tree'],
         'childs': [{
             'node': 'A1',
             'childs': [{
@@ -257,7 +257,7 @@ def print_tree(tree):
             'childs': [{
                 'node': 'B3',
                 'childs': [{
-                    'node': 'C2'
+                    'node': ['C2', 'This is a leaf']
                 },
                 {
                     'node': 'C3'
@@ -265,7 +265,7 @@ def print_tree(tree):
             }]
         },
         {
-            'node': 'A3',
+            'node': ['A3', 'This is a node'],
             'childs': [{
                 'node': 'B2'
             }]
@@ -274,17 +274,18 @@ def print_tree(tree):
 
     `print_tree` will output::
 
-    ROOT
+    ROOT            This is the root of the tree
     ├── A1
     │   ├── B1
     │   │   └── C1
     │   └── B2
     ├── A2
     │   └── B3
-    │       ├── C2
+    │       ├── C2  This is a leaf
     │       └── C3
-    └── A3
+    └── A3          This is a node
         └── B2
+
     """
 
     def _traverse_tree(tree, parents=None):
@@ -300,7 +301,7 @@ def print_tree(tree):
 
     tree = _traverse_tree(tree, parents=[])
 
-    def _print_tree(tree):
+    def _get_rows_data(tree, rows):
         prefix = ''
         for p in tree['parents'][:-1]:
             if p is False:
@@ -313,9 +314,24 @@ def print_tree(tree):
             prefix += '└── '
         else:
             prefix += '├── '
-        data = tree['node']
-        printo('%s%s' % (prefix, data))
+        if type(tree['node']) is text_type:
+            tree['node'] = [tree['node']]
+        rows.append([prefix + tree['node'][0]] + tree['node'][1:])
         for child in tree.get('childs', []):
-            _print_tree(child)
+            rows = _get_rows_data(child, rows)
+        return rows
 
-    _print_tree(tree)
+    rows = _get_rows_data(tree, [])
+
+    def _print_rows(rows):
+        max_col_length = [0] * 100
+        # calculate max length for each col
+        for row in rows:
+            for index, (col, length) in enumerate(zip(row, max_col_length)):
+                if len(col) > length:
+                    max_col_length[index] = len(col)
+        for row in rows:
+            format_str = '  '.join(['{:<%s}' % l for c, l in zip(row, max_col_length)])
+            printo(format_str.format(*row))
+
+    _print_rows(rows)
