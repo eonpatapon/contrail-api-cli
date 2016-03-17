@@ -24,3 +24,9 @@ Command
     :members:
     :special-members: __call__
     :inherited-members: description
+
+Utils
+-----
+
+.. autofunction:: contrail_api_cli.utils.print_table
+.. autofunction:: contrail_api_cli.utils.print_tree

@@ -233,58 +233,94 @@ def printo(msg, encoding=None, errors='replace', std_type='stdout'):
     std.flush()
 
 
+def print_table(rows, sep='  '):
+    """Print table on stdout
+
+    :param sep: separator between columns
+    :type sep: unicode on python2 | str on python3
+
+    Given the table::
+
+        table = [
+            ['foo', 'bar', 'foo'],
+            [1, 2, 3],
+            ['54a5a05d-c83b-4bb5-bd95-d90d6ea4a878'],
+            ['foo', 45, 'bar', 2345]
+        ]
+
+    `print_table` will output::
+
+        foo                                   bar  foo
+        1                                     2    3
+        54a5a05d-c83b-4bb5-bd95-d90d6ea4a878
+        foo                                   45   bar  2345
+    """
+    max_col_length = [0] * 100
+    # calculate max length for each col
+    for row in rows:
+        for index, (col, length) in enumerate(zip(row, max_col_length)):
+            if len(text_type(col)) > length:
+                max_col_length[index] = len(text_type(col))
+    for row in rows:
+        format_str = sep.join([
+            '{:<%s}' % l if i < (len(row) - 1) else '{}'
+            for i, (c, l) in enumerate(zip(row, max_col_length))
+        ])
+        printo(format_str.format(*row))
+
+
 def print_tree(tree):
     """Print a python tree on stdout like the old DOS tree command.
 
     Given the python tree::
 
-    tree = {
-        'node': ['ROOT', 'This is the root of the tree'],
-        'childs': [{
-            'node': 'A1',
+        tree = {
+            'node': ['ROOT', 'This is the root of the tree'],
             'childs': [{
-                'node': 'B1',
+                'node': 'A1',
                 'childs': [{
-                    'node': 'C1'
+                    'node': 'B1',
+                    'childs': [{
+                        'node': 'C1'
+                    }]
+                },
+                {
+                    'node': 'B2'
                 }]
             },
             {
-                'node': 'B2'
-            }]
-        },
-        {
-            'node': 'A2',
-            'childs': [{
-                'node': 'B3',
+                'node': 'A2',
                 'childs': [{
-                    'node': ['C2', 'This is a leaf']
-                },
-                {
-                    'node': 'C3'
+                    'node': 'B3',
+                    'childs': [{
+                        'node': ['C2', 'This is a leaf']
+                    },
+                    {
+                        'node': 'C3'
+                    }]
+                }]
+            },
+            {
+                'node': ['A3', 'This is a node'],
+                'childs': [{
+                    'node': 'B2'
                 }]
             }]
-        },
-        {
-            'node': ['A3', 'This is a node'],
-            'childs': [{
-                'node': 'B2'
-            }]
-        }]
-    }
+        }
 
     `print_tree` will output::
 
-    ROOT            This is the root of the tree
-    ├── A1
-    │   ├── B1
-    │   │   └── C1
-    │   └── B2
-    ├── A2
-    │   └── B3
-    │       ├── C2  This is a leaf
-    │       └── C3
-    └── A3          This is a node
-        └── B2
+        ROOT            This is the root of the tree
+        ├── A1
+        │   ├── B1
+        │   │   └── C1
+        │   └── B2
+        ├── A2
+        │   └── B3
+        │       ├── C2  This is a leaf
+        │       └── C3
+        └── A3          This is a node
+            └── B2
 
     """
 
@@ -322,19 +358,4 @@ def print_tree(tree):
         return rows
 
     rows = _get_rows_data(tree, [])
-
-    def _print_rows(rows):
-        max_col_length = [0] * 100
-        # calculate max length for each col
-        for row in rows:
-            for index, (col, length) in enumerate(zip(row, max_col_length)):
-                if len(col) > length:
-                    max_col_length[index] = len(col)
-        for row in rows:
-            format_str = '  '.join([
-                '{:<%s}' % l if i < (len(row) - 1) else '{}'
-                for i, (c, l) in enumerate(zip(row, max_col_length))
-            ])
-            printo(format_str.format(*row))
-
-    _print_rows(rows)
+    print_table(rows)
