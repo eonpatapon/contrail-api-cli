@@ -69,7 +69,7 @@ collection of resources of a specific type.
 
 Basically doing ``ls /`` in the CLI gives you all collections::
 
-    from contrail_api_cli.commands import Command
+    from contrail_api_cli.command import Command
     from contrail_api_cli.resource import Collection
     from contrail_api_cli.utils import printo
 
@@ -119,7 +119,7 @@ To add a virtual-router we need at least a name and an IP address.
 The type is optionnal and is usually not defined but we add an option
 for it just in case::
 
-    from contrail_api_cli.commands import Command
+    from contrail_api_cli.command import Command
     from contrail_api_cli.resource import Resource
 
     class AddVRouter(Command):

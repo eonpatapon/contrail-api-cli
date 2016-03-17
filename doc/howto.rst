@@ -34,7 +34,7 @@ In ``howto/__init__.py`` we define our command::
 
     from __future__ import unicode_literals
 
-    from contrail_api_cli.commands import Command
+    from contrail_api_cli.command import Command
 
 
     class Hello(Command):
@@ -97,7 +97,7 @@ We will include an option in our command to greet someone::
 
     from __future__ import unicode_literals
 
-    from contrail_api_cli.commands import Command, Arg
+    from contrail_api_cli.command import Command, Arg
 
 
     class Hello(Command):

@@ -20,7 +20,7 @@ Resource
 Command
 -------
 
-.. autoclass:: contrail_api_cli.commands.Command
+.. autoclass:: contrail_api_cli.command.Command
     :members:
     :special-members: __call__
     :inherited-members: description
