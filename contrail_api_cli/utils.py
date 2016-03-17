@@ -163,6 +163,15 @@ class classproperty(object):
 
 
 def continue_prompt(message=""):
+    """Prompt the user to continue or not
+
+    Returns True when the user type Yes.
+
+    :param message: message to display
+    :type message: str
+
+    :rtype: bool
+    """
     answer = False
     message = message + "\n'Yes' or 'No' to continue: "
     while answer not in ('Yes', 'No'):
@@ -190,6 +199,11 @@ def to_json(resource_dict, cls=None):
 
 
 def md5(fname):
+    """Calulate md5sum of a file
+
+    :param fname: file path
+    :type fname: str
+    """
     hash = hashlib.md5()
     with open(fname, "rb") as f:
         for chunk in iter(lambda: f.read(4096), b""):

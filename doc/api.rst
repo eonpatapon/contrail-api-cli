@@ -30,3 +30,5 @@ Utils
 
 .. autofunction:: contrail_api_cli.utils.print_table
 .. autofunction:: contrail_api_cli.utils.print_tree
+.. autofunction:: contrail_api_cli.utils.continue_prompt
+.. autofunction:: contrail_api_cli.utils.md5
