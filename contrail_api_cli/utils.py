@@ -331,7 +331,10 @@ def print_tree(tree):
                 if len(col) > length:
                     max_col_length[index] = len(col)
         for row in rows:
-            format_str = '  '.join(['{:<%s}' % l for c, l in zip(row, max_col_length)])
+            format_str = '  '.join([
+                '{:<%s}' % l if i < (len(row) - 1) else '{}'
+                for i, (c, l) in enumerate(zip(row, max_col_length))
+            ])
             printo(format_str.format(*row))
 
     _print_rows(rows)
