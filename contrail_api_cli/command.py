@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
-import copy
 import os
 import sys
 import tempfile
@@ -13,10 +12,6 @@ import abc
 from fnmatch import fnmatch
 from collections import OrderedDict
 from six import b, add_metaclass, text_type
-try:
-    from functools import reduce
-except ImportError:
-    pass
 
 from keystoneclient.exceptions import ClientException, HttpError
 
@@ -35,7 +30,7 @@ from .manager import CommandManager
 from .resource import Resource
 from .resource import Collection, RootCollection
 from .client import ContrailAPISession
-from .utils import Path, classproperty, continue_prompt, md5, printo, print_tree
+from .utils import Path, classproperty, continue_prompt, md5, printo
 from .style import default as default_style
 from .exceptions import CommandError, CommandNotFound, BadPath, \
     ResourceNotFound, NoResourceFound
@@ -424,41 +419,6 @@ class Edit(Command):
         else:
             resource.update(data)
         resource.save()
-
-
-class Tree(Command):
-    description = "Tree of resource references"
-    paths = Arg(nargs="*", help="Resource path(s)",
-                metavar='path')
-    reverse = Arg('-r', '--reverse',
-                  help="Show tree of back references",
-                  action="store_true", default=False)
-    parent = Arg('-p', '--parent',
-                 help="Show tree of parents",
-                 action="store_true", default=False)
-
-    def _create_tree(self, resource, reverse, parent):
-        tree = {}
-        resource.fetch()
-        tree['node'] = [str(self.current_path(resource)), str(resource.fq_name)]
-        if parent:
-            childs = [resource.parent]
-        elif reverse:
-            childs = resource.back_refs
-        else:
-            childs = resource.refs
-        if childs:
-            tree['childs'] = []
-            for child in childs:
-                tree['childs'].append(self._create_tree(child, reverse, parent))
-        return tree
-
-    def __call__(self, paths=None, reverse=False, parent=False):
-        resources = expand_paths(paths,
-                                 predicate=lambda r: isinstance(r, Resource))
-        for resource in resources:
-            tree = self._create_tree(resource, reverse, parent)
-            print_tree(tree)
 
 
 class Actions:
