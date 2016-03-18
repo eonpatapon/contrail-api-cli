@@ -120,7 +120,10 @@ class Collection(ResourceBase, UserList):
         """
         if not self.data:
             res = self.session.get_json(self.href, count=True)
-            return res[self._contrail_name]['count']
+            try:
+                return res[self._contrail_name]['count']
+            except KeyError:
+                return 0
         return super(Collection, self).__len__()
 
     @property
