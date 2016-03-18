@@ -225,7 +225,7 @@ class Ls(Command):
                   help="filter predicate",
                   default=[], dest='filters',
                   metavar='field_name=field_value')
-    parent_uuid = Arg('-p', '--parent_uuid',
+    parent_uuid = Arg('-P', '--parent-uuid',
                       help="Filter by parent uuid")
     # fields to show in -l mode when no
     # column is specified
@@ -505,7 +505,7 @@ class ShellContext(object):
 
 class Shell(Command):
     description = "Run an interactive shell"
-    parent_uuid = Arg('-p', '--parent_uuid',
+    parent_uuid = Arg('-P', '--parent-uuid',
                       help='Limit listing to parent_uuid',
                       default=None)
 
@@ -526,11 +526,6 @@ class Shell(Command):
         commands = CommandManager()
         commands.load_namespace('contrail_api_cli.shell_command')
         ShellContext.parent_uuid = parent_uuid
-        if parent_uuid is None:
-            print('Warning: no parent_uuid specified. ls command will list '
-                  'resources of all parents by default. See set --help to '
-                  'set parent_uuid or start the shell with the --parent_uuid '
-                  'option.')
         # load home resources
         try:
             RootCollection(fetch=True)
