@@ -228,16 +228,16 @@ class TestCommand(unittest.TestCase):
         }
 
         ShellContext.current_path = Path('/foo')
-        result = self.mgr.get('count')()
+        result = self.mgr.get('du')()
         self.assertEqual(result, '3')
 
         ShellContext.current_path = Path('/')
-        result = self.mgr.get('count')(paths=['foo'])
+        result = self.mgr.get('du')(paths=['foo'])
         self.assertEqual(result, '3')
 
         ShellContext.current_path = Path('/foo/%s' % uuid.uuid4())
         with self.assertRaises(cmds.NoResourceFound):
-            self.mgr.get('count')()
+            self.mgr.get('du')()
 
     @mock.patch('contrail_api_cli.resource.ResourceBase.session')
     @mock.patch('contrail_api_cli.command.continue_prompt')

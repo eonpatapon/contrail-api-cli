@@ -40,7 +40,7 @@ setup(
         'contrail_api_cli.command': [
             'ls = contrail_api_cli.command:Ls',
             'cat = contrail_api_cli.command:Cat',
-            'count = contrail_api_cli.command:Count',
+            'du = contrail_api_cli.commands.du:Du',
             'rm = contrail_api_cli.command:Rm',
             'edit = contrail_api_cli.command:Edit',
             'shell = contrail_api_cli.command:Shell',

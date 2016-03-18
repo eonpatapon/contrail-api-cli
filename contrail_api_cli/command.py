@@ -328,19 +328,6 @@ class Cat(Command):
         return "".join(result)
 
 
-class Count(Command):
-    description = "Count number of resources"
-    paths = Arg(nargs="*", help="Resource path(s)")
-
-    def __call__(self, paths=None):
-        collections = expand_paths(paths,
-                                   predicate=lambda r: isinstance(r, Collection))
-        result = []
-        for c in collections:
-            result.append(str(len(c)))
-        return "\n".join(result)
-
-
 @experimental
 class Rm(Command):
     description = "Delete a resource"
