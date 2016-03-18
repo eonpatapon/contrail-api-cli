@@ -240,7 +240,7 @@ class Ls(Command):
         elif isinstance(fval, dict) or isinstance(fval, Resource):
             return "|".join(["%s=%s" % (k, self._field_val_to_str(v, k))
                              for k, v in fval.items()])
-        return str(fval)
+        return text_type(fval)
 
     def _get_field(self, resource, field):
         # elif field.startswith('.'):
