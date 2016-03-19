@@ -1,12 +1,10 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+from six import string_types
 
 from ..command import Command, Arg, CommandError
 from ..schema import create_schema_from_version, list_available_schema_version, SchemaVersionNotAvailable, ResourceNotDefined, get_last_schema_version
-
-from pygments import highlight
-from pygments.lexers import JsonLexer
-from pygments.formatters import Terminal256Formatter
+from ..utils import print_tree
 
 
 class Schema(Command):
@@ -21,21 +19,29 @@ class Schema(Command):
     resource_name = Arg(nargs="?", help="Schema resource name",
                         metavar='resource_name')
 
-    # Could be provided by command module
-    def colorize(self, json_data):
-        return highlight(json_data,
-                         JsonLexer(indent=2),
-                         Terminal256Formatter(bg="dark"))
-
     def _list_resources(self, schema):
         return "\n".join(schema.all_resources())
 
     def _show_resource(self, schema, resource_name):
         try:
-            json_data = schema.resource(resource_name).json()
-            return self.colorize(json_data)
+            resource = schema.resource(resource_name)
         except ResourceNotDefined as e:
             raise CommandError(str(e))
+        tree = {
+            'node': resource_name,
+            'childs': []
+        }
+        for type in ('parent', 'children', 'refs', 'back_refs'):
+            childs = getattr(resource, type)
+            if not childs:
+                continue
+            if isinstance(childs, string_types):
+                childs = [childs]
+            tree['childs'].append({
+                'node': type,
+                'childs': [{'node': c} for c in childs]
+            })
+        print_tree(tree)
 
     def __call__(self, schema_version=None,
                  list_version=False, resource_name=None):
