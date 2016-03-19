@@ -364,7 +364,7 @@ def print_tree(tree):
             prefix += '└── '
         else:
             prefix += '├── '
-        if type(tree['node']) is text_type:
+        if isinstance(tree['node'], string_types):
             tree['node'] = [tree['node']]
         rows.append([prefix + tree['node'][0]] + tree['node'][1:])
         for child in tree.get('childs', []):
