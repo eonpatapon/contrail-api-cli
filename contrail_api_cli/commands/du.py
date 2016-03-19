@@ -8,6 +8,7 @@ from ..resource import Collection
 class Du(Command):
     description = "Count number of resources"
     paths = Arg(nargs="*", help="Resource path(s)")
+    aliases = ['count']
 
     def __call__(self, paths=None):
         collections = expand_paths(paths,
