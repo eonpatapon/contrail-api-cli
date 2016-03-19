@@ -45,7 +45,7 @@ setup(
             'edit = contrail_api_cli.command:Edit',
             'shell = contrail_api_cli.command:Shell',
             'tree = contrail_api_cli.commands.tree:Tree',
-            'code = contrail_api_cli.command:Python',
+            'python = contrail_api_cli.command:Python',
             'schema = contrail_api_cli.commands.schema:Schema',
         ],
         'contrail_api_cli.shell_command': [
