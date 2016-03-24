@@ -70,6 +70,10 @@ class CommandManager(object):
         :rtype: (name, Command)
         """
         for ext in self.extensions:
+            # don't return ext that failed
+            # to load earlier
+            if ext.obj is None:
+                continue
             yield (ext.name, ext.obj)
 
     @classmethod
