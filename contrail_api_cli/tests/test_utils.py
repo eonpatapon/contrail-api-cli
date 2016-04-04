@@ -60,6 +60,16 @@ class TestUtils(unittest.TestCase):
         sys.stdout = orig_stdout
         sys.stderr = orig_stderr
 
+    def test_async_map(self):
+        lst = [1, 2, 3, 4, 5]
+        res = utils.async_map(lambda x: x * 2, lst)
+        expected = map(lambda x: x * 2, lst)
+        self.assertEqual(res, expected)
+
+        res = utils.async_map(lambda x: x * 2, lst, workers=2)
+        expected = map(lambda x: x * 2, lst)
+        self.assertEqual(res, expected)
+
 
 if __name__ == '__main__':
     unittest.main()

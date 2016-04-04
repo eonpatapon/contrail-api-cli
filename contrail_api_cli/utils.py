@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+import gevent
+import gevent.monkey
+from gevent.pool import Group, Pool
 import sys
 import json
 import os.path
@@ -13,6 +16,7 @@ import logging
 from prompt_toolkit import prompt
 
 
+gevent.monkey.patch_socket()
 logger = logging.getLogger(__name__)
 
 
@@ -373,3 +377,29 @@ def print_tree(tree):
 
     rows = _get_rows_data(tree, [])
     print_table(rows)
+
+
+def async_map(func, iterable, args=None, kwargs=None, workers=None):
+    """Map func on a list using gevent greenlets.
+
+    :param func: function applied on lst elements
+    :type func: function
+    :param iterable: elements to map the function over
+    :type iterable: iterable
+    :param args: supplementary arguments of func
+    :type args: tuple
+    :param workers: limit the number of greenlets
+                    running in parrallel
+    :type workers: int
+    """
+    if args is None:
+        args = ()
+    if kwargs is None:
+        kwargs = {}
+    if workers is not None:
+        pool = Pool(workers)
+    else:
+        pool = Group()
+    iterable = [pool.spawn(func, i, *args, **kwargs) for i in iterable]
+    pool.join()
+    return [i.value for i in iterable]

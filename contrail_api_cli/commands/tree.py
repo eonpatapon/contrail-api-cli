@@ -1,6 +1,9 @@
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
 from ..command import Command, Arg, expand_paths
 from ..resource import Resource
-from ..utils import print_tree
+from ..utils import print_tree, async_map
 
 
 class Tree(Command):
@@ -25,14 +28,12 @@ class Tree(Command):
         else:
             childs = resource.refs
         if childs:
-            tree['childs'] = []
-            for child in childs:
-                tree['childs'].append(self._create_tree(child, reverse, parent))
+            tree['childs'] = async_map(self._create_tree, childs, args=(reverse, parent))
         return tree
 
     def __call__(self, paths=None, reverse=False, parent=False):
         resources = expand_paths(paths,
                                  predicate=lambda r: isinstance(r, Resource))
-        for resource in resources:
-            tree = self._create_tree(resource, reverse, parent)
+        trees = async_map(self._create_tree, resources, args=(reverse, parent))
+        for tree in trees:
             print_tree(tree)
