@@ -4,7 +4,7 @@ Section: python
 Priority: optional
 Build-Depends: python-setuptools (>= 0.6b3), python-all (>= 2.6.6-3), debhelper (>= 9),
  python-mock, dh-python, python-pathlib, python-prompt-toolkit (>= 0.53),
- python-keystoneclient, python-tabulate
+ python-keystoneclient, python-tabulate, python-gevent
 Standards-Version: 3.9.6
 Homepage: https://github.com/eonpatapon/contrail-api-cli
 X-Python-Version: >= 2.7
