@@ -379,7 +379,7 @@ def print_tree(tree):
     print_table(rows)
 
 
-def async_map(func, iterable, args=None, kwargs=None, workers=None):
+def parallel_map(func, iterable, args=None, kwargs=None, workers=None):
     """Map func on a list using gevent greenlets.
 
     :param func: function applied on lst elements

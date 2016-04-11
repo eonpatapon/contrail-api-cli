@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 
 from ..command import Command, Arg, expand_paths
 from ..resource import Resource
-from ..utils import print_tree, async_map
+from ..utils import print_tree, parallel_map
 
 
 class Tree(Command):
@@ -28,12 +28,12 @@ class Tree(Command):
         else:
             childs = resource.refs
         if childs:
-            tree['childs'] = async_map(self._create_tree, childs, args=(reverse, parent))
+            tree['childs'] = parallel_map(self._create_tree, childs, args=(reverse, parent))
         return tree
 
     def __call__(self, paths=None, reverse=False, parent=False):
         resources = expand_paths(paths,
                                  predicate=lambda r: isinstance(r, Resource))
-        trees = async_map(self._create_tree, resources, args=(reverse, parent))
+        trees = parallel_map(self._create_tree, resources, args=(reverse, parent))
         for tree in trees:
             print_tree(tree)
