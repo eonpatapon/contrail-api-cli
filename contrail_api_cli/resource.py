@@ -403,8 +403,8 @@ class Resource(ResourceBase, UserDict):
         :param exclude_back_refs: don't get back_refs references
         :type exclude_back_refs: bool
         """
-        if not self.path.is_resource:
-            self.check()
+        # check if the resource still exists
+        self.check()
         params = {}
         # even if the param is False the API will exclude resources
         if exclude_children:
