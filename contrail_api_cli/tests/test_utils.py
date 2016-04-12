@@ -63,11 +63,11 @@ class TestUtils(unittest.TestCase):
     def test_paralel_map(self):
         lst = [1, 2, 3, 4, 5]
         res = utils.parallel_map(lambda x: x * 2, lst)
-        expected = map(lambda x: x * 2, lst)
+        expected = list(map(lambda x: x * 2, lst))
         self.assertEqual(res, expected)
 
         res = utils.parallel_map(lambda x: x * 2, lst, workers=2)
-        expected = map(lambda x: x * 2, lst)
+        expected = list(map(lambda x: x * 2, lst))
         self.assertEqual(res, expected)
 
 
