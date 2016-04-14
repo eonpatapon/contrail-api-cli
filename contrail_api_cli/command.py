@@ -22,7 +22,7 @@ from .manager import CommandManager
 from .resource import Resource
 from .resource import Collection, RootCollection
 from .client import ContrailAPISession
-from .utils import Path, classproperty, continue_prompt, printo
+from .utils import Observable, Path, classproperty, continue_prompt, printo
 from .style import default as default_style
 from .exceptions import CommandError, CommandNotFound, BadPath, \
     ResourceNotFound, NoResourceFound
@@ -319,6 +319,23 @@ class ShellContext(object):
     current_path = Path("/")
 
 
+class ShellAliases(object):
+
+    def __init__(self):
+        self._aliases = {}
+
+    def set(self, alias):
+        if '=' not in alias:
+            raise CommandError('Alias %s is incorrect' % alias)
+        alias, cmd = alias.split('=')
+        self._aliases[alias.strip()] = cmd.strip()
+
+    def apply(self, cmd):
+        cmd = cmd.split()
+        cmd = [self._aliases.get(c, c) for c in cmd]
+        return ' '.join(cmd)
+
+
 class Shell(Command):
     description = "Run an interactive shell"
 
@@ -338,6 +355,9 @@ class Shell(Command):
         completer = ResourceCompleter()
         commands = CommandManager()
         commands.load_namespace('contrail_api_cli.shell_command')
+        aliases = ShellAliases()
+        for cmd_name, cmd in commands.list:
+            map(aliases.set, cmd.aliases)
         # load home resources
         try:
             RootCollection(fetch=True)
@@ -350,6 +370,7 @@ class Shell(Command):
                                 history=history,
                                 completer=completer,
                                 style=default_style)
+                action = aliases.apply(action)
             except (EOFError, KeyboardInterrupt):
                 break
             try:

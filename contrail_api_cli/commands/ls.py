@@ -28,7 +28,7 @@ class Ls(Command):
     # fields to show in -l mode when no
     # column is specified
     default_fields = [u'fq_name']
-    aliases = ['ll']
+    aliases = ['ll = ls -l']
 
     def _field_val_to_str(self, fval, fkey=None):
         if fkey in ('fq_name', 'to'):

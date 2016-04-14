@@ -18,7 +18,7 @@ class Edit(Command):
     template = Arg('-t', '--template',
                    help="Create new resource from existing",
                    action="store_true", default=False)
-    aliases = ['vim', 'emacs', 'nano']
+    aliases = ['vim = edit', 'emacs = edit', 'nano = edit']
 
     def __call__(self, path='', template=False):
         resources = expand_paths([path],

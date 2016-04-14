@@ -53,9 +53,8 @@ class CommandManager(object):
         :param name: name of the command
         :type name: str
         """
-        for ext in self.extensions:
-            cmd = ext.obj
-            if name in [ext.name] + cmd.aliases:
+        for cmd_name, cmd in self.list:
+            if cmd_name == name:
                 return cmd
         raise CommandNotFound('Command %s not found. Type help for all commands' % name)
 
