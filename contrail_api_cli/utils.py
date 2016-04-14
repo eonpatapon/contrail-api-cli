@@ -251,8 +251,8 @@ def printo(msg, encoding=None, errors='replace', std_type='stdout'):
     std.flush()
 
 
-def print_table(rows, sep='  '):
-    """Print table on stdout
+def format_table(rows, sep='  '):
+    """Format table
 
     :param sep: separator between columns
     :type sep: unicode on python2 | str on python3
@@ -266,7 +266,7 @@ def print_table(rows, sep='  '):
             ['foo', 45, 'bar', 2345]
         ]
 
-    `print_table` will output::
+    `format_table` will return::
 
         foo                                   bar  foo
         1                                     2    3
@@ -279,16 +279,18 @@ def print_table(rows, sep='  '):
         for index, (col, length) in enumerate(zip(row, max_col_length)):
             if len(text_type(col)) > length:
                 max_col_length[index] = len(text_type(col))
+    formated_rows = []
     for row in rows:
         format_str = sep.join([
             '{:<%s}' % l if i < (len(row) - 1) else '{}'
             for i, (c, l) in enumerate(zip(row, max_col_length))
         ])
-        printo(format_str.format(*row))
+        formated_rows.append(format_str.format(*row))
+    return '\n'.join(formated_rows)
 
 
-def print_tree(tree):
-    """Print a python tree on stdout like the old DOS tree command.
+def format_tree(tree):
+    """Format a python tree structure
 
     Given the python tree::
 
@@ -326,7 +328,7 @@ def print_tree(tree):
             }]
         }
 
-    `print_tree` will output::
+    `format_tree` will return::
 
         ROOT            This is the root of the tree
         ├── A1
@@ -376,7 +378,7 @@ def print_tree(tree):
         return rows
 
     rows = _get_rows_data(tree, [])
-    print_table(rows)
+    return format_table(rows)
 
 
 def parallel_map(func, iterable, args=None, kwargs=None, workers=None):

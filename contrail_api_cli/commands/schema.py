@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
-from six import string_types
+from six import string_types, text_type
 
 from ..command import Command, Arg, CommandError
 from ..schema import create_schema_from_version, list_available_schema_version, SchemaVersionNotAvailable, ResourceNotDefined, get_last_schema_version
-from ..utils import print_tree
+from ..utils import format_tree
 
 
 class Schema(Command):
@@ -22,11 +22,11 @@ class Schema(Command):
     def _list_resources(self, schema):
         return "\n".join(schema.all_resources())
 
-    def _show_resource(self, schema, resource_name):
+    def _resource(self, schema, resource_name):
         try:
             resource = schema.resource(resource_name)
         except ResourceNotDefined as e:
-            raise CommandError(str(e))
+            raise CommandError(text_type(e))
         tree = {
             'node': resource_name,
             'childs': []
@@ -41,7 +41,7 @@ class Schema(Command):
                 'node': type,
                 'childs': [{'node': c} for c in childs]
             })
-        print_tree(tree)
+        return format_tree(tree)
 
     def __call__(self, schema_version=None,
                  list_version=False, resource_name=None):
@@ -54,9 +54,9 @@ class Schema(Command):
             try:
                 schema = create_schema_from_version(schema_version)
             except SchemaVersionNotAvailable as e:
-                raise CommandError(str(e))
+                raise CommandError(text_type(e))
 
             if resource_name is None:
                 return self._list_resources(schema)
             else:
-                return self._show_resource(schema, resource_name)
+                return self._resource(schema, resource_name)

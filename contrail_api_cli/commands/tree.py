@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 
 from ..command import Command, Arg, expand_paths
 from ..resource import Resource
-from ..utils import print_tree, parallel_map
+from ..utils import format_tree, parallel_map
 
 
 class Tree(Command):
@@ -35,5 +35,4 @@ class Tree(Command):
         resources = expand_paths(paths,
                                  predicate=lambda r: isinstance(r, Resource))
         trees = parallel_map(self._create_tree, resources, args=(reverse, parent))
-        for tree in trees:
-            print_tree(tree)
+        return '\n'.join([format_tree(tree) for tree in trees])
