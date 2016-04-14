@@ -15,21 +15,18 @@ from six import b, add_metaclass, text_type
 
 from keystoneclient.exceptions import ClientException, HttpError
 
+from pygments.token import Token
+
 from prompt_toolkit import prompt
 from prompt_toolkit.history import InMemoryHistory
 from prompt_toolkit.completion import Completer, Completion
-
-from pygments import highlight
-from pygments.token import Token
-from pygments.lexers import JsonLexer
-from pygments.formatters import Terminal256Formatter
 
 from .manager import CommandManager
 from .resource import Resource
 from .resource import Collection, RootCollection
 from .client import ContrailAPISession
 from .utils import Path, classproperty, continue_prompt, md5, \
-    printo, format_table
+    printo
 from .style import default as default_style
 from .exceptions import CommandError, CommandNotFound, BadPath, \
     ResourceNotFound, NoResourceFound
@@ -207,30 +204,6 @@ class Command(object):
 
         :rtype: unicode | str
         """
-
-
-class Cat(Command):
-    description = "Print a resource"
-    paths = Arg(nargs="*", help="Resource path(s)",
-                metavar='path')
-
-    def colorize(self, json_data):
-        return highlight(json_data,
-                         JsonLexer(indent=2),
-                         Terminal256Formatter(bg="dark"))
-
-    def __call__(self, paths=None):
-        resources = expand_paths(paths,
-                                 predicate=lambda r: isinstance(r, Resource))
-        result = []
-        for r in resources:
-            r.fetch()
-            json_data = r.json()
-            if self.is_piped:
-                result.append(json_data)
-            else:
-                result.append(self.colorize(json_data))
-        return "".join(result)
 
 
 @experimental

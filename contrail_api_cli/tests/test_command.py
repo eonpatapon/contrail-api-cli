@@ -148,7 +148,7 @@ class TestCommand(unittest.TestCase):
         self.mgr.get('ls')(paths=['foo'], parent_uuid='1ad831be-3b21-4870-aadf-8efc2b0a480d')
         mock_session.get_json.assert_called_with(BASE + '/foos', parent_id='1ad831be-3b21-4870-aadf-8efc2b0a480d')
 
-    @mock.patch('contrail_api_cli.command.Cat.colorize')
+    @mock.patch('contrail_api_cli.commands.cat.Cat.colorize')
     @mock.patch('contrail_api_cli.resource.ResourceBase.session')
     def test_resource_cat(self, mock_session, mock_colorize):
         # bind original method to mock_session
