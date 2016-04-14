@@ -15,8 +15,6 @@ from six import b, add_metaclass, text_type
 
 from keystoneclient.exceptions import ClientException, HttpError
 
-from tabulate import tabulate
-
 from prompt_toolkit import prompt
 from prompt_toolkit.history import InMemoryHistory
 from prompt_toolkit.completion import Completer, Completion
@@ -30,7 +28,8 @@ from .manager import CommandManager
 from .resource import Resource
 from .resource import Collection, RootCollection
 from .client import ContrailAPISession
-from .utils import Path, classproperty, continue_prompt, md5, printo
+from .utils import Path, classproperty, continue_prompt, md5, \
+    printo, format_table
 from .style import default as default_style
 from .exceptions import CommandError, CommandNotFound, BadPath, \
     ResourceNotFound, NoResourceFound
@@ -301,7 +300,7 @@ class Ls(Command):
         # retrieve asked fields for each resource
         fields = ['path'] + fields
         result = [[self._get_field(r, f) for f in fields] for r in result]
-        return tabulate(result, tablefmt='plain')
+        return format_table(result)
 
 
 class Cat(Command):
