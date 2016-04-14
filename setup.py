@@ -42,7 +42,7 @@ setup(
             'cat = contrail_api_cli.commands.cat:Cat',
             'du = contrail_api_cli.commands.du:Du',
             'rm = contrail_api_cli.command:Rm',
-            'edit = contrail_api_cli.command:Edit',
+            'edit = contrail_api_cli.commands.edit:Edit',
             'shell = contrail_api_cli.command:Shell',
             'tree = contrail_api_cli.commands.tree:Tree',
             'python = contrail_api_cli.command:Python',

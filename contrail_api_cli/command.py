@@ -1,17 +1,14 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
-import os
 import sys
 import tempfile
 import inspect
 import argparse
 import pipes
-import subprocess
-import json
 import abc
 from fnmatch import fnmatch
 from collections import OrderedDict
-from six import b, add_metaclass, text_type
+from six import add_metaclass, text_type
 
 from keystoneclient.exceptions import ClientException, HttpError
 
@@ -25,8 +22,7 @@ from .manager import CommandManager
 from .resource import Resource
 from .resource import Collection, RootCollection
 from .client import ContrailAPISession
-from .utils import Path, classproperty, continue_prompt, md5, \
-    printo
+from .utils import Path, classproperty, continue_prompt, printo
 from .style import default as default_style
 from .exceptions import CommandError, CommandNotFound, BadPath, \
     ResourceNotFound, NoResourceFound
@@ -240,50 +236,6 @@ class Rm(Command):
                 for r in reversed(resources):
                     print("Deleting %s" % self.current_path(r))
                     r.delete()
-
-
-@experimental
-class Edit(Command):
-    description = "Edit resource"
-    path = Arg(nargs="?", help="Resource path", default='')
-    template = Arg('-t', '--template',
-                   help="Create new resource from existing",
-                   action="store_true", default=False)
-    aliases = ['vim', 'emacs', 'nano']
-
-    def __call__(self, path='', template=False):
-        resources = expand_paths([path],
-                                 predicate=lambda r: isinstance(r, Resource))
-        if len(resources) > 1:
-            raise CommandError("Can't edit multiple resources")
-        resource = resources[0]
-        # don't show childs or back_refs
-        resource.fetch(exclude_children=True, exclude_back_refs=True)
-        resource.pop('id_perms')
-        if template:
-            resource.pop('href')
-            resource.pop('uuid')
-        editor = os.environ.get('EDITOR', 'vim')
-        with tempfile.NamedTemporaryFile(suffix='tmp.json') as tmp:
-            tmp.write(b(resource.json()))
-            tmp.flush()
-            tmp_md5 = md5(tmp.name)
-            subprocess.call([editor, tmp.name])
-            tmp.seek(0)
-            if tmp_md5 == md5(tmp.name):
-                print("No modification made, doing nothing...")
-                return
-            data_json = tmp.read().decode('utf-8')
-        try:
-            data = json.loads(data_json)
-        except ValueError as e:
-            raise CommandError('Provided JSON is not valid: ' + str(e))
-        if template:
-            # create new resource
-            resource = Resource(resource.type, **data)
-        else:
-            resource.update(data)
-        resource.save()
 
 
 class Actions:
