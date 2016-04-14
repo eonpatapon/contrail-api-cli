@@ -38,7 +38,7 @@ setup(
             'http = contrail_api_cli.auth:HTTPAuth'
         ],
         'contrail_api_cli.command': [
-            'ls = contrail_api_cli.command:Ls',
+            'ls = contrail_api_cli.commands.ls:Ls',
             'cat = contrail_api_cli.command:Cat',
             'du = contrail_api_cli.commands.du:Du',
             'rm = contrail_api_cli.command:Rm',
