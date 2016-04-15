@@ -10,7 +10,7 @@ from keystoneclient.exceptions import ClientException, HttpError
 
 from .manager import CommandManager
 from .exceptions import CommandError, ResourceNotFound, NoResourceFound, BadPath
-from .utils import printo
+from .utils import CONFIG_DIR, printo
 from . import command
 
 
@@ -59,6 +59,9 @@ def main():
     mgr = CommandManager.register_argparse_commands(parser, argv)
 
     options = parser.parse_args()
+
+    if not os.path.exists(CONFIG_DIR):
+        os.makedirs(CONFIG_DIR)
 
     command.make_api_session(options)
     try:

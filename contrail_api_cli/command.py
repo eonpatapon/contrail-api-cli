@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+import os.path
 import sys
 import tempfile
 import inspect
@@ -15,14 +16,14 @@ from keystoneclient.exceptions import ClientException, HttpError
 from pygments.token import Token
 
 from prompt_toolkit import prompt
-from prompt_toolkit.history import InMemoryHistory
+from prompt_toolkit.history import FileHistory
 from prompt_toolkit.completion import Completer, Completion
 
 from .manager import CommandManager
 from .resource import Resource
 from .resource import Collection, RootCollection
 from .client import ContrailAPISession
-from .utils import Observable, Path, classproperty, continue_prompt, printo
+from .utils import CONFIG_DIR, Path, classproperty, continue_prompt, printo
 from .style import default as default_style
 from .exceptions import CommandError, CommandNotFound, BadPath, \
     ResourceNotFound, NoResourceFound
@@ -351,7 +352,7 @@ class Shell(Command):
                 (Token.Pound, '> ')
             ]
 
-        history = InMemoryHistory()
+        history = FileHistory(os.path.join(CONFIG_DIR, 'history'))
         completer = ResourceCompleter()
         commands = CommandManager()
         commands.load_namespace('contrail_api_cli.shell_command')

@@ -18,6 +18,7 @@ from prompt_toolkit import prompt
 
 gevent.monkey.patch_socket()
 logger = logging.getLogger(__name__)
+CONFIG_DIR = os.path.expanduser('~/.config/contrail-api-cli')
 
 
 class FQName(collections.Sequence):
