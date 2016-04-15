@@ -317,16 +317,12 @@ class ResourceCompleter(Completer):
 
 class ShellContext(object):
     current_path = Path("/")
-    parent_uuid = None
 
 
 class Shell(Command):
     description = "Run an interactive shell"
-    parent_uuid = Arg('-P', '--parent-uuid',
-                      help='Limit listing to parent_uuid',
-                      default=None)
 
-    def __call__(self, parent_uuid=None):
+    def __call__(self):
 
         def get_prompt_tokens(cli):
             return [
@@ -342,7 +338,6 @@ class Shell(Command):
         completer = ResourceCompleter()
         commands = CommandManager()
         commands.load_namespace('contrail_api_cli.shell_command')
-        ShellContext.parent_uuid = parent_uuid
         # load home resources
         try:
             RootCollection(fetch=True)
@@ -395,31 +390,6 @@ class Shell(Command):
                     printo(t.read().strip())
                 else:
                     printo(result)
-
-
-class Set(Command):
-    description = "Set or show shell options"
-    option = Arg('-o', '--option')
-    value = Arg(nargs='?',
-                default=None,
-                help='Option value')
-
-    def __call__(self, option=None, value=None):
-        if option and value:
-            if option == 'current_path':
-                value = Path(value)
-            if value == 'None':
-                value = None
-            setattr(ShellContext, option, value)
-        elif option:
-            return text_type(getattr(ShellContext, option))
-        else:
-            output = []
-            for option, value in inspect.getmembers(ShellContext,
-                                                    lambda a: not(inspect.isroutine(a))):
-                if not option.startswith('__'):
-                    output.append('%s = %s' % (option, value))
-            return "\n".join(output)
 
 
 class Cd(Command):

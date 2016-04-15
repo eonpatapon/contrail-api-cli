@@ -50,7 +50,6 @@ setup(
         ],
         'contrail_api_cli.shell_command': [
             'cd = contrail_api_cli.command:Cd',
-            'set = contrail_api_cli.command:Set',
             'exit = contrail_api_cli.command:Exit',
             'help = contrail_api_cli.command:Help',
         ]

@@ -2,7 +2,7 @@
 from __future__ import unicode_literals
 from six import text_type
 
-from ..command import Command, Arg, ShellContext, expand_paths
+from ..command import Command, Arg, expand_paths
 from ..resource import Collection, Resource
 from ..exceptions import CommandError
 from ..utils import format_table
@@ -80,8 +80,6 @@ class Ls(Command):
             fields = self.default_fields
         if filters:
             filters = [self._get_filter(p) for p in filters]
-        if not parent_uuid:
-            parent_uuid = ShellContext.parent_uuid
         resources = expand_paths(paths, filters=filters,
                                  parent_uuid=parent_uuid)
         result = []

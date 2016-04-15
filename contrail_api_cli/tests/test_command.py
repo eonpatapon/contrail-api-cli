@@ -142,9 +142,8 @@ class TestCommand(unittest.TestCase):
     @mock.patch('contrail_api_cli.resource.ResourceBase.session')
     def test_resource_parent_uuid_ls(self, mock_session):
         mock_session.configure_mock(base_url=BASE)
-        ShellContext.parent_uuid = '98409b5b-3d25-4533-8140-c430625f3775'
         self.mgr.get('ls')(paths=['foo'])
-        mock_session.get_json.assert_called_with(BASE + '/foos', parent_id=ShellContext.parent_uuid)
+        mock_session.get_json.assert_called_with(BASE + '/foos')
         self.mgr.get('ls')(paths=['foo'], parent_uuid='1ad831be-3b21-4870-aadf-8efc2b0a480d')
         mock_session.get_json.assert_called_with(BASE + '/foos', parent_id='1ad831be-3b21-4870-aadf-8efc2b0a480d')
 
@@ -390,7 +389,7 @@ class TestCommand(unittest.TestCase):
             "cmd",
             "exit"
         ]
-        self.mgr.get('shell')(parent_uuid='6b6a7f47-807e-4c39-8ac6-3adcf2f5498f')
+        self.mgr.get('shell')()
         sys.stdout = old_stdout
         result = out.getvalue()
         self.assertEqual(result, b'piped\nnot piped\n')
