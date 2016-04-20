@@ -277,14 +277,8 @@ class ShellCompleter(Completer):
             # fq_name search
             text_before_cursor
         ]
-        searches = [s for s in searches if s in self.cache.trie]
-
-        if not searches:
-            return
-
         # limit list to 50 entries
-        resources = [self.cache.resources[p] for p in self.cache.trie[searches[0]]][:50]
-
+        resources = self.cache.search(searches, limit=50)
         for res in resources:
             rel_path = text_type(res.path.relative_to(ShellContext.current_path))
             if rel_path in ('.', '/', ''):

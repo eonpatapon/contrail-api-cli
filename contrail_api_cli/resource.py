@@ -531,6 +531,23 @@ class ResourceCache(object):
         Collection.register('created', self._add_resource)
         Collection.register('deleted', self._del_resource)
 
+    def search(self, paths, limit=None):
+        """Search in cache
+
+        :param strings: list of paths to get from the cache
+        :type strings: str list
+        :param limit: limit search results
+        :type limit: int
+
+        :rtype: Resource list
+        """
+        results = [p for p in paths if p in self.trie]
+        if not results:
+            return []
+        resources = [self.resources[p]
+                     for p in self.trie[results[0]]][:limit]
+        return resources
+
     def _action_in_trie(self, value, path, action):
         v = ""
         for c in value:
