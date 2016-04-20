@@ -47,6 +47,7 @@ setup(
             'tree = contrail_api_cli.commands.tree:Tree',
             'python = contrail_api_cli.command:Python',
             'schema = contrail_api_cli.commands.schema:Schema',
+            'relative = contrail_api_cli.commands.relative:Relative',
         ],
         'contrail_api_cli.shell_command': [
             'cd = contrail_api_cli.command:Cd',
