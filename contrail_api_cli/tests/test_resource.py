@@ -11,7 +11,7 @@ from keystoneclient.exceptions import HttpError
 from contrail_api_cli.utils import Path, FQName
 from contrail_api_cli.resource import RootCollection, Collection, Resource, ResourceEncoder
 from contrail_api_cli.client import ContrailAPISession
-from contrail_api_cli.exceptions import ResourceNotFound, ResourceMissing
+from contrail_api_cli.exceptions import ResourceNotFound, ResourceMissing, NoResourceFound
 
 
 BASE = "http://localhost:8082"
@@ -189,7 +189,7 @@ class TestResource(unittest.TestCase):
                 }
                 return result
             if data['type'] == "bar":
-                raise HttpError()
+                raise HttpError(http_status=404)
 
         mock_session.post.side_effect = post
         r = Resource('foo', fq_name='domain:foo:uuid', check=True)
@@ -218,7 +218,7 @@ class TestResource(unittest.TestCase):
                     ]
                 }
             else:
-                raise HttpError()
+                raise HttpError(http_status=404)
 
         mock_session.post_json.side_effect = post
         r = Resource('foo-bar', uuid='a5a1b67b-4246-4e2d-aa24-479d8d47435d', check=True)
@@ -232,7 +232,7 @@ class TestResource(unittest.TestCase):
     def test_resource_fetch(self, mock_session):
         mock_session.configure_mock(base_url=BASE)
 
-        mock_session.fqname_to_id.side_effect = HttpError()
+        mock_session.fqname_to_id.side_effect = HttpError(http_status=404)
         r = Resource('foo', fq_name='domain:bar:foo')
         with self.assertRaises(ResourceNotFound):
             r.fetch()
@@ -308,7 +308,7 @@ class TestResource(unittest.TestCase):
         r = Resource('foo', fq_name='domain:foo', parent=p)
         self.assertEqual(p, r.parent)
 
-        mock_session.id_to_fqname.side_effect = HttpError()
+        mock_session.id_to_fqname.side_effect = HttpError(http_status=404)
         with self.assertRaises(ResourceNotFound):
             p = Resource('not-found', uuid='1fe29f52-28dc-44a5-90d0-43de1b02cbd8')
             Resource('foo', fq_name='domain:foo', parent=p)
@@ -321,7 +321,7 @@ class TestResource(unittest.TestCase):
     def test_resource_check(self, mock_session):
         mock_session.configure_mock(base_url=BASE)
 
-        mock_session.id_to_fqname.side_effect = HttpError()
+        mock_session.id_to_fqname.side_effect = HttpError(http_status=404)
         r = Resource('bar', uuid='57ef609c-6c9b-4b91-a542-26c61420c37b')
         self.assertFalse(r.exists)
 
@@ -332,7 +332,7 @@ class TestResource(unittest.TestCase):
         r = Resource('bar', uuid='57ef609c-6c9b-4b91-a542-26c61420c37b')
         self.assertTrue(r.exists)
 
-        mock_session.fqname_to_id.side_effect = HttpError()
+        mock_session.fqname_to_id.side_effect = HttpError(http_status=404)
         r = Resource('bar', fq_name='domain:foo')
         self.assertFalse(r.exists)
 
@@ -518,6 +518,12 @@ class TestCollection(unittest.TestCase):
         self.assertEqual(c._contrail_name, '')
         c = Collection('foo')
         self.assertEqual(c._contrail_name, 'foos')
+
+    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
+    def test_collection_not_found(self, mock_session):
+        mock_session.get_json.side_effect = HttpError(http_status=404)
+        with self.assertRaises(NoResourceFound):
+            Collection('foo', fetch=True)
 
 
 if __name__ == "__main__":

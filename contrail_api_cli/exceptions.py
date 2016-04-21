@@ -1,5 +1,7 @@
 from __future__ import unicode_literals
 
+from six import text_type
+
 
 class CommandNotFound(Exception):
     pass
@@ -19,13 +21,15 @@ class ResourceMissing(Exception):
 
 class ResourceNotFound(Exception):
 
-    def __init__(self, uuid=None, fq_name=None):
+    def __init__(self, resource=None):
         super(Exception, self).__init__()
-        self.uuid = uuid
-        self.fq_name = fq_name
+        self.r = resource
 
     def __str__(self):
-        return "Resource %s not found" % self.uuid or self.fq_name
+        if self.r is None:
+            return "Resource not found"
+        return "Resource %s not found" % self.r.path \
+            if self.r.path.is_resource else text_type(self.r.fq_name)
 
 
 class NoResourceFound(Exception):

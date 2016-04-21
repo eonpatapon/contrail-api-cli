@@ -3,6 +3,7 @@ import json
 import string
 from uuid import UUID
 from six import string_types, text_type
+from functools import wraps
 try:
     from UserDict import UserDict
     from UserList import UserList
@@ -13,7 +14,27 @@ import datrie
 from keystoneclient.exceptions import HTTPError
 
 from .utils import FQName, Path, Observable, to_json
-from .exceptions import ResourceNotFound, ResourceMissing
+from .exceptions import ResourceNotFound, ResourceMissing, NoResourceFound
+
+
+def http_404_handler(f):
+    """Handle 404 errors returned by the API server
+    """
+    @wraps(f)
+    def wrapper(self, *args, **kwargs):
+        try:
+            return f(self, *args, **kwargs)
+        except HTTPError as e:
+            if e.http_status == 404:
+                # remove previously created resource
+                # from the cache
+                self.emit('deleted', self)
+                if isinstance(self, Resource):
+                    raise ResourceNotFound(resource=self)
+                elif isinstance(self, Collection):
+                    raise NoResourceFound()
+            raise
+    return wrapper
 
 
 class ResourceEncoder(json.JSONEncoder):
@@ -182,6 +203,7 @@ class Collection(ResourceBase, UserList):
     def _fetch_fields(self, fields=None):
         return self.fields + (fields or [])
 
+    @http_404_handler
     def fetch(self, recursive=1, fields=None, detail=None, filters=None, parent_uuid=None):
         """
         Fetch collection from API server
@@ -302,19 +324,13 @@ class Resource(ResourceBase, UserDict):
             self['fq_name'] = self._check_uuid(self.uuid)
         return True
 
+    @http_404_handler
     def _check_uuid(self, uuid):
-        try:
-            fq_name = self.session.id_to_fqname(uuid, type=self.type)['fq_name']
-        except HTTPError:
-            raise ResourceNotFound(uuid=uuid)
-        return fq_name
+        return self.session.id_to_fqname(uuid, type=self.type)['fq_name']
 
+    @http_404_handler
     def _check_fq_name(self, fq_name):
-        try:
-            uuid = self.session.fqname_to_id(fq_name, self.type)
-        except HTTPError:
-            raise ResourceNotFound(fq_name=fq_name)
-        return uuid
+        return self.session.fqname_to_id(fq_name, self.type)
 
     @property
     def exists(self):
@@ -371,6 +387,7 @@ class Resource(ResourceBase, UserDict):
         self['parent_type'] = resource.type
         self['parent_uuid'] = resource.uuid
 
+    @http_404_handler
     def save(self):
         """Save the resource to the API server
 
@@ -387,14 +404,15 @@ class Resource(ResourceBase, UserDict):
                                   cls=ResourceEncoder)
         self.fetch(exclude_children=True, exclude_back_refs=True)
 
+    @http_404_handler
     def delete(self):
         """Delete resource from the API server
         """
         res = self.session.delete(self.href)
-        if res:
-            self.emit('deleted', self)
+        self.emit('deleted', self)
         return res
 
+    @http_404_handler
     def fetch(self, recursive=1, exclude_children=False, exclude_back_refs=False):
         """Fetch resource from the API server
 

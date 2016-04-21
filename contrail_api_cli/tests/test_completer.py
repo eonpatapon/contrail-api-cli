@@ -5,9 +5,12 @@ try:
 except ImportError:
     import unittest.mock as mock
 
+from keystoneclient.exceptions import HttpError
+
 from contrail_api_cli.command import ShellContext, ShellCompleter
 from contrail_api_cli.resource import Resource
 from contrail_api_cli.utils import Path
+from contrail_api_cli.exceptions import ResourceNotFound
 
 BASE = 'http://localhost:8082'
 
@@ -71,6 +74,21 @@ class TestCompleter(unittest.TestCase):
         r2.delete()
         completions = comp.get_completions(mock_document, None)
         self.assertEqual(len(list(completions)), 0)
+
+    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
+    def test_not_found(self, mock_session):
+        mock_session.id_to_fqname.side_effect = HttpError(http_status=404)
+        mock_document = mock.Mock()
+        mock_document.get_word_before_cursor.return_value = 'foo'
+        mock_document.configure_mock(text='ls foo')
+
+        comp = ShellCompleter()
+        try:
+            Resource('foo', uuid='dda4574d-96bc-43fd-bdf7-12ac776f754c', check=True)
+        except ResourceNotFound:
+            pass
+        completions = list(comp.get_completions(mock_document, None))
+        self.assertEqual(len(completions), 0)
 
 
 if __name__ == "__main__":
