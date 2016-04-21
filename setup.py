@@ -5,7 +5,8 @@ install_requires = [
     'pygments',
     'prompt_toolkit>=0.53',
     'python-keystoneclient',
-    'gevent'
+    'gevent',
+    'datrie'
 ]
 
 test_requires = []

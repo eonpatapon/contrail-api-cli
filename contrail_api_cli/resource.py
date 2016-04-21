@@ -1,5 +1,6 @@
 from __future__ import unicode_literals
 import json
+import string
 from uuid import UUID
 from six import string_types, text_type
 try:
@@ -8,6 +9,7 @@ try:
 except ImportError:
     from collections import UserDict, UserList
 
+import datrie
 from keystoneclient.exceptions import HTTPError
 
 from .utils import FQName, Path, Observable, to_json
@@ -524,55 +526,37 @@ class ResourceCache(object):
     """Resource cache of discovered resources.
     """
     def __init__(self):
-        self.resources = {}
-        self.trie = {}
+        self.trie = datrie.Trie(string.printable)
         Resource.register('created', self._add_resource)
         Resource.register('deleted', self._del_resource)
         Collection.register('created', self._add_resource)
         Collection.register('deleted', self._del_resource)
 
-    def search(self, paths, limit=None):
+    def search(self, strings, limit=None):
         """Search in cache
 
-        :param strings: list of paths to get from the cache
+        :param strings: list of strings to get from the cache
         :type strings: str list
         :param limit: limit search results
         :type limit: int
 
-        :rtype: Resource list
+        :rtype: [Resource | Collection]
         """
-        results = [p for p in paths if p in self.trie]
-        if not results:
+        results = [self.trie.has_keys_with_prefix(s) for s in strings]
+        if not any(results):
             return []
-        resources = [self.resources[p]
-                     for p in self.trie[results[0]]][:limit]
-        return resources
-
-    def _action_in_trie(self, value, path, action):
-        v = ""
-        for c in value:
-            v += c
-            if v not in self.trie:
-                self.trie[v] = []
-            if action == Actions.STORE:
-                if path not in self.trie[v]:
-                    self.trie[v].append(path)
-                    self.trie[v].sort()
-            elif action == Actions.DELETE:
-                if path in self.trie[v]:
-                    self.trie[v].remove(path)
-
-    def _resource_action(self, resource, action):
-        if action == Actions.STORE:
-            self.resources[text_type(resource.path)] = resource
-        elif action == Actions.DELETE and text_type(resource.path) in self.resources:
-            self.resources.pop(text_type(resource.path))
-        path_text_type = text_type(resource.path)
-        for c in [path_text_type, text_type(resource.fq_name)]:
-            self._action_in_trie(c, text_type(resource.path), action)
+        for result, s in zip(results, strings):
+            if result is True:
+                return self.trie.values(s)[:limit]
 
     def _add_resource(self, resource):
-        self._resource_action(resource, Actions.STORE)
+        for item in [text_type(resource.path), text_type(resource.fq_name)]:
+            if item and item not in self.trie:
+                self.trie[item] = resource
 
     def _del_resource(self, resource):
-        self._resource_action(resource, Actions.DELETE)
+        for item in [text_type(resource.path), text_type(resource.fq_name)]:
+            try:
+                del self.trie[item]
+            except KeyError:
+                pass
