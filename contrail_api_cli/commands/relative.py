@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+from six import text_type
+
 from ..resource import Resource
 from ..command import Command, Arg, CommandError, expand_paths
 from ..utils import format_table
-from six import text_type
 
 RESOURCE_NAME_PATH_SEPARATOR = "."
 
@@ -34,7 +35,8 @@ class Relative(Command):
                 next_resource_type = k
                 break
         else:
-            raise CommandError("Resource '%s' is not linked to resource type '%s'" % (resource.path, next_resource_name))
+            raise CommandError("Resource '%s' is not linked to resource type '%s'" %
+                               (self.current_path(resource), next_resource_name))
 
         next_resource = resource.get(next_resource_attr)
         if len(next_resource) > 0:
@@ -54,7 +56,7 @@ class Relative(Command):
         resource = resources[0]
         resource_type = "base"
 
-        resource_name_paths = resource_name_path.split(
+        resource_name_paths = resource_name_path.replace('-', '_').split(
             RESOURCE_NAME_PATH_SEPARATOR)
 
         # Build resources along the path
