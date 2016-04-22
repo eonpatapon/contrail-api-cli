@@ -7,6 +7,7 @@ import inspect
 import argparse
 import pipes
 import abc
+import re
 from fnmatch import fnmatch
 from collections import OrderedDict
 from six import add_metaclass, text_type
@@ -26,7 +27,7 @@ from .client import ContrailAPISession
 from .utils import CONFIG_DIR, Path, classproperty, continue_prompt, printo
 from .style import default as default_style
 from .exceptions import CommandError, CommandNotFound, BadPath, \
-    ResourceNotFound, NoResourceFound
+    ResourceNotFound, NoResourceFound, CommandInvalid
 from .parser import CommandParser
 
 
@@ -261,14 +262,16 @@ class ShellCompleter(Completer):
                         yield Completion(option,
                                          -len(text_before_cursor),
                                          display_meta=action.help or '')
-                return
+                raise StopIteration
         except CommandNotFound:
             for cmd_name, cmd in self.mgr.list:
                 if cmd_name.startswith(text_before_cursor):
                     yield Completion(cmd_name,
                                      -len(text_before_cursor),
                                      display_meta=cmd.description)
-            return
+            raise StopIteration
+        except CommandInvalid:
+            raise StopIteration
 
         # resource completion from cache
         searches = [
@@ -304,7 +307,7 @@ class ShellAliases(object):
         self._aliases[alias.strip()] = cmd.strip()
 
     def apply(self, cmd):
-        cmd = cmd.split()
+        cmd = re.split(r'(\s+)', cmd)
         cmd = [self._aliases.get(c, c) for c in cmd]
         return ' '.join(cmd)
 

@@ -4,7 +4,7 @@ import unittest
 from contrail_api_cli.command import Command, Arg
 from contrail_api_cli.manager import CommandManager
 from contrail_api_cli.parser import CommandParser
-from contrail_api_cli.exceptions import CommandNotFound
+from contrail_api_cli.exceptions import CommandNotFound, CommandInvalid
 
 BASE = 'http://localhost:8082'
 
@@ -27,8 +27,14 @@ class TestCompletion(unittest.TestCase):
         self.mgr.add('test-cmd', self.cmd)
 
     def test_bad_cmd(self):
-        with self.assertRaises(CommandNotFound):
+        with self.assertRaises(CommandInvalid):
             CommandParser('foo -h')
+        with self.assertRaises(CommandInvalid):
+            CommandParser('bar ')
+        with self.assertRaises(CommandNotFound):
+            CommandParser('')
+        with self.assertRaises(CommandNotFound):
+            CommandParser('ex')
 
     def test_cmd(self):
         parser = CommandParser('test-cmd')

@@ -1,7 +1,7 @@
 from argparse import _AppendAction, _AppendConstAction
 
 from .manager import CommandManager
-from .exceptions import CommandNotFound
+from .exceptions import CommandNotFound, CommandInvalid
 
 
 class CommandParser(object):
@@ -15,8 +15,16 @@ class CommandParser(object):
         try:
             self.cmd_name = self.cmd_line[0]
             self.cmd = self.mgr.get(self.cmd_name)
-        except (IndexError, CommandNotFound):
+        except IndexError:
+            # no command in string
             raise CommandNotFound
+        except CommandNotFound:
+            # partial command
+            if self.cmd_name == self.cmd_line_text:
+                raise
+            # invalid command in string
+            else:
+                raise CommandInvalid
 
     def _get_action(self, option_str):
         for action in self.cmd.parser._actions:

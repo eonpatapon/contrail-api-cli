@@ -11,6 +11,10 @@ class CommandError(Exception):
     pass
 
 
+class CommandInvalid(Exception):
+    pass
+
+
 class BadPath(Exception):
     pass
 
