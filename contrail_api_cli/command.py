@@ -261,7 +261,7 @@ class ShellCompleter(Completer):
                     if option.startswith(text_before_cursor):
                         yield Completion(option,
                                          -len(text_before_cursor),
-                                         display_meta=action.help or '')
+                                         display_meta=action.help % vars(action) or '')
                 raise StopIteration
         except CommandNotFound:
             for cmd_name, cmd in self.mgr.list:
