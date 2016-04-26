@@ -49,6 +49,7 @@ setup(
             'python = contrail_api_cli.command:Python',
             'schema = contrail_api_cli.commands.schema:Schema',
             'relative = contrail_api_cli.commands.relative:Relative',
+            'ln = contrail_api_cli.commands.ln:Ln',
         ],
         'contrail_api_cli.shell_command': [
             'cd = contrail_api_cli.command:Cd',
