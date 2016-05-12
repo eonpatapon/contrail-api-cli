@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 from ..command import Command, Arg, expand_paths
 from ..resource import Resource
 from ..utils import format_tree, parallel_map
+from ..exceptions import ResourceMissing
 
 NB_WORKERS = 100
 
@@ -25,7 +26,10 @@ class Tree(Command):
         tree['node'] = [str(self.current_path(resource)), str(resource.fq_name)]
         visited.append(resource.uuid)
         if parent:
-            childs = [resource.parent]
+            try:
+                childs = [resource.parent]
+            except ResourceMissing:
+                childs = []
         elif reverse:
             childs = resource.back_refs
         else:
