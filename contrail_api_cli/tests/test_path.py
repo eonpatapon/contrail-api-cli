@@ -22,6 +22,8 @@ class TestPath(unittest.TestCase):
         self.assertFalse(p.is_resource)
         p = Path("/")
         self.assertFalse(p.is_resource)
+        p = Path("/75963ada-2c70-4eeb-8daf-f24ce920ff7b")
+        self.assertFalse(p.is_resource)
 
     def test_root(self):
         p = Path("/")

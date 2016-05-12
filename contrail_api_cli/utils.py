@@ -136,6 +136,8 @@ class Path(PurePosixPath):
 
     @property
     def is_resource(self):
+        if self.name == self.base:
+            return False
         try:
             UUID(self.name, version=4)
         except (ValueError, IndexError):
