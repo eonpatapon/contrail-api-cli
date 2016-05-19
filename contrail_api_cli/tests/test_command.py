@@ -34,8 +34,8 @@ class Cmd(cmds.Command):
 class TestCommand(unittest.TestCase):
 
     def setUp(self):
-        self.mgr = cmds.CommandManager(namespaces=['contrail_api_cli.command',
-                                                   'contrail_api_cli.shell_command'])
+        self.mgr = cmds.CommandManager()
+        self.mgr.load_namespace('contrail_api_cli.shell_command')
         ep = EntryPoint('cmd', 'contrail_api_cli.tests.test_command', attrs=('Cmd',))
         cls = ep.load(require=False)
         ext = Extension('cmd', ep, cls, cls('cmd'))
