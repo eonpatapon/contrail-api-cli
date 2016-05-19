@@ -135,9 +135,11 @@ class Path(PurePosixPath):
         return len(self.parts) == 1 and self.root == "/"
 
     @property
-    def is_resource(self):
-        if self.name == self.base:
-            return False
+    def is_fq_name(self):
+        return not self.is_uuid
+
+    @property
+    def is_uuid(self):
         try:
             UUID(self.name, version=4)
         except (ValueError, IndexError):
@@ -145,7 +147,13 @@ class Path(PurePosixPath):
         return True
 
     @property
+    def is_resource(self):
+        """The path is a resource if it is not a Collection"""
+        return not self.is_collection
+
+    @property
     def is_collection(self):
+        """The path is a Collection if there is only one part in the path"""
         return self.base == self.name
 
     def relative_to(self, path):

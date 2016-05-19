@@ -111,7 +111,7 @@ def expand_paths(paths=None, predicate=None, filters=None, parent_uuid=None):
             except ResourceNotFound as e:
                 raise BadPath(str(e))
         else:
-            if path.is_resource:
+            if path.is_resource and path.is_uuid:
                 try:
                     r = Resource(path.base,
                                  uuid=path.name,
