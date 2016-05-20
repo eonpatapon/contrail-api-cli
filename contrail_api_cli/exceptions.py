@@ -19,6 +19,10 @@ class BadPath(Exception):
     pass
 
 
+class AbsPathRequired(Exception):
+    pass
+
+
 class ResourceMissing(Exception):
     pass
 
@@ -33,7 +37,7 @@ class ResourceNotFound(Exception):
         if self.r is None:
             return "Resource not found"
         return "Resource %s not found" % self.r.path \
-            if self.r.path.is_resource else text_type(self.r.fq_name)
+            if self.r.path.is_uuid else text_type(self.r.fq_name)
 
 
 class NoResourceFound(Exception):

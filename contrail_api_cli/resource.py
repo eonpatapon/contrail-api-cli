@@ -423,7 +423,7 @@ class Resource(ResourceBase, UserDict):
         :param exclude_back_refs: don't get back_refs references
         :type exclude_back_refs: bool
         """
-        if not self.path.is_resource:
+        if not self.path.is_resource and not self.path.is_uuid:
             self.check()
         params = {}
         # even if the param is False the API will exclude resources

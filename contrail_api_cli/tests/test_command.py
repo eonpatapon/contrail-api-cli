@@ -34,8 +34,8 @@ class Cmd(cmds.Command):
 class TestCommand(unittest.TestCase):
 
     def setUp(self):
-        self.mgr = cmds.CommandManager(namespaces=['contrail_api_cli.command',
-                                                   'contrail_api_cli.shell_command'])
+        self.mgr = cmds.CommandManager()
+        self.mgr.load_namespace('contrail_api_cli.shell_command')
         ep = EntryPoint('cmd', 'contrail_api_cli.tests.test_command', attrs=('Cmd',))
         cls = ep.load(require=False)
         ext = Extension('cmd', ep, cls, cls('cmd'))
@@ -211,7 +211,7 @@ class TestCommand(unittest.TestCase):
     @mock.patch('contrail_api_cli.resource.ResourceBase.session')
     def test_notfound_fqname_ls(self, mock_session):
         fq_name = 'default-domain:foo'
-        ShellContext.current_path = Path('foo')
+        ShellContext.current_path = Path('/foo')
         mock_session.fqname_to_id.side_effect = client.HTTPError(http_status=404)
         with self.assertRaises(cmds.BadPath) as e:
             self.mgr.get('ls')(paths=[fq_name])

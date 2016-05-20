@@ -100,7 +100,7 @@ def expand_paths(paths=None, predicate=None, filters=None, parent_uuid=None):
                          Path('/', r.type, str(r.fq_name))]
                 if any([fnmatch(str(p), str(path)) for p in paths]):
                     result[r.path] = r
-        elif ':' in path.name:
+        elif path.is_resource and path.is_fq_name:
             try:
                 r = Resource(path.base,
                              fq_name=path.name,
@@ -111,7 +111,7 @@ def expand_paths(paths=None, predicate=None, filters=None, parent_uuid=None):
             except ResourceNotFound as e:
                 raise BadPath(str(e))
         else:
-            if path.is_resource:
+            if path.is_resource and path.is_uuid:
                 try:
                     r = Resource(path.base,
                                  uuid=path.name,

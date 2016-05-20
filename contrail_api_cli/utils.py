@@ -15,6 +15,8 @@ import logging
 
 from prompt_toolkit import prompt
 
+from .exceptions import AbsPathRequired
+
 
 gevent.monkey.patch_socket()
 logger = logging.getLogger(__name__)
@@ -135,9 +137,11 @@ class Path(PurePosixPath):
         return len(self.parts) == 1 and self.root == "/"
 
     @property
-    def is_resource(self):
-        if self.name == self.base:
-            return False
+    def is_fq_name(self):
+        return not self.is_uuid
+
+    @property
+    def is_uuid(self):
         try:
             UUID(self.name, version=4)
         except (ValueError, IndexError):
@@ -145,7 +149,22 @@ class Path(PurePosixPath):
         return True
 
     @property
+    def is_resource(self):
+        """The path is a resource if it is not a Collection
+
+        :raises AbsPathRequired: path doesn't start with '/'
+        """
+        return not self.is_collection
+
+    @property
     def is_collection(self):
+        """The path is a Collection if there is only one part in the path. Be
+        careful, the root is a Collection.
+
+        :raises AbsPathRequired: path doesn't start with '/'
+        """
+        if not self.is_absolute():
+            raise AbsPathRequired()
         return self.base == self.name
 
     def relative_to(self, path):
