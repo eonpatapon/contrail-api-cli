@@ -4,6 +4,7 @@ import unittest
 from uuid import uuid4
 
 from contrail_api_cli.utils import Path
+from contrail_api_cli.exceptions import AbsPathRequired
 
 
 class TestPath(unittest.TestCase):
@@ -24,6 +25,9 @@ class TestPath(unittest.TestCase):
         self.assertFalse(p.is_resource)
         p = Path("/75963ada-2c70-4eeb-8daf-f24ce920ff7b")
         self.assertFalse(p.is_resource)
+        p = Path("foo/bar")
+        with self.assertRaises(AbsPathRequired):
+            p.is_resource
 
     def test_collection(self):
         p = Path("/foo")
@@ -32,6 +36,9 @@ class TestPath(unittest.TestCase):
         self.assertFalse(p.is_collection)
         p = Path("/")
         self.assertTrue(p.is_collection)
+        p = Path("foo/bar")
+        with self.assertRaises(AbsPathRequired):
+            p.is_collection
 
     def test_uuid(self):
         p = Path("/foo/%s" % str(uuid4()))

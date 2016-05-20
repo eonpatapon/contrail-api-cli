@@ -19,6 +19,10 @@ class BadPath(Exception):
     pass
 
 
+class AbsPathRequired(Exception):
+    pass
+
+
 class ResourceMissing(Exception):
     pass
 
