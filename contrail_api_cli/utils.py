@@ -163,7 +163,7 @@ class Path(PurePosixPath):
 
         :raises AbsPathRequired: path doesn't start with '/'
         """
-        if self.root != "/":
+        if not self.is_absolute():
             raise AbsPathRequired()
         return self.base == self.name
 
