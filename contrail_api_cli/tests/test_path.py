@@ -18,14 +18,32 @@ class TestPath(unittest.TestCase):
     def test_resource(self):
         p = Path("/foo/%s" % str(uuid4()))
         self.assertTrue(p.is_resource)
-        self.assertTrue(p.is_uuid)
         p = Path("/foo/bar")
         self.assertTrue(p.is_resource)
-        self.assertFalse(p.is_uuid)
         p = Path("/")
         self.assertFalse(p.is_resource)
         p = Path("/75963ada-2c70-4eeb-8daf-f24ce920ff7b")
         self.assertFalse(p.is_resource)
+
+    def test_collection(self):
+        p = Path("/foo")
+        self.assertTrue(p.is_collection)
+        p = Path("/foo/bar")
+        self.assertFalse(p.is_collection)
+        p = Path("/")
+        self.assertTrue(p.is_collection)
+
+    def test_uuid(self):
+        p = Path("/foo/%s" % str(uuid4()))
+        self.assertTrue(p.is_uuid)
+        p = Path("/foo/bar")
+        self.assertFalse(p.is_uuid)
+
+    def test_fq_name(self):
+        p = Path("/foo/%s" % str(uuid4()))
+        self.assertFalse(p.is_fq_name)
+        p = Path("/foo/bar")
+        self.assertTrue(p.is_fq_name)
 
     def test_root(self):
         p = Path("/")

@@ -153,7 +153,8 @@ class Path(PurePosixPath):
 
     @property
     def is_collection(self):
-        """The path is a Collection if there is only one part in the path"""
+        """The path is a Collection if there is only one part in the path. Be
+        careful, the root is a Collection."""
         return self.base == self.name
 
     def relative_to(self, path):
