@@ -425,5 +425,11 @@ def parallel_map(func, iterable, args=None, kwargs=None, workers=None):
     else:
         pool = Group()
     iterable = [pool.spawn(func, i, *args, **kwargs) for i in iterable]
-    pool.join()
-    return [i.value for i in iterable]
+    pool.join(raise_error=True)
+    for idx, i in enumerate(iterable):
+        i_type = type(i.get())
+        i_value = i.get()
+        if issubclass(i_type, Exception):
+            raise i_value
+        iterable[idx] = i_value
+    return iterable
