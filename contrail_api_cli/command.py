@@ -100,34 +100,27 @@ def expand_paths(paths=None, predicate=None, filters=None, parent_uuid=None):
                          Path('/', r.type, str(r.fq_name))]
                 if any([fnmatch(str(p), str(path)) for p in paths]):
                     result[r.path] = r
-        elif path.is_resource and path.is_fq_name:
+        elif path.is_resource:
+            if path.is_uuid:
+                kwargs = {'uuid': path.name}
+            else:
+                kwargs = {'fq_name': path.name}
             try:
                 r = Resource(path.base,
-                             fq_name=path.name,
-                             check=True)
+                             check=True,
+                             **kwargs)
                 if predicate and not predicate(r):
                     continue
                 result[r.path] = r
             except ResourceNotFound as e:
                 raise BadPath(str(e))
-        else:
-            if path.is_resource and path.is_uuid:
-                try:
-                    r = Resource(path.base,
-                                 uuid=path.name,
-                                 check=True)
-                    if predicate and not predicate(r):
-                        continue
-                    result[path] = r
-                except ResourceNotFound as e:
-                    raise BadPath(str(e))
-            elif path.is_collection:
-                c = Collection(path.base,
-                               filters=filters,
-                               parent_uuid=parent_uuid)
-                if predicate and not predicate(c):
-                    continue
-                result[path] = c
+        elif path.is_collection:
+            c = Collection(path.base,
+                           filters=filters,
+                           parent_uuid=parent_uuid)
+            if predicate and not predicate(c):
+                continue
+            result[path] = c
 
     paths = list(result.values())
     if not paths:
