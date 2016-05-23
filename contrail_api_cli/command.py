@@ -24,7 +24,7 @@ from .manager import CommandManager
 from .resource import Resource, ResourceCache
 from .resource import Collection, RootCollection
 from .client import ContrailAPISession
-from .utils import CONFIG_DIR, Path, classproperty, continue_prompt, printo
+from .utils import CONFIG_DIR, Path, classproperty, continue_prompt, printo, parallel_map
 from .style import default as default_style
 from .exceptions import CommandError, CommandNotFound, BadPath, \
     ResourceNotFound, NoResourceFound, CommandInvalid
@@ -55,6 +55,48 @@ def experimental(cls):
     return cls
 
 
+def _path_to_resource(path, predicate=None, filters=None, parent_uuid=None):
+    if any([c in str(path) for c in ('*', '?')]):
+        if any([c in path.base for c in ('*', '?')]):
+            col = RootCollection(fetch=True,
+                                 filters=filters,
+                                 parent_uuid=parent_uuid)
+        else:
+            col = Collection(path.base, fetch=True,
+                             filters=filters,
+                             parent_uuid=parent_uuid)
+        for r in col:
+            if predicate and not predicate(r):
+                continue
+            # list of paths to match against
+            paths = [r.path,
+                     Path('/', r.type, str(r.fq_name))]
+            if any([fnmatch(str(p), str(path)) for p in paths]):
+                return r
+    elif path.is_resource:
+        if path.is_uuid:
+            kwargs = {'uuid': path.name}
+        else:
+            kwargs = {'fq_name': path.name}
+        try:
+            r = Resource(path.base,
+                         check=True,
+                         **kwargs)
+            if predicate and not predicate(r):
+                return
+            return r
+        except ResourceNotFound as e:
+            raise BadPath(str(e))
+    elif path.is_collection:
+        c = Collection(path.base,
+                       filters=filters,
+                       parent_uuid=parent_uuid)
+        if predicate and not predicate(c):
+            return
+        return c
+    return
+
+
 def expand_paths(paths=None, predicate=None, filters=None, parent_uuid=None):
     """Return an unique list of resources or collections from a list of paths.
     Supports fq_name and wilcards resolution.
@@ -82,50 +124,18 @@ def expand_paths(paths=None, predicate=None, filters=None, parent_uuid=None):
     # use a dict to have unique paths
     # but keep them ordered
     result = OrderedDict()
-    for path in paths:
-        if any([c in str(path) for c in ('*', '?')]):
-            if any([c in path.base for c in ('*', '?')]):
-                col = RootCollection(fetch=True,
-                                     filters=filters,
-                                     parent_uuid=parent_uuid)
-            else:
-                col = Collection(path.base, fetch=True,
-                                 filters=filters,
-                                 parent_uuid=parent_uuid)
-            for r in col:
-                if predicate and not predicate(r):
-                    continue
-                # list of paths to match against
-                paths = [r.path,
-                         Path('/', r.type, str(r.fq_name))]
-                if any([fnmatch(str(p), str(path)) for p in paths]):
-                    result[r.path] = r
-        elif path.is_resource:
-            if path.is_uuid:
-                kwargs = {'uuid': path.name}
-            else:
-                kwargs = {'fq_name': path.name}
-            try:
-                r = Resource(path.base,
-                             check=True,
-                             **kwargs)
-                if predicate and not predicate(r):
-                    continue
-                result[r.path] = r
-            except ResourceNotFound as e:
-                raise BadPath(str(e))
-        elif path.is_collection:
-            c = Collection(path.base,
-                           filters=filters,
-                           parent_uuid=parent_uuid)
-            if predicate and not predicate(c):
-                continue
-            result[path] = c
+    for r in parallel_map(_path_to_resource, paths,
+                          kwargs={'predicate': predicate,
+                                  'filters': filters,
+                                  'parent_uuid': parent_uuid},
+                          workers=50):
+        if r is not None:
+            result[r.path] = r
 
-    paths = list(result.values())
-    if not paths:
+    resources = list(result.values())
+    if not resources:
         raise NoResourceFound()
-    return paths
+    return resources
 
 
 @add_metaclass(abc.ABCMeta)

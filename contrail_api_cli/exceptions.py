@@ -2,6 +2,8 @@ from __future__ import unicode_literals
 
 from six import text_type
 
+from gevent import GreenletExit
+
 
 class CommandNotFound(Exception):
     pass
@@ -15,7 +17,7 @@ class CommandInvalid(Exception):
     pass
 
 
-class BadPath(Exception):
+class BadPath(Exception, GreenletExit):
     pass
 
 
