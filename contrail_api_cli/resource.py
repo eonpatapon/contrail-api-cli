@@ -136,6 +136,7 @@ class Collection(ResourceBase, UserList):
             self.fetch(recursive=recursive)
         self.emit('created', self)
 
+    @http_404_handler
     def __len__(self):
         """Return the number of items of the collection
 
