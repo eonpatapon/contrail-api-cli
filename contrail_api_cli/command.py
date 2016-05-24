@@ -26,8 +26,8 @@ from .resource import Collection, RootCollection
 from .client import ContrailAPISession
 from .utils import CONFIG_DIR, Path, classproperty, continue_prompt, printo, parallel_map
 from .style import default as default_style
-from .exceptions import CommandError, CommandNotFound, BadPath, \
-    ResourceNotFound, NoResourceFound, CommandInvalid
+from .exceptions import CommandError, CommandNotFound, \
+    ResourceNotFound, CollectionNotFound, NotFound, CommandInvalid
 from .parser import CommandParser
 
 
@@ -78,15 +78,12 @@ def _path_to_resource(path, predicate=None, filters=None, parent_uuid=None):
             kwargs = {'uuid': path.name}
         else:
             kwargs = {'fq_name': path.name}
-        try:
-            r = Resource(path.base,
-                         check=True,
-                         **kwargs)
-            if predicate and not predicate(r):
-                return
-            return r
-        except ResourceNotFound as e:
-            raise BadPath(str(e))
+        r = Resource(path.base,
+                     check=True,
+                     **kwargs)
+        if predicate and not predicate(r):
+            return
+        return r
     elif path.is_collection:
         c = Collection(path.base,
                        filters=filters,
@@ -134,7 +131,7 @@ def expand_paths(paths=None, predicate=None, filters=None, parent_uuid=None):
 
     resources = list(result.values())
     if not resources:
-        raise NoResourceFound()
+        raise NotFound()
     return resources
 
 
@@ -373,7 +370,7 @@ class Shell(Command):
             try:
                 result = cmd.parse_and_call(*args)
             except (HttpError, ClientException, CommandError,
-                    ResourceNotFound, NoResourceFound, BadPath) as e:
+                    ResourceNotFound, CollectionNotFound, NotFound) as e:
                 printo(text_type(e))
                 continue
             except KeyboardInterrupt:

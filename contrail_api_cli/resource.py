@@ -14,7 +14,7 @@ import datrie
 from keystoneclient.exceptions import HTTPError
 
 from .utils import FQName, Path, Observable, to_json
-from .exceptions import ResourceNotFound, ResourceMissing, NoResourceFound
+from .exceptions import ResourceNotFound, ResourceMissing, CollectionNotFound
 
 
 def http_404_handler(f):
@@ -32,7 +32,7 @@ def http_404_handler(f):
                 if isinstance(self, Resource):
                     raise ResourceNotFound(resource=self)
                 elif isinstance(self, Collection):
-                    raise NoResourceFound()
+                    raise CollectionNotFound(collection=self)
             raise
     return wrapper
 

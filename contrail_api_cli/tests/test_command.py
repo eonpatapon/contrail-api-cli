@@ -16,6 +16,7 @@ from contrail_api_cli import client
 from contrail_api_cli.utils import Path, FQName
 from contrail_api_cli.command import ShellContext
 from contrail_api_cli.resource import Resource
+from contrail_api_cli.exceptions import ResourceNotFound, CommandError
 
 
 BASE = 'http://localhost:8082'
@@ -213,7 +214,7 @@ class TestCommand(unittest.TestCase):
         fq_name = 'default-domain:foo'
         ShellContext.current_path = Path('/foo')
         mock_session.fqname_to_id.side_effect = client.HTTPError(http_status=404)
-        with self.assertRaises(cmds.BadPath) as e:
+        with self.assertRaises(ResourceNotFound) as e:
             self.mgr.get('ls')(paths=[fq_name])
             self.assertEqual("%s doesn't exists" % fq_name, str(e))
         self.assertFalse(mock_session.get_json.called)
@@ -235,7 +236,7 @@ class TestCommand(unittest.TestCase):
         self.assertEqual(result, '3')
 
         ShellContext.current_path = Path('/foo/%s' % uuid.uuid4())
-        with self.assertRaises(cmds.NoResourceFound):
+        with self.assertRaises(CommandError):
             self.mgr.get('du')()
 
     @mock.patch('contrail_api_cli.resource.ResourceBase.session')

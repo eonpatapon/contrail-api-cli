@@ -11,7 +11,7 @@ from keystoneclient.exceptions import HttpError
 from contrail_api_cli.utils import Path, FQName
 from contrail_api_cli.resource import RootCollection, Collection, Resource, ResourceEncoder
 from contrail_api_cli.client import ContrailAPISession
-from contrail_api_cli.exceptions import ResourceNotFound, ResourceMissing, NoResourceFound
+from contrail_api_cli.exceptions import ResourceNotFound, ResourceMissing, CollectionNotFound
 
 
 BASE = "http://localhost:8082"
@@ -522,7 +522,7 @@ class TestCollection(unittest.TestCase):
     @mock.patch('contrail_api_cli.resource.ResourceBase.session')
     def test_collection_not_found(self, mock_session):
         mock_session.get_json.side_effect = HttpError(http_status=404)
-        with self.assertRaises(NoResourceFound):
+        with self.assertRaises(CollectionNotFound):
             Collection('foo', fetch=True)
 
 

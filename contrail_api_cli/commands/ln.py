@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 from six import text_type
 
 from ..command import Command, Arg, expand_paths
-from ..exceptions import CommandError, NoResourceFound
+from ..exceptions import CommandError
 from ..resource import Resource
 from ..schema import create_schema_from_version, SchemaVersionNotAvailable, ResourceNotDefined, get_last_schema_version
 
@@ -25,11 +25,8 @@ class Ln(Command):
             raise CommandError(text_type(e))
 
         for idx, r in enumerate(resources):
-            try:
-                resources[idx] = expand_paths([r],
-                                              predicate=lambda r: isinstance(r, Resource))[0]
-            except NoResourceFound:
-                raise CommandError("%s not found" % r)
+            resources[idx] = expand_paths([r],
+                                          predicate=lambda r: isinstance(r, Resource))[0]
 
         res1, res2 = resources
 

@@ -9,7 +9,7 @@ from keystoneclient import session as ksession, auth
 from keystoneclient.exceptions import ClientException, HttpError
 
 from .manager import CommandManager
-from .exceptions import CommandError, ResourceNotFound, NoResourceFound, BadPath
+from .exceptions import CommandError, ResourceNotFound, CollectionNotFound, NotFound
 from .utils import CONFIG_DIR, printo
 from . import command
 
@@ -69,7 +69,7 @@ def main():
         logger.debug('Calling %s with %s' % (subcmd, subcmd_kwargs))
         result = subcmd(**subcmd_kwargs)
     except (HttpError, ClientException, CommandError,
-            ResourceNotFound, NoResourceFound, BadPath) as e:
+            ResourceNotFound, CollectionNotFound, NotFound) as e:
         printo(text_type(e), std_type='stderr')
         exit(1)
     except KeyboardInterrupt:
