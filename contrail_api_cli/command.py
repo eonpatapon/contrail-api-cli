@@ -37,10 +37,45 @@ class ArgumentParser(argparse.ArgumentParser):
         raise CommandError(message or '')
 
 
-class Arg(object):
+class BaseOption(object):
 
     def __init__(self, *args, **kwargs):
-        self.args = args
+        self.attr = ''
+
+    @property
+    def help(self):
+        return self.kwargs.get('help', '') % self.kwargs
+
+    @property
+    def dest(self):
+        return self.kwargs.get('get', self.attr)
+
+    @property
+    def is_multiple(self):
+        return self.kwargs.get('nargs') in ('*', '+') or \
+            self.kwargs.get('action') in ('append',)
+
+
+class Option(BaseOption):
+
+    def __init__(self, short_name=None, **kwargs):
+        BaseOption.__init__(self)
+        self.short_name = short_name
+        self.kwargs = kwargs
+
+    @property
+    def long_name(self):
+        return '--%s' % self.attr.replace('_', '-')
+
+    @property
+    def option_strings(self):
+        return [n for n in (self.long_name, self.short_name) if n is not None]
+
+
+class Arg(BaseOption):
+
+    def __init__(self, **kwargs):
+        BaseOption.__init__(self)
         self.kwargs = kwargs
 
 
@@ -143,6 +178,8 @@ class Command(object):
     """Description of the command"""
     aliases = []
     """Command aliases"""
+    _options = None
+    _args = None
 
     def __init__(self, name):
         self.parser = ArgumentParser(prog=name, description=self.description)
@@ -173,20 +210,33 @@ class Command(object):
         self._is_piped = value
 
     @classproperty
-    def arguments(cls):
-        for attr, value in inspect.getmembers(cls):
-            if isinstance(value, Arg):
-                # Handle case for options
-                # attr can't be something like '-r'
-                if len(value.args) > 0:
-                    attr = value.args[0]
-                yield (attr, value.args[1:], value.kwargs)
-        raise StopIteration()
+    def options(cls):
+        if cls._options is not None:
+            return cls._options
+        cls._options = OrderedDict()
+        for attr, option in inspect.getmembers(cls):
+            if isinstance(option, Option):
+                option.attr = attr
+                cls._options[text_type(attr)] = option
+        return cls._options
+
+    @classproperty
+    def args(cls):
+        if cls._args is not None:
+            return cls._args
+        cls._args = OrderedDict()
+        for attr, arg in inspect.getmembers(cls):
+            if isinstance(arg, Arg):
+                arg.attr = attr
+                cls._args[text_type(attr)] = arg
+        return cls._args
 
     @classmethod
     def add_arguments_to_parser(cls, parser):
-        for (arg_name, arg_args, arg_kwargs) in cls.arguments:
-            parser.add_argument(arg_name, *arg_args, **arg_kwargs)
+        for (arg_name, arg) in cls.args.items():
+            parser.add_argument(arg_name, **arg.kwargs)
+        for (option_name, option) in cls.options.items():
+            parser.add_argument(*option.option_strings, **option.kwargs)
 
     def parse_and_call(self, *args):
         args = self.parser.parse_args(args=args)
@@ -210,12 +260,12 @@ class Rm(Command):
     description = "Delete a resource"
     paths = Arg(nargs="*", help="Resource path(s)",
                 metavar='path')
-    recursive = Arg("-r", "--recursive",
-                    action="store_true", default=False,
-                    help="Recursive delete of back_refs resources")
-    force = Arg("-f", "--force",
-                action="store_true", default=False,
-                help="Don't ask for confirmation")
+    recursive = Option("-r", action="store_true",
+                       default=False,
+                       help="Recursive delete of back_refs resources")
+    force = Option("-f", action="store_true",
+                   default=False,
+                   help="Don't ask for confirmation")
 
     def _get_back_refs(self, resources, back_refs):
         for resource in resources:
@@ -256,12 +306,14 @@ class ShellCompleter(Completer):
             parser = CommandParser(text)
             # complete options for the current command
             if text_before_cursor.startswith('-'):
-                for action in parser.available_options:
-                    option = action.option_strings[0]
-                    if option.startswith(text_before_cursor):
-                        yield Completion(option,
+                for option in parser.available_options:
+                    option_name = option.short_name or option.long_name
+                    if text_before_cursor.startswith('--'):
+                        option_name = option.long_name
+                    if option_name.startswith(text_before_cursor):
+                        yield Completion(option_name,
                                          -len(text_before_cursor),
-                                         display_meta=action.help % vars(action) or '')
+                                         display_meta=option.help)
                 raise StopIteration
         except CommandNotFound:
             for cmd_name, cmd in self.mgr.list:

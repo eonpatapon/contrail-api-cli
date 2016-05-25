@@ -6,7 +6,7 @@ from six import b
 import subprocess
 import json
 
-from ..command import Command, Arg, expand_paths
+from ..command import Command, Arg, Option, expand_paths
 from ..resource import Resource
 from ..exceptions import CommandError
 from ..utils import md5
@@ -15,9 +15,9 @@ from ..utils import md5
 class Edit(Command):
     description = "Edit resource"
     path = Arg(nargs="?", help="Resource path", default='')
-    template = Arg('-t', '--template',
-                   help="Create new resource from existing",
-                   action="store_true", default=False)
+    template = Option('-t',
+                      help="Create new resource from existing",
+                      action="store_true", default=False)
     aliases = ['vim = edit', 'emacs = edit', 'nano = edit']
 
     def __call__(self, path='', template=False):

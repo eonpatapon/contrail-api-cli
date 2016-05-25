@@ -23,10 +23,9 @@ def get_subcommand_kwargs(mgr, name, namespace):
     """
     subcmd = mgr.get(name)
     subcmd_kwargs = {}
-    for action in subcmd.parser._actions:
-        if (action.dest is not argparse.SUPPRESS and
-                action.default is not argparse.SUPPRESS):
-            subcmd_kwargs[action.dest] = getattr(namespace, action.dest)
+    for opt in list(subcmd.args.values()) + list(subcmd.options.values()):
+        if hasattr(namespace, opt.dest):
+            subcmd_kwargs[opt.dest] = getattr(namespace, opt.dest)
     return (subcmd, subcmd_kwargs)
 
 

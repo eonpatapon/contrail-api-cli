@@ -2,7 +2,7 @@
 from __future__ import unicode_literals
 from six import text_type
 
-from ..command import Command, Arg, expand_paths
+from ..command import Command, Arg, Option, expand_paths
 from ..exceptions import CommandError
 from ..resource import Resource
 from ..schema import create_schema_from_version, SchemaVersionNotAvailable, ResourceNotDefined, get_last_schema_version
@@ -11,12 +11,12 @@ from ..schema import create_schema_from_version, SchemaVersionNotAvailable, Reso
 class Ln(Command):
     description = "Link two resources"
     resources = Arg(help='resource to link', metavar='PATH', nargs=2)
-    remove = Arg('-r', '--remove', help='remove link',
-                 action='store_true', default=False)
-    schema_version = Arg('-v', '--schema-version',
-                         type=str,
-                         default=get_last_schema_version(),
-                         help="schema version to use (default='%(default)s')")
+    remove = Option('-r', help='remove link',
+                    action='store_true', default=False)
+    schema_version = Option('-v',
+                            type=str,
+                            default=get_last_schema_version(),
+                            help="schema version to use (default='%(default)s')")
 
     def __call__(self, resources=None, remove=None, schema_version=None):
         try:

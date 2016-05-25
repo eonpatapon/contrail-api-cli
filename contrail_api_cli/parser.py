@@ -1,5 +1,3 @@
-from argparse import _AppendAction, _AppendConstAction
-
 from .manager import CommandManager
 from .exceptions import CommandNotFound, CommandInvalid
 
@@ -26,68 +24,26 @@ class CommandParser(object):
             else:
                 raise CommandInvalid
 
-    def _get_action(self, option_str):
-        for action in self.cmd.parser._actions:
-            if option_str in action.option_strings:
-                return action
-
-    @property
-    def options(self):
-        """Return argparse optional actions
-
-        rtype: argparse.Action generator
-        """
-        for action in self.cmd.parser._actions:
-            if action.option_strings:
-                yield action
-
     @property
     def used_options(self):
-        """Return argparse optional actions already
-        used in the command line
+        """Return options already used in the
+        command line
 
-        rtype: argparse.Action generator
+        rtype: command.Option generator
         """
         for option_str in filter(lambda c: c.startswith('-'), self.cmd_line):
-            action = self._get_action(option_str)
-            if action is not None:
-                yield action
+            for option in list(self.cmd.options.values()):
+                if option_str in option.option_strings:
+                    yield option
 
     @property
     def available_options(self):
-        """Return argparse optional actions
-        that can be used given the current cmd line
+        """Return options that can be used given
+        the current cmd line
 
-        rtype: argparse.Action generator
+        rtype: command.Option generator
         """
-        multiple_allowed = (_AppendAction, _AppendConstAction)
-        for action in self.options:
-            if (action not in list(self.used_options) or
-                    any([isinstance(action, c) for c in multiple_allowed])):
-                yield action
-
-    # def _action_need_value(self, action):
-        # classes = [_AppendAction, _AppendConstAction, _StoreAction]
-        # return any([isinstance(action, cls) for cls in classes])
-
-    # @property
-    # def used_args(self):
-        # values = []
-        # for index, c in enumerate(self.cmd_line):
-            # if index == 0:
-                # continue
-            # action = self._get_action(c)
-            # prev_action = self._get_action(self.cmd_line[index - 1])
-            # if action is None and self._action_need_value(prev_action):
-                # continue
-            # elif action is None:
-                # values.append(c)
-            # else:
-                # continue
-        # return list(self.args)
-
-    # @property
-    # def args(self):
-        # for action in self.cmd.parser._actions:
-            # if action.option_strings == []:
-                # yield action
+        for option in list(self.cmd.options.values()):
+            if (option.is_multiple or
+                    option not in list(self.used_options)):
+                yield option

@@ -4,8 +4,9 @@ from __future__ import unicode_literals
 from six import text_type
 
 from ..resource import Resource
-from ..command import Command, Arg, CommandError, expand_paths
+from ..command import Command, Arg, Option, expand_paths
 from ..utils import format_table
+from ..exceptions import CommandError
 
 RESOURCE_NAME_PATH_SEPARATOR = "."
 
@@ -15,9 +16,9 @@ class Relative(Command):
     path = Arg(help="Base resource", metavar='path')
     resource_name_path = Arg(help="Resource names separated by '%s'" % RESOURCE_NAME_PATH_SEPARATOR,
                              metavar='resource_name_path')
-    show_intermediate = Arg('-l', '--show-intermediate',
-                            default=False, action="store_true",
-                            help="show intermediate resources")
+    show_intermediate = Option('-l',
+                               default=False, action="store_true",
+                               help="show intermediate resources")
 
     def _get_next_resource(self, resource, next_resource_name):
         """

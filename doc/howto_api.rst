@@ -119,20 +119,18 @@ To add a virtual-router we need at least a name and an IP address.
 The type is optionnal and is usually not defined but we add an option
 for it just in case::
 
-    from contrail_api_cli.command import Command
+    from contrail_api_cli.command import Command, Arg, Option
     from contrail_api_cli.resource import Resource
 
     class AddVRouter(Command):
         description = 'Add vrouter'
         vrouter_name = Arg(help='Hostname of compute node')
-        vrouter_ip = Arg('--vrouter-ip',
-                         help='IP of compute node',
-                         type=ip_type,
-                         required=True)
-        vrouter_type = Arg('--vrouter-type',
-                           help='vrouter type',
-                           choices=['tor-service-mode', 'embedded'],
-                           default=None)
+        vrouter_ip = Option(help='IP of compute node',
+                            type=ip_type,
+                            required=True)
+        vrouter_type = Option(help='vrouter type',
+                              choices=['tor-service-mode', 'embedded'],
+                              default=None)
 
         def __call__(self, vrouter_ip=None, vrouter_name=None, vrouter_type=None):
             global_config = Resource('global-system-config',

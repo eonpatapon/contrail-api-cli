@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from ..command import Command, Arg, expand_paths
+from ..command import Command, Arg, Option, expand_paths
 from ..resource import Resource
 from ..utils import format_tree, parallel_map
 from ..exceptions import ResourceMissing
@@ -13,12 +13,12 @@ class Tree(Command):
     description = "Tree of resource references"
     paths = Arg(nargs="*", help="Resource path(s)",
                 metavar='path')
-    reverse = Arg('-r', '--reverse',
-                  help="Show tree of back references",
-                  action="store_true", default=False)
-    parent = Arg('-p', '--parent',
-                 help="Show tree of parents",
-                 action="store_true", default=False)
+    reverse = Option('-r',
+                     help="Show tree of back references",
+                     action="store_true", default=False)
+    parent = Option('-p',
+                    help="Show tree of parents",
+                    action="store_true", default=False)
 
     def _create_tree(self, resource, reverse, parent, visited):
         tree = {}

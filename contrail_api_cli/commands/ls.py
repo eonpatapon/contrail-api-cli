@@ -2,7 +2,7 @@
 from __future__ import unicode_literals
 from six import text_type
 
-from ..command import Command, Arg, expand_paths
+from ..command import Command, Arg, Option, expand_paths
 from ..resource import Collection, Resource
 from ..exceptions import CommandError
 from ..utils import format_table
@@ -12,19 +12,18 @@ class Ls(Command):
     description = "List resource objects"
     paths = Arg(nargs="*", help="Resource path(s)",
                 metavar='path')
-    long = Arg('-l', '--long',
-               default=False, action="store_true",
-               help="use a long listing format")
-    fields = Arg('-c', '--column', action="append",
-                 help="fields to show in long mode",
-                 default=[], dest="fields",
-                 metavar="field_name")
-    filters = Arg('-f', '--filter', action="append",
-                  help="filter predicate",
-                  default=[], dest='filters',
-                  metavar='field_name=field_value')
-    parent_uuid = Arg('-P', '--parent-uuid',
-                      help="Filter by parent uuid")
+    long = Option('-l',
+                  default=False, action="store_true",
+                  help="use a long listing format")
+    column = Option('-c', action="append",
+                    help="fields to show in long mode",
+                    default=[], dest="fields",
+                    metavar="field_name")
+    filter = Option('-f', action="append",
+                    help="filter predicate",
+                    default=[], dest='filters',
+                    metavar='field_name=field_value')
+    parent_uuid = Option('-P', help="filter by parent uuid")
     # fields to show in -l mode when no
     # column is specified
     default_fields = [u'fq_name']

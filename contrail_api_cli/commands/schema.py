@@ -2,20 +2,21 @@
 from __future__ import unicode_literals
 from six import string_types, text_type
 
-from ..command import Command, Arg, CommandError
+from ..command import Command, Arg, Option
 from ..schema import create_schema_from_version, list_available_schema_version, SchemaVersionNotAvailable, ResourceNotDefined, get_last_schema_version
 from ..utils import format_tree
+from ..exceptions import CommandError
 
 
 class Schema(Command):
     description = "Explore schema resources"
-    schema_version = Arg('-v', '--schema-version',
-                         type=str,
-                         default=get_last_schema_version(),
-                         help="schema version to use (default='%(default)s')")
-    list_version = Arg('-l', '--list-version',
-                       action="store_true",
-                       help="list available schema versions")
+    schema_version = Option('-v',
+                            type=str,
+                            default=get_last_schema_version(),
+                            help="schema version to use (default='%(default)s')")
+    list_version = Option('-l',
+                          action="store_true",
+                          help="list available schema versions")
     resource_name = Arg(nargs="?", help="Schema resource name",
                         metavar='resource_name')
 
