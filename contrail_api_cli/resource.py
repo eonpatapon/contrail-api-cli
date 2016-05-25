@@ -15,6 +15,7 @@ from keystoneclient.exceptions import HTTPError
 
 from .utils import FQName, Path, Observable, to_json
 from .exceptions import ResourceNotFound, ResourceMissing, CollectionNotFound
+from .context import Context, SchemaNotInitialized
 
 
 def http_404_handler(f):
@@ -296,6 +297,10 @@ class Resource(ResourceBase, UserDict):
                  parent=None, recursive=1, **kwargs):
         assert('fq_name' in kwargs or 'uuid' in kwargs or 'to' in kwargs)
         self.type = type
+        try:
+            self.schema = Context().schema.resource(self.type)
+        except SchemaNotInitialized:
+            self.schema = None
 
         for key in ('fq_name', 'to'):
             if key in kwargs:
@@ -449,9 +454,11 @@ class Resource(ResourceBase, UserDict):
         for attr, value in list(data.items()):
             if attr == 'fq_name':
                 data[attr] = FQName(value)
-            if attr.endswith('refs'):
+            if attr.endswith('refs') or (self.schema is not None and self.schema.is_child(attr)):
                 ref_type = "-".join([c for c in attr.split('_')
                                      if c not in ('back', 'refs')])
+                if ref_type.endswith("s"):
+                    ref_type = ref_type[:-1]
                 for idx, res in enumerate(data[attr]):
                     data[attr][idx] = Resource(ref_type,
                                                fetch=recursive - 1 > 0,
@@ -480,6 +487,18 @@ class Resource(ResourceBase, UserDict):
             if attr.endswith('refs') and not attr.endswith('back_refs'):
                 for ref in value:
                     yield ref
+
+    @property
+    def children(self):
+        """Return children resources of the resource
+
+        :rtype: Resource generator
+        """
+        res = Context().schema.resource(self.type)
+        for attr, value in self.data.items():
+            if res.is_child(attr):
+                for child in value:
+                    yield child
 
     def remove_ref(self, ref):
         """Remove reference from self to ref
