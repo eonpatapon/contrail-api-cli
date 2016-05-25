@@ -16,5 +16,14 @@ class TestSchema(unittest.TestCase):
         for v in schema.list_available_schema_version():
             schema.create_schema_from_version(v)
 
+    def test_is_child(self):
+        s = schema.create_schema_from_version("1.10")
+        vn_res = s.resource("virtual-network")
+        self.assertTrue(vn_res.is_child("routing-instance"))
+        self.assertTrue(vn_res.is_child("routing_instance"))
+        self.assertTrue(vn_res.is_child("routing_instances"))
+        self.assertTrue(vn_res.is_child("routing-instances"))
+        self.assertFalse(vn_res.is_child("foo"))
+
 if __name__ == "__main__":
     unittest.main()

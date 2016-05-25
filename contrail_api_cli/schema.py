@@ -11,6 +11,7 @@ schema files.
 from os import listdir
 from os.path import isfile, join
 import logging
+import re
 
 import contrail_api_cli.idl_parser
 from .utils import to_json
@@ -156,3 +157,11 @@ class Resource(object):
                 'refs': self.refs,
                 'back_refs': self.back_refs}
         return to_json(data)
+
+    def is_child(self, resource_type):
+        """Test if resource type is a child. Resource type can be '_' or '-'
+        separated and/or plurial."""
+        return (resource_type in self.children or
+                resource_type in [c + "s" for c in self.children] or
+                re.sub("_", "-", resource_type) in self.children or
+                re.sub("_", "-", resource_type) in [c + "s" for c in self.children])
