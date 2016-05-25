@@ -15,6 +15,7 @@ except ImportError:
 
 import datrie
 from keystoneclient.exceptions import HTTPError
+from prompt_toolkit.completion import Completion
 
 from .utils import FQName, Path, Observable, to_json
 from .exceptions import ResourceNotFound, ResourceMissing, CollectionNotFound, ChildrenExists, BackRefsExists
@@ -663,13 +664,26 @@ class ResourceCache(object):
     """Resource cache of discovered resources.
     """
     def __init__(self):
-        self.trie = datrie.Trie(string.printable)
-        Resource.register('created', self._add_resource)
-        Resource.register('deleted', self._del_resource)
-        Collection.register('created', self._add_resource)
-        Collection.register('deleted', self._del_resource)
+        self.cache = {
+            'resources': datrie.Trie(string.printable),
+            'collections': datrie.Trie(string.printable)
+        }
+        Resource.register('created', self._add_item)
+        Resource.register('deleted', self._del_item)
+        Collection.register('created', self._add_item)
+        Collection.register('deleted', self._del_item)
+
+    def search_resources(self, strings, limit=None):
+        return self._search(self.cache['resources'], strings, limit=limit)
+
+    def search_collections(self, strings, limit=None):
+        return self._search(self.cache['collections'], strings, limit=limit)
 
     def search(self, strings, limit=None):
+        return self.search_collections(strings, limit=limit) + \
+            self.search_resources(strings, limit=limit)
+
+    def _search(self, trie, strings, limit=None):
         """Search in cache
 
         :param strings: list of strings to get from the cache
@@ -679,21 +693,43 @@ class ResourceCache(object):
 
         :rtype: [Resource | Collection]
         """
-        results = [self.trie.has_keys_with_prefix(s) for s in strings]
+        results = [trie.has_keys_with_prefix(s) for s in strings]
         if not any(results):
             return []
         for result, s in zip(results, strings):
             if result is True:
-                return self.trie.values(s)[:limit]
+                return trie.values(s)[:limit]
 
-    def _add_resource(self, resource):
-        for item in [text_type(resource.path), text_type(resource.fq_name)]:
-            if item and item not in self.trie:
-                self.trie[item] = resource
+    def _get_trie_for_item(self, item):
+        if isinstance(item, Collection):
+            trie = self.cache['collections']
+        elif isinstance(item, Resource):
+            trie = self.cache['resources']
+        else:
+            raise RuntimeError('Invalid item')
+        return trie
 
-    def _del_resource(self, resource):
-        for item in [text_type(resource.path), text_type(resource.fq_name)]:
+    def _add_item(self, item):
+        trie = self._get_trie_for_item(item)
+        for key in [text_type(item.path), text_type(item.fq_name)]:
+            if key and key not in trie:
+                trie[key] = item
+
+    def _del_item(self, item):
+        trie = self._get_trie_for_item(item)
+        for key in [text_type(item.path), text_type(item.fq_name)]:
             try:
-                del self.trie[item]
+                del trie[key]
             except KeyError:
                 pass
+
+    def get_completions(self, document, current_path, searches, limit=None):
+        text_before_cursor = document.get_word_before_cursor(WORD=True)
+        resources = self.search(searches, limit=limit)
+        for res in resources:
+            rel_path = text_type(res.path.relative_to(current_path))
+            if rel_path in ('.', '/', ''):
+                continue
+            yield Completion(text_type(rel_path),
+                             -len(text_before_cursor),
+                             display_meta=text_type(res.fq_name))

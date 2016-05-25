@@ -23,7 +23,8 @@ class Ls(Command):
                     help="filter predicate",
                     default=[], dest='filters',
                     metavar='field_name=field_value')
-    parent_uuid = Option('-P', help="filter by parent uuid")
+    parent_uuid = Option('-P', help="filter by parent uuid",
+                         complete="resources:project:uuid")
     # fields to show in -l mode when no
     # column is specified
     default_fields = [u'fq_name']

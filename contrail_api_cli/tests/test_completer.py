@@ -7,6 +7,8 @@ except ImportError:
 
 from keystoneclient.exceptions import HttpError
 
+from prompt_toolkit.document import Document
+
 from contrail_api_cli.command import ShellContext, ShellCompleter
 from contrail_api_cli.resource import Resource
 from contrail_api_cli.utils import Path
@@ -20,9 +22,7 @@ class TestCompleter(CLITest):
     @mock.patch('contrail_api_cli.resource.ResourceBase.session')
     def test_add_del_resource(self, mock_session):
         ShellContext.current_path = Path('/')
-        mock_document = mock.Mock()
-        mock_document.get_word_before_cursor.return_value = 'bar'
-        mock_document.configure_mock(text='ls bar')
+        mock_document = Document(text='ls bar')
 
         comp = ShellCompleter()
         r1 = Resource('foo', uuid='d8eb36b4-9c57-49c5-9eac-95bedc90eb9a')
@@ -40,9 +40,7 @@ class TestCompleter(CLITest):
     @mock.patch('contrail_api_cli.resource.ResourceBase.session')
     def test_add_same_resource(self, mock_session):
         ShellContext.current_path = Path('/')
-        mock_document = mock.Mock()
-        mock_document.get_word_before_cursor.return_value = 'bar'
-        mock_document.configure_mock(text='ls bar')
+        mock_document = Document(text='ls bar')
 
         comp = ShellCompleter()
         r1 = Resource('bar', uuid='4c6d3711-61f1-4505-b8df-189d32b52872')
@@ -57,9 +55,7 @@ class TestCompleter(CLITest):
     @mock.patch('contrail_api_cli.resource.ResourceBase.session')
     def test_fq_name_completion(self, mock_session):
         ShellContext.current_path = Path('/')
-        mock_document = mock.Mock()
-        mock_document.get_word_before_cursor.return_value = 'default-dom'
-        mock_document.configure_mock(text='ls default-dom')
+        mock_document = Document(text='ls default-dom')
 
         comp = ShellCompleter()
         r1 = Resource('bar', fq_name='default-domain:project:resource')
@@ -78,9 +74,7 @@ class TestCompleter(CLITest):
     @mock.patch('contrail_api_cli.resource.ResourceBase.session')
     def test_not_found(self, mock_session):
         mock_session.id_to_fqname.side_effect = HttpError(http_status=404)
-        mock_document = mock.Mock()
-        mock_document.get_word_before_cursor.return_value = 'foo'
-        mock_document.configure_mock(text='ls foo')
+        mock_document = Document(text='ls foo')
 
         comp = ShellCompleter()
         try:
