@@ -11,6 +11,8 @@ from keystoneclient.exceptions import ClientException, HttpError
 from .manager import CommandManager
 from .exceptions import CommandError, ResourceNotFound, CollectionNotFound, NotFound
 from .utils import CONFIG_DIR, printo
+from .schema import create_schema_from_version, get_last_schema_version
+from .context import Context
 from . import command
 
 
@@ -64,6 +66,9 @@ def main():
         os.makedirs(CONFIG_DIR)
 
     command.make_api_session(options)
+    Context().schema = create_schema_from_version(
+        get_last_schema_version())
+
     try:
         subcmd, subcmd_kwargs = get_subcommand_kwargs(mgr, options.subcmd, options)
         logger.debug('Calling %s with %s' % (subcmd, subcmd_kwargs))
