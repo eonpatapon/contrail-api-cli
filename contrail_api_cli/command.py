@@ -28,7 +28,7 @@ from .utils import CONFIG_DIR, Path, classproperty, continue_prompt, printo, par
 from .style import default as default_style
 from .exceptions import CommandError, CommandNotFound, \
     ResourceNotFound, CollectionNotFound, NotFound, CommandInvalid
-from .parser import CommandParser
+from .parser import CommandParser, NoCompletions
 
 
 class ArgumentParser(argparse.ArgumentParser):
@@ -62,6 +62,9 @@ class Option(BaseOption):
         BaseOption.__init__(self)
         self.short_name = short_name
         self.kwargs = kwargs
+        self.complete = None
+        if 'complete' in kwargs:
+            self.complete = kwargs.pop('complete')
 
     @property
     def long_name(self):
@@ -301,20 +304,10 @@ class ShellCompleter(Completer):
     def get_completions(self, document, complete_event):
         text_before_cursor = document.get_word_before_cursor(WORD=True)
         text = self.aliases.apply(document.text)
-
         try:
             parser = CommandParser(text)
-            # complete options for the current command
-            if text_before_cursor.startswith('-'):
-                for option in parser.available_options:
-                    option_name = option.short_name or option.long_name
-                    if text_before_cursor.startswith('--'):
-                        option_name = option.long_name
-                    if option_name.startswith(text_before_cursor):
-                        yield Completion(option_name,
-                                         -len(text_before_cursor),
-                                         display_meta=option.help)
-                raise StopIteration
+            for c in parser.get_completions(self.cache, document, ShellContext.current_path):
+                yield c
         except CommandNotFound:
             for cmd_name, cmd in self.mgr.list:
                 if cmd_name.startswith(text_before_cursor):
@@ -324,6 +317,8 @@ class ShellCompleter(Completer):
             raise StopIteration
         except CommandInvalid:
             raise StopIteration
+        except NoCompletions:
+            raise StopIteration
 
         # resource completion from cache
         searches = [
@@ -332,15 +327,8 @@ class ShellCompleter(Completer):
             # fq_name search
             text_before_cursor
         ]
-        # limit list to 50 entries
-        resources = self.cache.search(searches, limit=50)
-        for res in resources:
-            rel_path = text_type(res.path.relative_to(ShellContext.current_path))
-            if rel_path in ('.', '/', ''):
-                continue
-            yield Completion(text_type(rel_path),
-                             -len(text_before_cursor),
-                             display_meta=text_type(res.fq_name))
+        for c in self.cache.get_completions(document, ShellContext.current_path, searches, 50):
+            yield c
 
 
 class ShellContext(object):

@@ -13,6 +13,7 @@ class Schema(Command):
     schema_version = Option('-v',
                             type=str,
                             default=get_last_schema_version(),
+                            choices=list_available_schema_version(),
                             help="schema version to use (default='%(default)s')")
     list_version = Option('-l',
                           action="store_true",
