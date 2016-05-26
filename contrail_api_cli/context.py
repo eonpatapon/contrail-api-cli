@@ -1,16 +1,17 @@
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+from six import add_metaclass
+
+from .utils import Singleton
+
+
 class SchemaNotInitialized(Exception):
     pass
 
 
+@add_metaclass(Singleton)
 class Context(object):
-    _instance = None
-
     _schema = None
-
-    def __new__(class_, *args, **kwargs):
-        if not isinstance(class_._instance, class_):
-            class_._instance = object.__new__(class_, *args, **kwargs)
-        return class_._instance
 
     @property
     def schema(self):
