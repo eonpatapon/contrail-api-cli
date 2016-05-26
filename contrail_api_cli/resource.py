@@ -314,10 +314,6 @@ class Resource(ResourceBase, UserDict):
                  parent=None, recursive=1, **kwargs):
         assert('fq_name' in kwargs or 'uuid' in kwargs or 'to' in kwargs)
         self.type = type
-        try:
-            self.schema = Context().schema.resource(self.type)
-        except SchemaNotInitialized:
-            self.schema = None
 
         UserDict.__init__(self, kwargs)
         self.from_dict(self.data)
@@ -332,6 +328,13 @@ class Resource(ResourceBase, UserDict):
             self.fetch(recursive=recursive)
 
         self.emit('created', self)
+
+    @property
+    def schema(self):
+        try:
+            return Context().schema.resource(self.type)
+        except SchemaNotInitialized:
+            return None
 
     def check(self):
         """Check that the resource exists.
@@ -520,9 +523,10 @@ class Resource(ResourceBase, UserDict):
 
         :rtype: Resource generator
         """
-        res = Context().schema.resource(self.type)
+        if self.schema is None:
+            raise StopIteration
         for attr, value in self.data.items():
-            if res.is_child(attr):
+            if self.schema.is_child(attr):
                 for child in value:
                     yield child
 
