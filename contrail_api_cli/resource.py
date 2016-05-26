@@ -15,7 +15,7 @@ from keystoneclient.exceptions import HTTPError
 
 from .utils import FQName, Path, Observable, to_json
 from .exceptions import ResourceNotFound, ResourceMissing, CollectionNotFound
-from .context import Context, SchemaNotInitialized
+from .context import Context
 
 
 def http_404_handler(f):
@@ -317,10 +317,7 @@ class Resource(ResourceBase, UserDict):
 
     @property
     def schema(self):
-        try:
-            return Context().schema.resource(self.type)
-        except SchemaNotInitialized:
-            return None
+        return Context().schema.resource(self.type)
 
     def check(self):
         """Check that the resource exists.
@@ -457,13 +454,10 @@ class Resource(ResourceBase, UserDict):
         for attr, value in list(data.items()):
             if attr == 'fq_name':
                 data[attr] = FQName(value)
-            if attr.endswith('refs') or (self.schema is not None and self.schema.is_child(attr)):
-                ref_type = "-".join([c for c in attr.split('_')
-                                     if c not in ('back', 'refs')])
-                if ref_type.endswith("s"):
-                    ref_type = ref_type[:-1]
+            res_type = self.schema.is_linked(attr)
+            if res_type is not None:
                 for idx, res in enumerate(data[attr]):
-                    data[attr][idx] = Resource(ref_type,
+                    data[attr][idx] = Resource(res_type,
                                                fetch=recursive - 1 > 0,
                                                recursive=recursive - 1,
                                                **res)

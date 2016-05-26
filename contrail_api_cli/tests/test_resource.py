@@ -12,9 +12,12 @@ from contrail_api_cli.utils import Path, FQName
 from contrail_api_cli.resource import RootCollection, Collection, Resource, ResourceEncoder
 from contrail_api_cli.client import ContrailAPISession
 from contrail_api_cli.exceptions import ResourceNotFound, ResourceMissing, CollectionNotFound
+from contrail_api_cli.context import Context
+from contrail_api_cli.schema import DummySchema
 
 
-BASE = "http://localhost:8082"
+BASE = 'http://localhost:8082'
+Context().schema = DummySchema()
 
 
 class TestResource(unittest.TestCase):
@@ -353,6 +356,7 @@ class TestResource(unittest.TestCase):
                       fq_name='domain:foo')
         r2 = Resource('bar', uuid='5d085b74-2dcc-4180-8284-10a56f9ed318',
                       fq_name='domain:bar')
+        Collection('bar')
 
         mock_session.get_json.return_value = {
             'foo': {

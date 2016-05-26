@@ -15,11 +15,14 @@ import contrail_api_cli.command as cmds
 from contrail_api_cli import client
 from contrail_api_cli.utils import Path, FQName
 from contrail_api_cli.command import ShellContext
-from contrail_api_cli.resource import Resource
+from contrail_api_cli.resource import Resource, Collection
 from contrail_api_cli.exceptions import ResourceNotFound, CommandError
+from contrail_api_cli.context import Context
+from contrail_api_cli.schema import DummySchema
 
 
 BASE = 'http://localhost:8082'
+Context().schema = DummySchema()
 
 
 class Cmd(cmds.Command):
@@ -369,6 +372,9 @@ class TestCommand(unittest.TestCase):
                 }
             }
         ]
+        Collection('bar')
+        Collection('foobar')
+        Collection('foo')
         mock_session.delete.return_value = True
         self.mgr.get('rm')(paths=t, recursive=True)
         expected_calls = [

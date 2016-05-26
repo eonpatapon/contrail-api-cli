@@ -14,6 +14,7 @@ import logging
 
 import contrail_api_cli.idl_parser
 from .utils import to_json
+from .resource import Collection
 
 logger = logging.getLogger(__name__)
 
@@ -124,9 +125,16 @@ def fill_schema_from_xsd_file(filename, schema):
                 target.back_refs.append(src_name)
 
 
-class Schema(object):
+class DummySchema(object):
+
     def __init__(self):
         self._schema = {}
+        Collection.register('created', self._get_or_add_resource)
+
+    def _get_or_add_resource(self, collection):
+        if collection.type not in self._schema:
+            self._schema[collection.type] = DummyResource(self)
+        return self._schema[collection.type]
 
     def resource(self, resource_name):
         try:
@@ -137,18 +145,52 @@ class Schema(object):
     def all_resources(self):
         return self._schema.keys()
 
+
+class Schema(DummySchema):
+
+    def __init__(self):
+        self._schema = {}
+
     def _get_or_add_resource(self, resource_name):
         if resource_name not in self._schema:
-            self._schema[resource_name] = Resource()
+            self._schema[resource_name] = Resource(self)
         return self._schema[resource_name]
 
 
-class Resource(object):
-    def __init__(self):
+class DummyResource(object):
+
+    def __init__(self, schema):
+        self.schema = schema
         self.children = []
         self.parent = None
         self.refs = []
         self.back_refs = []
+
+    def _sanitize_resource_type(self, resource_type):
+        """Resource type can be '_' or '-' separated and/or plurial."""
+        resource_type = resource_type.replace('_', '-')
+        if resource_type.endswith('-back-refs'):
+            return resource_type.split('-back-refs')[0]
+        elif resource_type.endswith('-refs'):
+            return resource_type.split('-refs')[0]
+        elif resource_type.endswith('s'):
+            return resource_type[:-1]
+        return resource_type
+
+    def is_linked(self, resource_type):
+        sanitized_resource_type = self._sanitize_resource_type(resource_type)
+        if sanitized_resource_type not in self.schema.all_resources():
+            return
+        return sanitized_resource_type
+
+    def is_child(self, resource_type):
+        return resource_type.endswith('s')
+
+    def is_ref(self, resource_type):
+        return resource_type.endswith('_refs') and not self.is_back_ref(resource_type)
+
+    def is_back_ref(self, resource_type):
+        return resource_type.endswith('_back_refs')
 
     def json(self):
         data = {'children': self.children,
@@ -157,12 +199,16 @@ class Resource(object):
                 'back_refs': self.back_refs}
         return to_json(data)
 
-    def _sanitize_resource_type(self, resource_type):
-        """Resource type can be '_' or '-' separated and/or plurial."""
-        resource_type = resource_type.replace('_', '-')
-        if resource_type.endswith('s'):
-            return resource_type[:-1]
-        return resource_type
+
+class Resource(DummyResource):
+
+    def is_linked(self, resource_type):
+        resource_type = self._sanitize_resource_type(resource_type)
+        if (self.is_child(resource_type) or
+                self.is_ref(resource_type) or
+                self.is_back_ref(resource_type)):
+            return resource_type
+        return None
 
     def is_child(self, resource_type):
         """Test if resource type is a child
@@ -171,5 +217,10 @@ class Resource(object):
 
         :rtype: bool
         """
-        resource_type = self._sanitize_resource_type(resource_type)
         return resource_type in self.children
+
+    def is_ref(self, resource_type):
+        return resource_type in self.refs
+
+    def is_back_ref(self, resource_type):
+        return resource_type in self.back_refs
