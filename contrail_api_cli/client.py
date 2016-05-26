@@ -159,7 +159,7 @@ class ContrailAPISession(Session):
         result = self.post_json(self.make_url("/id-to-fqname"), data)
         result['fq_name'] = FQName(result['fq_name'])
         if type is not None and not result['type'].replace('_', '-') == type:
-            raise HTTPError('uuid %s not found for type %s' % (uuid, type))
+            raise HTTPError('uuid %s not found for type %s' % (uuid, type), http_status=404)
         return result
 
     def add_ref(self, r1, r2, attr=None):
