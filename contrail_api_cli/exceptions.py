@@ -25,10 +25,10 @@ class ResourceMissing(Exception):
     pass
 
 
-class NotFound(Exception, GreenletExit):
+class NotFound(GreenletExit):
 
     def __init__(self, resource=None, collection=None):
-        super(Exception, self).__init__()
+        super(GreenletExit, self).__init__()
         self.r = resource
         self.c = collection
 

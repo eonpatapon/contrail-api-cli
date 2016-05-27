@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 import gevent
 import gevent.monkey
 from gevent.pool import Group, Pool
+from gevent import GreenletExit
 import sys
 import json
 import os.path
@@ -429,7 +430,7 @@ def parallel_map(func, iterable, args=None, kwargs=None, workers=None):
     for idx, i in enumerate(iterable):
         i_type = type(i.get())
         i_value = i.get()
-        if issubclass(i_type, Exception):
+        if issubclass(i_type, BaseException):
             raise i_value
         iterable[idx] = i_value
     return iterable
