@@ -3,7 +3,6 @@ from __future__ import unicode_literals
 import gevent
 import gevent.monkey
 from gevent.pool import Group, Pool
-from gevent import GreenletExit
 import sys
 import json
 import os.path
