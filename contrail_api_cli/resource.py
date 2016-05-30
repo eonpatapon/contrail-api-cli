@@ -4,6 +4,7 @@ import string
 from uuid import UUID
 from six import string_types, text_type
 from functools import wraps
+from datetime import datetime
 try:
     from UserDict import UserDict
     from UserList import UserList
@@ -387,6 +388,18 @@ class Resource(ResourceBase, UserDict):
         resource.check()
         self['parent_type'] = resource.type
         self['parent_uuid'] = resource.uuid
+
+    @property
+    def created(self):
+        """Return creation date
+
+        :rtype: datetime
+        :raises ResourceNotFound: resource not found on the API
+        """
+        if 'id_perms' not in self:
+            self.fetch()
+        created = self.get['id_perms']['created']
+        return datetime.strptime(created, '%Y-%m-%dT%H:%M:%S.%f')
 
     @http_404_handler
     def save(self):
