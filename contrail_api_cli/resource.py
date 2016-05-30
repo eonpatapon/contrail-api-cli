@@ -398,7 +398,7 @@ class Resource(ResourceBase, UserDict):
         """
         if 'id_perms' not in self:
             self.fetch()
-        created = self.get['id_perms']['created']
+        created = self['id_perms']['created']
         return datetime.strptime(created, '%Y-%m-%dT%H:%M:%S.%f')
 
     @http_404_handler
