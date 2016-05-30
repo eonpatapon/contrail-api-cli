@@ -19,6 +19,7 @@ from .exceptions import AbsPathRequired
 
 
 gevent.monkey.patch_socket()
+gevent.monkey.patch_ssl()
 logger = logging.getLogger(__name__)
 CONFIG_DIR = os.path.expanduser('~/.config/contrail-api-cli')
 
