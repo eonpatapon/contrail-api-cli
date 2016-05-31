@@ -16,7 +16,7 @@ class Context(object):
     @property
     def schema(self):
         if self._schema is None:
-            raise SchemaNotInitialized("The schema must be fisrt initialized")
+            raise SchemaNotInitialized("The schema must be first initialized")
         else:
             return self._schema
 

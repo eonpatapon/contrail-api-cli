@@ -12,8 +12,11 @@ from os import listdir
 from os.path import isfile, join
 import logging
 
+from six import add_metaclass
+
 import contrail_api_cli.idl_parser
-from .utils import to_json
+from .utils import to_json, Singleton
+from .resource import RootCollection
 
 logger = logging.getLogger(__name__)
 
@@ -85,16 +88,16 @@ def create_schema_from_version(version):
 
     """
     schema_directory = _get_schema_version_path(version)
-    return create_schema_from_xsd_directory(schema_directory)
+    return create_schema_from_xsd_directory(schema_directory, version)
 
 
-def create_schema_from_xsd_directory(directory):
+def create_schema_from_xsd_directory(directory, version):
     """Create and fill the schema from a directory which contains xsd
     files. It calls fill_schema_from_xsd_file for each xsd file
     found.
 
     """
-    schema = Schema()
+    schema = Schema(version)
     for f in _get_xsd_from_directory(directory):
         logger.info("Loading schema %s" % f)
         fill_schema_from_xsd_file(f, schema)
@@ -125,8 +128,13 @@ def fill_schema_from_xsd_file(filename, schema):
 
 
 class Schema(object):
-    def __init__(self):
+    def __init__(self, version):
         self._schema = {}
+        self._version = version
+
+    @property
+    def version(self):
+        return self._version
 
     def resource(self, resource_name):
         try:
@@ -139,11 +147,12 @@ class Schema(object):
 
     def _get_or_add_resource(self, resource_name):
         if resource_name not in self._schema:
-            self._schema[resource_name] = Resource()
+            self._schema[resource_name] = ResourceSchema()
         return self._schema[resource_name]
 
 
-class Resource(object):
+class ResourceSchema(object):
+
     def __init__(self):
         self.children = []
         self.parent = None
@@ -157,19 +166,29 @@ class Resource(object):
                 'back_refs': self.back_refs}
         return to_json(data)
 
-    def _sanitize_resource_type(self, resource_type):
-        """Resource type can be '_' or '-' separated and/or plurial."""
-        resource_type = resource_type.replace('_', '-')
-        if resource_type.endswith('s'):
-            return resource_type[:-1]
-        return resource_type
 
-    def is_child(self, resource_type):
-        """Test if resource type is a child
+class DummySchema(object):
 
-        :type resource_type: str
+    @property
+    def version(self):
+        return "dummy"
 
-        :rtype: bool
-        """
-        resource_type = self._sanitize_resource_type(resource_type)
-        return resource_type in self.children
+    def resource(self, resource_name):
+        if resource_name not in self.all_resources():
+            raise ResourceNotDefined(resource_name)
+        return DummyResourceSchema()
+
+    def all_resources(self):
+        return DummyResourceSchema().children
+
+
+@add_metaclass(Singleton)
+class DummyResourceSchema(ResourceSchema):
+
+    def __init__(self):
+        ResourceSchema.__init__(self)
+        # add all resource types to all link types
+        # so that LinkedResources can find linked
+        # resources in the json representation
+        self.children = self.refs = self.back_refs = \
+            [c.type for c in RootCollection(fetch=True)]

@@ -11,7 +11,7 @@ from keystoneclient.exceptions import ClientException, HttpError
 from .manager import CommandManager
 from .exceptions import CommandError, NotFound, Exists
 from .utils import CONFIG_DIR, printo
-from .schema import create_schema_from_version, get_last_schema_version
+from .schema import create_schema_from_version, list_available_schema_version, DummySchema
 from .context import Context
 from . import command
 
@@ -53,6 +53,10 @@ def main():
                         help="protocol used (default=%(default)s)")
     parser.add_argument('--debug', '-d',
                         action="store_true", default=False)
+    parser.add_argument('--schema-version',
+                        default=os.environ.get('CONTRAIL_API_VERSION', None),
+                        choices=list_available_schema_version())
+
     ksession.Session.register_cli_options(parser)
     # Default auth plugin will be http unless OS_AUTH_PLUGIN envvar is set
     auth.register_argparse_arguments(parser, argv, default="http")
@@ -65,8 +69,11 @@ def main():
         os.makedirs(CONFIG_DIR)
 
     command.make_api_session(options)
-    Context().schema = create_schema_from_version(
-        get_last_schema_version())
+
+    if options.schema_version:
+        Context().schema = create_schema_from_version(options.schema_version)
+    else:
+        Context().schema = DummySchema()
 
     try:
         subcmd, subcmd_kwargs = get_subcommand_kwargs(mgr, options.subcmd, options)

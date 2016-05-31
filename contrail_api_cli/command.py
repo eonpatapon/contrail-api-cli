@@ -29,6 +29,7 @@ from .style import default as default_style
 from .exceptions import CommandError, CommandNotFound, \
     NotFound, Exists, CommandInvalid
 from .parser import CommandParser
+from .schema import ResourceNotDefined
 
 
 class ArgumentParser(argparse.ArgumentParser):
@@ -113,9 +114,12 @@ def _path_to_resources(path, predicate=None, filters=None, parent_uuid=None):
             kwargs = {'uuid': path.name}
         else:
             kwargs = {'fq_name': path.name}
-        r = Resource(path.base,
-                     check=True,
-                     **kwargs)
+        try:
+            r = Resource(path.base,
+                         check=True,
+                         **kwargs)
+        except ResourceNotDefined as e:
+            raise CommandError(text_type(e))
         if predicate and not predicate(r):
             raise StopIteration
         yield r
