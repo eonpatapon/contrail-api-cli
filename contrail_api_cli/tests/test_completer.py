@@ -12,10 +12,10 @@ from contrail_api_cli.resource import Resource
 from contrail_api_cli.utils import Path
 from contrail_api_cli.exceptions import ResourceNotFound
 
-BASE = 'http://localhost:8082'
+from .utils import CLITest
 
 
-class TestCompleter(unittest.TestCase):
+class TestCompleter(CLITest):
 
     @mock.patch('contrail_api_cli.resource.ResourceBase.session')
     def test_add_del_resource(self, mock_session):

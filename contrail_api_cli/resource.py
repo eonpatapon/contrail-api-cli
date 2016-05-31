@@ -5,6 +5,7 @@ from uuid import UUID
 from six import string_types, text_type
 from functools import wraps
 from datetime import datetime
+import itertools
 try:
     from UserDict import UserDict
     from UserList import UserList
@@ -16,7 +17,7 @@ from keystoneclient.exceptions import HTTPError
 
 from .utils import FQName, Path, Observable, to_json
 from .exceptions import ResourceNotFound, ResourceMissing, CollectionNotFound
-from .context import Context, SchemaNotInitialized
+from .context import Context
 
 
 def http_404_handler(f):
@@ -37,6 +38,75 @@ def http_404_handler(f):
                     raise CollectionNotFound(collection=self)
             raise
     return wrapper
+
+
+class LinkType(object):
+    BACK_REF = "back_refs"
+    REF = "refs"
+    CHILDREN = "children"
+
+
+class LinkedResources(object):
+    """Intermediate class to manage linked resources of a resource.
+
+    Given the LinkType the class allows iteration of linked resources
+    and provide access to linked resources types via direct attributes.
+
+    Linked types are validated be the resource schema.
+
+    >>> vmi = Resource('virtual-machine-interface',
+                       uuid='61ceff9d-9993-4d30-a337-abb0102f9f92')
+    >>> vmi.fetch()
+    >>> vmi.refs
+    LinkedResources(refs)
+    >>> vmi.refs.virtual_network
+    [Resource(/virtual-network/6dee5930-5ea3-4fa9-adfd-6d5b68c360b7)]
+    >>> list(vmi.refs)
+    [Resource(/security-group/3304f964-f75c-4a3b-9f91-5c89090346bf),
+     Resource(/virtual-network/6dee5930-5ea3-4fa9-adfd-6d5b68c360b7),
+     Resource(/routing-instance/e055dd4f-d7d9-4979-95ac-44a5c6269278)]
+    """
+    def __init__(self, link_type, resource):
+        self.link_type = link_type
+        self.resource = resource
+        self.linked_types = getattr(self.resource.schema, self.link_type)
+
+    def _type_to_attr(self, type):
+        type = type.replace('-', '_')
+        if self.link_type == LinkType.CHILDREN:
+            return type + 's'
+        else:
+            return type + '_' + self.link_type
+
+    def _attr_to_type(self, attr):
+        if self.link_type == LinkType.CHILDREN:
+            attr = attr[:-1]
+        else:
+            attr = attr.split('_' + self.link_type)[0]
+        return attr.replace('_', '-')
+
+    def __getattr__(self, type):
+        if type.replace('_', '-') not in self.linked_types:
+            return []
+        return self.resource.get(self._type_to_attr(type), [])
+
+    def __iter__(self):
+        return itertools.chain(*[getattr(self, res_type)
+                                 for res_type in self.linked_types])
+
+    def encode(self, data, recursive=1):
+        for attr, _ in list(data.items()):
+            type = self._attr_to_type(attr)
+            if type in self.linked_types:
+                for idx, res in enumerate(data[attr]):
+                    data[attr][idx] = Resource(type,
+                                               fetch=recursive - 1 > 0,
+                                               recursive=recursive - 1,
+                                               **res)
+        return data
+
+    def __repr__(self):
+        return '%s(%s)' % (self.__class__.__name__, self.link_type)
 
 
 class ResourceEncoder(json.JSONEncoder):
@@ -60,7 +130,7 @@ class ResourceBase(Observable):
         return super(ResourceBase, cls).__new__(cls, *args, **kwargs)
 
     def __repr__(self):
-        return '%s(%s)' % (self.__class__.__name__, str(self.path))
+        return '%s(%s)' % (self.__class__.__name__, self.path)
 
     def __hash__(self):
         if self.uuid:
@@ -315,10 +385,7 @@ class Resource(ResourceBase, UserDict):
 
     @property
     def schema(self):
-        try:
-            return Context().schema.resource(self.type)
-        except SchemaNotInitialized:
-            return None
+        return Context().schema.resource(self.type)
 
     def check(self):
         """Check that the resource exists.
@@ -464,55 +531,37 @@ class Resource(ResourceBase, UserDict):
         self.data = data
 
     def _encode_resource(self, data, recursive=1):
-        for attr, value in list(data.items()):
-            if attr in ('fq_name', 'to'):
-                data[attr] = FQName(value)
-            if attr.endswith('refs') or (self.schema is not None and self.schema.is_child(attr)):
-                ref_type = "-".join([c for c in attr.split('_')
-                                     if c not in ('back', 'refs')])
-                if ref_type.endswith("s"):
-                    ref_type = ref_type[:-1]
-                for idx, res in enumerate(data[attr]):
-                    data[attr][idx] = Resource(ref_type,
-                                               fetch=recursive - 1 > 0,
-                                               recursive=recursive - 1,
-                                               **res)
+        for attr in ('fq_name', 'to'):
+            if attr in data:
+                data[attr] = FQName(data[attr])
+        data = self.refs.encode(data, recursive)
+        data = self.back_refs.encode(data, recursive)
+        data = self.children.encode(data, recursive)
         return data
-
-    @property
-    def back_refs(self):
-        """Return back_refs resources of the resource
-
-        :rtype: Resource generator
-        """
-        for attr, value in self.data.items():
-            if attr.endswith('back_refs'):
-                for back_ref in value:
-                    yield back_ref
 
     @property
     def refs(self):
         """Return refs resources of the resource
 
-        :rtype: Resource generator
+        :rtype: LinkedResources
         """
-        for attr, value in self.data.items():
-            if attr.endswith('refs') and not attr.endswith('back_refs'):
-                for ref in value:
-                    yield ref
+        return LinkedResources(LinkType.REF, self)
+
+    @property
+    def back_refs(self):
+        """Return back_refs resources of the resource
+
+        :rtype: LinkedResources
+        """
+        return LinkedResources(LinkType.BACK_REF, self)
 
     @property
     def children(self):
         """Return children resources of the resource
 
-        :rtype: Resource generator
+        :rtype: LinkedResources
         """
-        if self.schema is None:
-            raise StopIteration
-        for attr, value in self.data.items():
-            if self.schema.is_child(attr):
-                for child in value:
-                    yield child
+        return LinkedResources(LinkType.CHILDREN, self)
 
     def remove_ref(self, ref):
         """Remove reference from self to ref
