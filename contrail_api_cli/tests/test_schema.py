@@ -8,7 +8,7 @@ except ImportError:
 
 import contrail_api_cli.schema as schema
 from contrail_api_cli.context import Context
-from contrail_api_cli.resource import Resource, LinkedResources, LinkType
+from contrail_api_cli.resource import Resource, LinkedResources, LinkType, Collection
 
 BASE = "http://localhost:8082"
 
@@ -59,11 +59,11 @@ class TestLinkResource(unittest.TestCase):
     def test_schema_refs(self, mock_session):
         mock_session.get_json.return_value = {
             "virtual-machine-interface": {
-                "href": BASE + "/foo/ec1afeaa-8930-43b0-a60a-939f23a50724",
+                "href": BASE + "/virtual-machine-interface/ec1afeaa-8930-43b0-a60a-939f23a50724",
                 "uuid": "ec1afeaa-8930-43b0-a60a-939f23a50724",
                 "attr": None,
                 "fq_name": [
-                    "foo",
+                    "virtual-machine-interface",
                     "ec1afeaa-8930-43b0-a60a-939f23a50724"
                 ],
                 "bar_refs": [1, 2, 3],
@@ -85,5 +85,33 @@ class TestLinkResource(unittest.TestCase):
         self.assertEqual(len(vmi.refs.bar), 0)
         self.assertEqual([r.uuid for r in vmi.refs], ['15315402-8a21-4116-aeaa-b6a77dceb191'])
 
+    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
+    def test_schema_children(self, mock_session):
+        mock_session.get_json.return_value = {
+            "project": {
+                "href": BASE + "/project/ec1afeaa-8930-43b0-a60a-939f23a50724",
+                "uuid": "ec1afeaa-8930-43b0-a60a-939f23a50724",
+                "attr": None,
+                "fq_name": [
+                    "project",
+                    "ec1afeaa-8930-43b0-a60a-939f23a50724"
+                ],
+                "virtual_networks": [
+                    {
+                        "href": BASE + "/virtual-network/15315402-8a21-4116-aeaa-b6a77dceb191",
+                        "uuid": "15315402-8a21-4116-aeaa-b6a77dceb191",
+                        "to": [
+                            "virtual-network",
+                            "15315402-8a21-4116-aeaa-b6a77dceb191"
+                        ]
+                    }
+                ]
+            }
+        }
+        vmi = Resource('project', uuid='ec1afeaa-8930-43b0-a60a-939f23a50724', fetch=True)
+        self.assertEqual(len(vmi.children.virtual_network), 1)
+        self.assertEqual(type(vmi.children.virtual_network), Collection)
+        self.assertTrue(vmi.children.virtual_network.type, 'virtual-network')
+        self.assertTrue(vmi.children.virtual_network.parent_uuid, vmi.uuid)
 if __name__ == "__main__":
     unittest.main()
