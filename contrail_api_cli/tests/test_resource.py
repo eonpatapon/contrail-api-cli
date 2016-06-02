@@ -165,10 +165,13 @@ class TestResource(unittest.TestCase):
             href=BASE + "/foo/ec1afeaa-8930-43b0-a60a-939f23a50724",
             attr=None,
             fq_name=["foo", "ec1afeaa-8930-43b0-a60a-939f23a50724"],
-            bar_refs=[Resource("bar",
-                               uuid="15315402-8a21-4116-aeaa-b6a77dceb191",
-                               href=BASE + "/bar/15315402-8a21-4116-aeaa-b6a77dceb191",
-                               to=["bar", "15315402-8a21-4116-aeaa-b6a77dceb191"])]
+            bar_refs=[
+                {
+                    'uuid': "15315402-8a21-4116-aeaa-b6a77dceb191",
+                    'href': BASE + "/bar/15315402-8a21-4116-aeaa-b6a77dceb191",
+                    'to': ["bar", "15315402-8a21-4116-aeaa-b6a77dceb191"]
+                }
+            ]
         )
         self.assertEqual(resource, expected_resource)
 
@@ -450,6 +453,11 @@ class TestCollection(unittest.TestCase):
                 {
                     'foo': {
                         'uuid': 'dd2f4111-abda-405f-bce9-c6c24181dd14',
+                        'bar_refs': [
+                            {
+                                'uuid': '3042be83-a5f7-4b94-a2a4-9e2ae7fe25be'
+                            }
+                        ]
                     }
                 },
                 {
@@ -460,7 +468,7 @@ class TestCollection(unittest.TestCase):
             ]
         }
         c = Collection('foo', detail=True, fetch=True)
-        self.assertEqual(c.data[0], Resource('foo', uuid='dd2f4111-abda-405f-bce9-c6c24181dd14'))
+        self.assertEqual(c.data[0]['bar_refs'][0], Resource('bar', uuid='3042be83-a5f7-4b94-a2a4-9e2ae7fe25be'))
         self.assertEqual(c.data[1], Resource('foo', uuid='9fe7094d-f54e-4284-a813-9ca4df866019'))
 
     @mock.patch('contrail_api_cli.resource.ResourceBase.session')

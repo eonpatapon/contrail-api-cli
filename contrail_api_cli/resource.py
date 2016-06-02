@@ -298,11 +298,8 @@ class Resource(ResourceBase, UserDict):
         assert('fq_name' in kwargs or 'uuid' in kwargs or 'to' in kwargs)
         self.type = type
 
-        for key in ('fq_name', 'to'):
-            if key in kwargs:
-                kwargs[key] = FQName(kwargs[key])
-
-        UserDict.__init__(self, **kwargs)
+        UserDict.__init__(self, kwargs)
+        self.from_dict(self.data)
 
         if parent:
             self.parent = parent
@@ -460,7 +457,7 @@ class Resource(ResourceBase, UserDict):
 
     def _encode_resource(self, data, recursive=1):
         for attr, value in list(data.items()):
-            if attr == 'fq_name':
+            if attr in ('fq_name', 'to'):
                 data[attr] = FQName(value)
             if attr.endswith('refs'):
                 ref_type = "-".join([c for c in attr.split('_')
