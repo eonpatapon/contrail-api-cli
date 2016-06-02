@@ -119,6 +119,9 @@ class LinkedResources(object):
                                                fetch=recursive - 1 > 0,
                                                recursive=recursive - 1,
                                                **res)
+                if self.link_type == LinkType.CHILDREN:
+                    data[attr] = Collection(type, parent_uuid=self.resource.uuid,
+                                            data=data[attr])
         return data
 
     def __repr__(self):
@@ -208,12 +211,14 @@ class Collection(ResourceBase, UserList):
     :type filters: [(name, value), ...]
     :param parent_uuid: filter by parent_uuid
     :type parent_uuid: v4UUID str or list of v4UUID str
+    :param data: initial resources of the collection
+    :type data: [Resource]
     """
 
     def __init__(self, type, fetch=False, recursive=1,
                  fields=None, detail=None, filters=None,
-                 parent_uuid=None, **kwargs):
-        UserList.__init__(self)
+                 parent_uuid=None, data=None, **kwargs):
+        UserList.__init__(self, initlist=data)
         self.type = type
         self.fields = fields or []
         self.filters = filters or []
