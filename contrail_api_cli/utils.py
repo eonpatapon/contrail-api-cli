@@ -31,6 +31,8 @@ class FQName(collections.Sequence):
             self._data = init.split(':')
         elif isinstance(init, list):
             self._data = init
+        elif isinstance(init, FQName):
+            self._data = init._data
         else:
             self._data = []
 
