@@ -87,31 +87,75 @@ class TestLinkResource(unittest.TestCase):
 
     @mock.patch('contrail_api_cli.resource.ResourceBase.session')
     def test_schema_children(self, mock_session):
-        mock_session.get_json.return_value = {
-            "project": {
-                "href": BASE + "/project/ec1afeaa-8930-43b0-a60a-939f23a50724",
-                "uuid": "ec1afeaa-8930-43b0-a60a-939f23a50724",
-                "attr": None,
-                "fq_name": [
-                    "project",
-                    "ec1afeaa-8930-43b0-a60a-939f23a50724"
-                ],
-                "virtual_networks": [
-                    {
-                        "href": BASE + "/virtual-network/15315402-8a21-4116-aeaa-b6a77dceb191",
-                        "uuid": "15315402-8a21-4116-aeaa-b6a77dceb191",
-                        "to": [
-                            "virtual-network",
-                            "15315402-8a21-4116-aeaa-b6a77dceb191"
-                        ]
-                    }
-                ]
+        mock_session.get_json.side_effect = [
+            {
+                "project": {
+                    "href": BASE + "/project/ec1afeaa-8930-43b0-a60a-939f23a50724",
+                    "uuid": "ec1afeaa-8930-43b0-a60a-939f23a50724",
+                    "attr": None,
+                    "fq_name": [
+                        "project",
+                        "ec1afeaa-8930-43b0-a60a-939f23a50724"
+                    ],
+                    "virtual_networks": [
+                        {
+                            "href": BASE + "/virtual-network/15315402-8a21-4116-aeaa-b6a77dceb191",
+                            "uuid": "15315402-8a21-4116-aeaa-b6a77dceb191",
+                            "to": [
+                                "virtual-network",
+                                "15315402-8a21-4116-aeaa-b6a77dceb191"
+                            ]
+                        }
+                    ]
+                }
+            },
+            {
+                'virtual-network': []
             }
-        }
+        ]
         vmi = Resource('project', uuid='ec1afeaa-8930-43b0-a60a-939f23a50724', fetch=True)
         self.assertEqual(len(vmi.children.virtual_network), 1)
         self.assertEqual(type(vmi.children.virtual_network), Collection)
         self.assertTrue(vmi.children.virtual_network.type, 'virtual-network')
         self.assertTrue(vmi.children.virtual_network.parent_uuid, vmi.uuid)
+        vmi.children.virtual_network.fetch()
+        mock_session.get_json.assert_called_with(vmi.children.virtual_network.href, parent_id=vmi.uuid)
+
+    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
+    def test_schema_back_refs(self, mock_session):
+        mock_session.get_json.side_effect = [
+            {
+                "virtual-network": {
+                    "href": BASE + "/virtual-network/ec1afeaa-8930-43b0-a60a-939f23a50724",
+                    "uuid": "ec1afeaa-8930-43b0-a60a-939f23a50724",
+                    "attr": None,
+                    "fq_name": [
+                        "virtual-network",
+                        "ec1afeaa-8930-43b0-a60a-939f23a50724"
+                    ],
+                    "instance_ip_back_refs": [
+                        {
+                            "href": BASE + "/instance-ip/15315402-8a21-4116-aeaa-b6a77dceb191",
+                            "uuid": "15315402-8a21-4116-aeaa-b6a77dceb191",
+                            "to": [
+                                "instance-ip",
+                                "15315402-8a21-4116-aeaa-b6a77dceb191"
+                            ]
+                        }
+                    ]
+                }
+            },
+            {
+                'instance-ip': []
+            }
+        ]
+        vn = Resource('virtual-network', uuid='ec1afeaa-8930-43b0-a60a-939f23a50724', fetch=True)
+        self.assertEqual(len(vn.back_refs.instance_ip), 1)
+        self.assertEqual(type(vn.back_refs.instance_ip), Collection)
+        self.assertTrue(vn.back_refs.instance_ip.type, 'instance-ip')
+        self.assertTrue(vn.back_refs.instance_ip.back_refs_uuid, vn.uuid)
+        vn.back_refs.instance_ip.fetch()
+        mock_session.get_json.assert_called_with(vn.back_refs.instance_ip.href, back_ref_id=vn.uuid)
+
 if __name__ == "__main__":
     unittest.main()
