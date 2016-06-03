@@ -122,6 +122,9 @@ class LinkedResources(object):
                 if self.link_type == LinkType.CHILDREN:
                     data[attr] = Collection(type, parent_uuid=self.resource.uuid,
                                             data=data[attr])
+                elif self.link_type == LinkType.BACK_REF:
+                    data[attr] = Collection(type, back_refs_uuid=self.resource.uuid,
+                                            data=data[attr])
         return data
 
     def __repr__(self):
@@ -211,18 +214,22 @@ class Collection(ResourceBase, UserList):
     :type filters: [(name, value), ...]
     :param parent_uuid: filter by parent_uuid
     :type parent_uuid: v4UUID str or list of v4UUID str
+    :param back_ref_uuid: filter by back_ref_uuid
+    :type back_ref_uuid: v4UUID str or list of v4UUID str
     :param data: initial resources of the collection
     :type data: [Resource]
     """
 
     def __init__(self, type, fetch=False, recursive=1,
                  fields=None, detail=None, filters=None,
-                 parent_uuid=None, data=None, **kwargs):
+                 parent_uuid=None, back_refs_uuid=None,
+                 data=None, **kwargs):
         UserList.__init__(self, initlist=data)
         self.type = type
         self.fields = fields or []
         self.filters = filters or []
-        self.parent_uuid = list(self._sanitize_parent_uuid(parent_uuid))
+        self.parent_uuid = list(self._sanitize_uuid(parent_uuid))
+        self.back_refs_uuid = list(self._sanitize_uuid(back_refs_uuid))
         self.detail = detail
         self.meta = dict(kwargs)
         if fetch:
@@ -249,17 +256,17 @@ class Collection(ResourceBase, UserList):
             return self.type + 's'
         return self.type
 
-    def _sanitize_parent_uuid(self, parent_uuid):
-        if parent_uuid is None:
+    def _sanitize_uuid(self, uuid):
+        if uuid is None:
             raise StopIteration
-        if isinstance(parent_uuid, string_types):
-            parent_uuid = [parent_uuid]
-        for p in parent_uuid:
+        if isinstance(uuid, string_types):
+            uuid = [uuid]
+        for u in uuid:
             try:
-                UUID(p, version=4)
+                UUID(u, version=4)
             except ValueError:
                 continue
-            yield p
+            yield u
 
     def filter(self, field_name, field_value):
         """Add permanent filter on the collection
@@ -270,13 +277,14 @@ class Collection(ResourceBase, UserList):
         """
         self.filters.append((field_name, field_value))
 
-    def _format_fetch_params(self, fields, detail, filters, parent_uuid):
+    def _format_fetch_params(self, fields, detail, filters, parent_uuid, back_refs_uuid):
         params = {}
         detail = detail or self.detail
         fields_str = ",".join(self._fetch_fields(fields))
         filters_str = ",".join(['%s==%s' % (f, json.dumps(v))
                                 for f, v in self._fetch_filters(filters)])
         parent_uuid_str = ",".join(self._fetch_parent_uuid(parent_uuid))
+        back_refs_uuid_str = ",".join(self._fetch_back_refs_uuid(back_refs_uuid))
         if detail is True:
             params['detail'] = detail
         elif fields_str:
@@ -285,11 +293,16 @@ class Collection(ResourceBase, UserList):
             params['filters'] = filters_str
         if parent_uuid_str:
             params['parent_id'] = parent_uuid_str
+        if back_refs_uuid_str:
+            params['back_ref_id'] = back_refs_uuid_str
 
         return params
 
     def _fetch_parent_uuid(self, parent_uuid=None):
-        return self.parent_uuid + list(self._sanitize_parent_uuid(parent_uuid))
+        return self.parent_uuid + list(self._sanitize_uuid(parent_uuid))
+
+    def _fetch_back_refs_uuid(self, back_refs_uuid=None):
+        return self.back_refs_uuid + list(self._sanitize_uuid(back_refs_uuid))
 
     def _fetch_filters(self, filters=None):
         return self.filters + (filters or [])
@@ -298,7 +311,8 @@ class Collection(ResourceBase, UserList):
         return self.fields + (fields or [])
 
     @http_error_handler
-    def fetch(self, recursive=1, fields=None, detail=None, filters=None, parent_uuid=None):
+    def fetch(self, recursive=1, fields=None, detail=None,
+              filters=None, parent_uuid=None, back_refs_uuid=None):
         """
         Fetch collection from API server
 
@@ -313,9 +327,11 @@ class Collection(ResourceBase, UserList):
         :type filters: [(name, value), ...]
         :param parent_uuid: filter by parent_uuid
         :type parent_uuid: v4UUID str or list of v4UUID str
+        :param back_refs_uuid: filter by back_refs_uuid
+        :type back_refs_uuid: v4UUID str or list of v4UUID str
         """
 
-        params = self._format_fetch_params(fields, detail, filters, parent_uuid)
+        params = self._format_fetch_params(fields, detail, filters, parent_uuid, back_refs_uuid)
         data = self.session.get_json(self.href, **params)
 
         if not self.type:
