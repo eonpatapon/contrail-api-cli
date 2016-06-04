@@ -14,9 +14,10 @@ import logging
 
 from six import add_metaclass
 
-import contrail_api_cli.idl_parser
+import contrail_api_cli
 from .utils import to_json, Singleton
 from .resource import RootCollection
+from .idl_parser import IDLParser
 
 logger = logging.getLogger(__name__)
 
@@ -75,7 +76,7 @@ def _get_xsd_from_directory(pathname):
 
 def _parse_xsd_file(filename):
     with open(filename) as f:
-        ifmap_statements = contrail_api_cli.idl_parser.IDLParser().Parse(f)
+        ifmap_statements = IDLParser().Parse(f)
         # idl parser should return empty dict
         if ifmap_statements is None:
             ifmap_statements = {}
@@ -113,8 +114,7 @@ def fill_schema_from_xsd_file(filename, schema):
     ifmap_statements = _parse_xsd_file(filename)
 
     for v in ifmap_statements.values():
-        if (isinstance(v[0],
-                       contrail_api_cli.idl_parser.IDLParser.Link)):
+        if (isinstance(v[0], IDLParser.Link)):
             src_name = v[1]
             target_name = v[2]
             src = schema._get_or_add_resource(src_name)
