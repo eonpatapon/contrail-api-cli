@@ -91,14 +91,14 @@ List resources and collections.
     instance-ip/f9d25887-2765-4ba0-bf45-54b9dbc5874a  f9d25887-2765-4ba0-bf45-54b9dbc5874a
 
 
-count
------
+du
+--
 
 Count resources of a collection.
 
 .. code-block:: bash
 
-    admin@localhost:/> count virtual-network
+    admin@localhost:/> du virtual-network
     6
 
 cd
@@ -188,6 +188,74 @@ edit
 Edit the json representation of a resource in an editor. Modification are sent
 to the API server.
 
+schema
+------
+
+View resources links using contrail schema definition.
+
+.. code-block:: bash
+
+    admin@localhost:/> schema -v 2.21 virtual-network
+    virtual-network
+    ├── parent
+    │   └── project
+    ├── children
+    │   ├── access-control-list
+    │   ├── routing-instance
+    │   └── floating-ip-pool
+    ├── refs
+    │   ├── route-table
+    │   ├── network-policy
+    │   ├── qos-forwarding-class
+    │   └── network-ipam
+    └── back_refs
+        ├── logical-router
+        ├── instance-ip
+        ├── physical-router
+        └── virtual-machine-interface
+
+ln
+--
+
+Add or remove a reference link between two resources.
+
+.. code-block:: bash
+
+    admin@localhost:/> tree -r /virtual-machine/8cfbddcf-6b55-4cdf-abcb-14eed68e4da7
+    virtual-machine/8cfbddcf-6b55-4cdf-abcb-14eed68e4da7                default-domain__foo__fa3ea892-3591-4611-ba22-cc45164aee3e__2
+    ├── virtual-machine-interface/d739db3d-b89f-46a4-ae02-97ac796261d0  default-domain:foo:default-domain__foo__fa3ea892-3591-4611-ba22-cc45164aee3e__2__right__1
+    │   ├── floating-ip/958234f5-4fae-4afd-ae7c-d0dc3c608e06            default-domain:admin:public:floating-ip-pool:958234f5-4fae-4afd-ae7c-d0dc3c608e06
+    │   └── instance-ip/bced2a04-0ef9-4c87-95a6-7cce54182c65            7d401b8c-b9d3-4be2-af0b-a0dfff500860
+    └── virtual-router/f6f0b262-745b-45f7-a40a-32ffc1f469bc             default-global-system-config:vrouter-1
+    admin@localhost:/> ln -r virtual-machine/8cfbddcf-6b55-4cdf-abcb-14eed68e4da7 virtual-router/f6f0b262-745b-45f7-a40a-32ffc1f469bc
+    admin@localhost:/> tree -r /virtual-machine/8cfbddcf-6b55-4cdf-abcb-14eed68e4da7
+    virtual-machine/8cfbddcf-6b55-4cdf-abcb-14eed68e4da7                default-domain__foo__fa3ea892-3591-4611-ba22-cc45164aee3e__2
+    └── virtual-machine-interface/d739db3d-b89f-46a4-ae02-97ac796261d0  default-domain:foo:default-domain__foo__fa3ea892-3591-4611-ba22-cc45164aee3e__2__right__1
+        ├── floating-ip/958234f5-4fae-4afd-ae7c-d0dc3c608e06            default-domain:admin:public:floating-ip-pool:958234f5-4fae-4afd-ae7c-d0dc3c608e06
+        └── instance-ip/bced2a04-0ef9-4c87-95a6-7cce54182c65            7d401b8c-b9d3-4be2-af0b-a0dfff500860
+    admin@localhost:/> ln virtual-machine/8cfbddcf-6b55-4cdf-abcb-14eed68e4da7 virtual-router/f6f0b262-745b-45f7-a40a-32ffc1f469bc
+    admin@localhost:/> tree -r /virtual-machine/8cfbddcf-6b55-4cdf-abcb-14eed68e4da7
+    virtual-machine/8cfbddcf-6b55-4cdf-abcb-14eed68e4da7                default-domain__foo__fa3ea892-3591-4611-ba22-cc45164aee3e__2
+    ├── virtual-machine-interface/d739db3d-b89f-46a4-ae02-97ac796261d0  default-domain:foo:default-domain__foo__fa3ea892-3591-4611-ba22-cc45164aee3e__2__right__1
+    │   ├── floating-ip/958234f5-4fae-4afd-ae7c-d0dc3c608e06            default-domain:admin:public:floating-ip-pool:958234f5-4fae-4afd-ae7c-d0dc3c608e06
+    │   └── instance-ip/bced2a04-0ef9-4c87-95a6-7cce54182c65            7d401b8c-b9d3-4be2-af0b-a0dfff500860
+    └── virtual-router/f6f0b262-745b-45f7-a40a-32ffc1f469bc             default-global-system-config:vrouter-1
+
+
+relative
+--------
+
+Find linked resource using a resource-type path.
+
+.. code-block:: bash
+
+    admin@localhost:/> relative virtual-machine/8cfbddcf-6b55-4cdf-abcb-14eed68e4da7 virtual-machine-interface.floating-ip
+    floating-ip/958234f5-4fae-4afd-ae7c-d0dc3c608e06
+    admin@localhost:/> relative -l virtual-machine/8cfbddcf-6b55-4cdf-abcb-14eed68e4da7 virtual-machine-interface.floating-ip
+    base      virtual-machine/8cfbddcf-6b55-4cdf-abcb-14eed68e4da7
+    back_ref  virtual-machine-interface/d739db3d-b89f-46a4-ae02-97ac796261d0
+    back_ref  floating-ip/958234f5-4fae-4afd-ae7c-d0dc3c608e06
+
 Advanced usage
 ==============
 
@@ -265,6 +333,18 @@ installed they will be used instead of the standard python repl.
     bf91b645-f7aa-4ab3-88cf-dc7a6358c08c
     a3694461-c4e0-4f54-a6fa-a11ae0472e04
     6afc9f77-607f-424c-8188-996c9513467a
+
+python script execution
+-----------------------
+
+The `exec` command can be used to run a python script that is using the
+contrail_api_cli API. This avoids the need to setup the connection to
+the API server inside the script since the script will be run in the
+context of the cli.
+
+.. code-block:: bash
+
+    $ contrail-api-cli exec my_script.py
 
 .. [1] https://github.com/jonathanslenders/ptpython
 .. [2] https://ipython.org/

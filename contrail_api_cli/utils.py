@@ -228,7 +228,7 @@ def to_json(resource_dict, cls=None):
 
 
 def md5(fname):
-    """Calulate md5sum of a file
+    """Calculate md5sum of a file
 
     :param fname: file path
     :type fname: str
@@ -409,12 +409,14 @@ def format_tree(tree):
 def parallel_map(func, iterable, args=None, kwargs=None, workers=None):
     """Map func on a list using gevent greenlets.
 
-    :param func: function applied on lst elements
+    :param func: function applied on iterable elements
     :type func: function
     :param iterable: elements to map the function over
     :type iterable: iterable
-    :param args: supplementary arguments of func
+    :param args: arguments of func
     :type args: tuple
+    :param kwargs: keyword arguments of func
+    :type kwargs: dict
     :param workers: limit the number of greenlets
                     running in parrallel
     :type workers: int

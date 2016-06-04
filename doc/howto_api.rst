@@ -98,10 +98,9 @@ encoding with python2 and python3.
 
 .. note::
 
-    With Contrail >= 3.0 (not released at the time of this writing) we can make
-    use of the fields API on :class:`Collection` objects. Instead of making a
-    GET request for each resource to get its details we can specify the
-    supplementary fields to get in the :class:`Collection`::
+    With Contrail >= 3.0 we can make use of the fields API on :class:`Collection`
+    objects. Instead of making a GET request for each resource to get its details
+    we can specify the supplementary fields to get in the :class:`Collection`::
 
         vrouter = Collection('virtual-router',
                              fields=['virtual_router_ip_address'],
@@ -126,7 +125,6 @@ for it just in case::
         description = 'Add vrouter'
         vrouter_name = Arg(help='Hostname of compute node')
         vrouter_ip = Option(help='IP of compute node',
-                            type=ip_type,
                             required=True)
         vrouter_type = Option(help='vrouter type',
                               choices=['tor-service-mode', 'embedded'],
