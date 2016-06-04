@@ -413,6 +413,16 @@ class TestCommand(unittest.TestCase):
         with self.assertRaises(CommandError):
             self.mgr.get('ln')(resources=[r1.path, r2.path], schema_version='xxxx')
 
+    def test_schema(self):
+        self.mgr.get('schema')(schema_version='2.21')
+        self.mgr.get('schema')(schema_version='2.21', resource_name='virtual-network')
+        self.mgr.get('schema')(schema_version='2.21', resource_name='route-target')
+        with self.assertRaises(CommandError):
+            self.mgr.get('schema')(schema_version='2.21', resource_name='foo')
+        with self.assertRaises(CommandError):
+            self.mgr.get('schema')(schema_version='4.0', resource_name='route-target')
+        self.mgr.get('schema')(schema_version='4.0', list_version=True)
+
 
 if __name__ == '__main__':
     unittest.main()
