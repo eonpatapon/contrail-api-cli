@@ -395,5 +395,24 @@ class TestCommand(unittest.TestCase):
         result = out.getvalue()
         self.assertEqual(result, b'piped\nnot piped\n')
 
+    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
+    def test_ln(self, mock_session):
+        r1 = Resource('virtual-network', uuid='9174e7d3-865b-4faf-ab0f-c083e43fee6d')
+        r2 = Resource('route-table', uuid='9174e7d3-865b-4faf-ab0f-c083e43fee6d')
+        r3 = Resource('project', uuid='9174e7d3-865b-4faf-ab0f-c083e43fee6d')
+        r4 = Resource('foo', uuid='9174e7d3-865b-4faf-ab0f-c083e43fee6d')
+        r5 = Resource('logical-router', uuid='9174e7d3-865b-4faf-ab0f-c083e43fee6d')
+        self.mgr.get('ln')(resources=[r1.path, r2.path], schema_version='2.21')
+        self.mgr.get('ln')(resources=[r1.path, r2.path], schema_version='2.21', remove=True)
+        self.mgr.get('ln')(resources=[r1.path, r5.path], schema_version='2.21')
+        self.mgr.get('ln')(resources=[r1.path, r5.path], schema_version='2.21', remove=True)
+        with self.assertRaises(CommandError):
+            self.mgr.get('ln')(resources=[r1.path, r3.path], schema_version='2.21')
+        with self.assertRaises(CommandError):
+            self.mgr.get('ln')(resources=[r4.path, r1.path], schema_version='2.21')
+        with self.assertRaises(CommandError):
+            self.mgr.get('ln')(resources=[r1.path, r2.path], schema_version='xxxx')
+
+
 if __name__ == '__main__':
     unittest.main()
