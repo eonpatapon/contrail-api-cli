@@ -57,11 +57,9 @@ class TestResource(CLITest):
             "href": self.BASE,
             "links": [
                 {"link": {"href": self.BASE + "/instance-ips",
-                          "path": Path("/instance-ips"),
                           "name": "instance-ip",
                           "rel": "collection"}},
                 {"link": {"href": self.BASE + "/instance-ip",
-                          "path": Path("/instance-ip"),
                           "name": "instance-ip",
                           "rel": "resource-base"}}
             ]
@@ -70,16 +68,7 @@ class TestResource(CLITest):
 
         self.assertFalse(root_collection.href.endswith('s'))
 
-        expected_root_resources = RootCollection(path=Path("/"))
-        expected_root_resources.data = [
-            Collection(
-                "instance-ip",
-                href=self.BASE + "/instance-ips",
-                path=Path("/instance-ip"),
-                name="instance-ip",
-                rel="collection"
-            )
-        ]
+        expected_root_resources = RootCollection(data=[Collection('instance-ip')])
         self.assertEqual(root_collection, expected_root_resources)
 
     @mock.patch('contrail_api_cli.resource.ResourceBase.session')

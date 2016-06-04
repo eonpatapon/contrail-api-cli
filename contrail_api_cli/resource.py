@@ -207,7 +207,7 @@ class Collection(ResourceBase, UserList):
     def __init__(self, type, fetch=False, recursive=1,
                  fields=None, detail=None, filters=None,
                  parent_uuid=None, back_refs_uuid=None,
-                 data=None, **kwargs):
+                 data=None):
         UserList.__init__(self, initlist=data)
         self.type = type
         self.fields = fields or []
@@ -215,7 +215,6 @@ class Collection(ResourceBase, UserList):
         self.parent_uuid = list(self._sanitize_uuid(parent_uuid))
         self.back_refs_uuid = list(self._sanitize_uuid(back_refs_uuid))
         self.detail = detail
-        self.meta = dict(kwargs)
         if fetch:
             self.fetch(recursive=recursive)
         self.emit('created', self)
@@ -326,7 +325,7 @@ class Collection(ResourceBase, UserList):
                                     detail=detail or self.detail,
                                     filters=self._fetch_filters(filters),
                                     parent_uuid=self._fetch_parent_uuid(parent_uuid),
-                                    **col["link"])
+                                    back_refs_uuid=self._fetch_back_refs_uuid(back_refs_uuid))
                          for col in data['links']
                          if col["link"]["rel"] == "collection"]
         else:
