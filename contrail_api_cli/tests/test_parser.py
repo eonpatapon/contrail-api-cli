@@ -20,6 +20,15 @@ class TestCmd(Command):
         pass
 
 
+class TestCmd2(Command):
+    long = Option('-l', action="store_true")
+    arg1 = Arg(help="%(default)s", default="bar")
+    arg2 = Arg(nargs="*")
+
+    def __call__(self, *args, **kwargs):
+        pass
+
+
 class TestCommandOptions(unittest.TestCase):
 
     def setUp(self):
@@ -54,7 +63,9 @@ class TestParser(unittest.TestCase):
     def setUp(self):
         self.mgr = CommandManager()
         self.cmd = TestCmd('test-cmd')
+        self.cmd2 = TestCmd2('test-cmd2')
         self.mgr.add('test-cmd', self.cmd)
+        self.mgr.add('test-cmd2', self.cmd2)
 
     def test_bad_cmd(self):
         with self.assertRaises(CommandInvalid):
@@ -86,9 +97,17 @@ class TestParser(unittest.TestCase):
 
     def test_arg_parsing(self):
         parser = CommandParser('test-cmd --foo bar arg1_value -l arg2_value')
-        self.assertEqual(list(parser.used_args), ['arg1_value', 'arg2_value'])
+        self.assertEqual(list(parser.used_args), [self.cmd.args['arg1'], self.cmd.args['arg2']])
         parser = CommandParser('test-cmd arg1_value -l')
-        self.assertEqual(list(parser.used_args), ['arg1_value'])
+        self.assertEqual(list(parser.used_args), [self.cmd.args['arg1']])
+        self.assertEqual(list(parser.available_args), [self.cmd.args['arg2']])
+
+        parser = CommandParser('test-cmd2 arg1_value -l')
+        self.assertEqual(list(parser.available_args), [self.cmd2.args['arg2']])
+        parser = CommandParser('test-cmd2 arg1_value -l arg2_value')
+        self.assertEqual(list(parser.available_args), [self.cmd2.args['arg2']])
+        parser = CommandParser('test-cmd2 arg1_value -l arg2_value arg2_value2')
+        self.assertEqual(list(parser.available_args), [self.cmd2.args['arg2']])
 
 
 if __name__ == "__main__":

@@ -11,7 +11,7 @@ from ..resource import Resource
 class Cat(Command):
     description = "Print a resource"
     paths = Arg(nargs="*", help="Resource path(s)",
-                metavar='path')
+                metavar='path', complete='resources::path')
 
     def colorize(self, json_data):
         return highlight(json_data,

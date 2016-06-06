@@ -42,6 +42,10 @@ class BaseOption(object):
 
     def __init__(self, *args, **kwargs):
         self.attr = ''
+        self.complete = None
+        if 'complete' in kwargs:
+            self.complete = kwargs.pop('complete')
+        self.kwargs = kwargs
 
     @property
     def help(self):
@@ -56,16 +60,15 @@ class BaseOption(object):
         return self.kwargs.get('nargs') in ('*', '+') or \
             self.kwargs.get('action') in ('append',)
 
+    def __repr__(self):
+        return '%s(%s)' % (self.__class__.__name__, self.attr)
+
 
 class Option(BaseOption):
 
     def __init__(self, short_name=None, **kwargs):
-        BaseOption.__init__(self)
+        BaseOption.__init__(self, **kwargs)
         self.short_name = short_name
-        self.kwargs = kwargs
-        self.complete = None
-        if 'complete' in kwargs:
-            self.complete = kwargs.pop('complete')
 
     @property
     def need_value(self):
@@ -81,10 +84,7 @@ class Option(BaseOption):
 
 
 class Arg(BaseOption):
-
-    def __init__(self, **kwargs):
-        BaseOption.__init__(self)
-        self.kwargs = kwargs
+    pass
 
 
 def experimental(cls):
@@ -324,18 +324,6 @@ class ShellCompleter(Completer):
             raise StopIteration
         except CommandInvalid:
             raise StopIteration
-        except NoCompletions:
-            raise StopIteration
-
-        # resource completion from cache
-        searches = [
-            # full path search
-            text_type(Path(ShellContext.current_path, text_before_cursor)),
-            # fq_name search
-            text_before_cursor
-        ]
-        for c in self.cache.get_completions(document, ShellContext.current_path, searches, 50):
-            yield c
 
 
 class ShellContext(object):

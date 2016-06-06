@@ -15,7 +15,6 @@ except ImportError:
 
 import datrie
 from keystoneclient.exceptions import HTTPError
-from prompt_toolkit.completion import Completion
 
 from .utils import FQName, Path, Observable, to_json
 from .exceptions import ResourceNotFound, ResourceMissing, CollectionNotFound, ChildrenExists, BackRefsExists
@@ -709,27 +708,20 @@ class ResourceCache(object):
             raise RuntimeError('Invalid item')
         return trie
 
+    def _get_keys(self, item):
+        if item.fq_name:
+            yield '/%s/%s' % (item.type, item.fq_name)
+        yield text_type(item.path)
+
     def _add_item(self, item):
         trie = self._get_trie_for_item(item)
-        for key in [text_type(item.path), text_type(item.fq_name)]:
-            if key and key not in trie:
-                trie[key] = item
+        for key in self._get_keys(item):
+            trie[key] = item
 
     def _del_item(self, item):
         trie = self._get_trie_for_item(item)
-        for key in [text_type(item.path), text_type(item.fq_name)]:
+        for key in self._get_keys(item):
             try:
                 del trie[key]
             except KeyError:
                 pass
-
-    def get_completions(self, document, current_path, searches, limit=None):
-        text_before_cursor = document.get_word_before_cursor(WORD=True)
-        resources = self.search(searches, limit=limit)
-        for res in resources:
-            rel_path = text_type(res.path.relative_to(current_path))
-            if rel_path in ('.', '/', ''):
-                continue
-            yield Completion(text_type(rel_path),
-                             -len(text_before_cursor),
-                             display_meta=text_type(res.fq_name))

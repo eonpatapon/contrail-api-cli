@@ -19,7 +19,8 @@ class Schema(Command):
                           action="store_true",
                           help="list available schema versions")
     resource_name = Arg(nargs="?", help="Schema resource name",
-                        metavar='resource_name')
+                        metavar='resource_name',
+                        complete='collections::type')
 
     def _list_resources(self, schema):
         return "\n".join(schema.all_resources())

@@ -8,7 +8,7 @@ from ..exceptions import NotFound, CommandError
 
 class Du(Command):
     description = "Count number of resources"
-    paths = Arg(nargs="*", help="Collections path(s)")
+    paths = Arg(nargs="*", help="Collections path(s)", complete='collections::path')
     aliases = ['count = du']
 
     def __call__(self, paths=None):

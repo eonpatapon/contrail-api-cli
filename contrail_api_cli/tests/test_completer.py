@@ -22,7 +22,7 @@ class TestCompleter(CLITest):
     @mock.patch('contrail_api_cli.resource.ResourceBase.session')
     def test_add_del_resource(self, mock_session):
         ShellContext.current_path = Path('/')
-        mock_document = Document(text='ls bar')
+        mock_document = Document(text='cat bar')
 
         comp = ShellCompleter()
         r1 = Resource('foo', uuid='d8eb36b4-9c57-49c5-9eac-95bedc90eb9a')
@@ -40,7 +40,7 @@ class TestCompleter(CLITest):
     @mock.patch('contrail_api_cli.resource.ResourceBase.session')
     def test_add_same_resource(self, mock_session):
         ShellContext.current_path = Path('/')
-        mock_document = Document(text='ls bar')
+        mock_document = Document(text='cat bar')
 
         comp = ShellCompleter()
         r1 = Resource('bar', uuid='4c6d3711-61f1-4505-b8df-189d32b52872')
@@ -55,11 +55,11 @@ class TestCompleter(CLITest):
     @mock.patch('contrail_api_cli.resource.ResourceBase.session')
     def test_fq_name_completion(self, mock_session):
         ShellContext.current_path = Path('/')
-        mock_document = Document(text='ls default-dom')
+        mock_document = Document(text='cat bar/default-dom')
 
         comp = ShellCompleter()
         r1 = Resource('bar', fq_name='default-domain:project:resource')
-        r2 = Resource('foo', fq_name='foo:foo:foo')
+        r2 = Resource('bar', fq_name='foo:foo:foo')
 
         completions = list(comp.get_completions(mock_document, None))
         self.assertEqual(len(completions), 1)
@@ -74,7 +74,7 @@ class TestCompleter(CLITest):
     @mock.patch('contrail_api_cli.resource.ResourceBase.session')
     def test_not_found(self, mock_session):
         mock_session.id_to_fqname.side_effect = HttpError(http_status=404)
-        mock_document = Document(text='ls foo')
+        mock_document = Document(text='cat foo')
 
         comp = ShellCompleter()
         try:
