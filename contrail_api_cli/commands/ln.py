@@ -10,7 +10,8 @@ from ..schema import create_schema_from_version, SchemaVersionNotAvailable, Reso
 
 class Ln(Command):
     description = "Link two resources"
-    resources = Arg(help='resource to link', metavar='PATH', nargs=2)
+    resources = Arg(help='resource to link', metavar='PATH', nargs=2,
+                    complete='resource::path')
     remove = Option('-r', help='remove link',
                     action='store_true', default=False)
     schema_version = Option('-v',

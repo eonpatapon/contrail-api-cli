@@ -11,7 +11,8 @@ from ..utils import format_table
 class Ls(Command):
     description = "List resource objects"
     paths = Arg(nargs="*", help="Resource path(s)",
-                metavar='path')
+                metavar='path',
+                complete='collections::path')
     long = Option('-l',
                   default=False, action="store_true",
                   help="use a long listing format")

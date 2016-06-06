@@ -14,7 +14,8 @@ from ..utils import md5
 
 class Edit(Command):
     description = "Edit resource"
-    path = Arg(nargs="?", help="Resource path", default='')
+    path = Arg(nargs="?", help="Resource path",
+               complete='resources::path')
     template = Option('-t',
                       help="Create new resource from existing",
                       action="store_true", default=False)

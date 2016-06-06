@@ -12,7 +12,7 @@ NB_WORKERS = 100
 class Tree(Command):
     description = "Tree of resource references"
     paths = Arg(nargs="*", help="Resource path(s)",
-                metavar='path')
+                metavar='path', complete='resources::path')
     reverse = Option('-r',
                      help="Show tree of back references",
                      action="store_true", default=False)

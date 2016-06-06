@@ -13,7 +13,8 @@ RESOURCE_NAME_PATH_SEPARATOR = "."
 
 class Relative(Command):
     description = "Get linked resources by providing a resource name path"
-    path = Arg(help="Base resource", metavar='path')
+    path = Arg(help="Base resource", metavar='path',
+               complete="resources::path")
     resource_name_path = Arg(help="Resource names separated by '%s'" % RESOURCE_NAME_PATH_SEPARATOR,
                              metavar='resource_name_path')
     show_intermediate = Option('-l',
