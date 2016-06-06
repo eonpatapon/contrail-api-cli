@@ -67,6 +67,10 @@ class Option(BaseOption):
             self.complete = kwargs.pop('complete')
 
     @property
+    def need_value(self):
+        return self.kwargs.get('action') not in ('store_true', 'store_false')
+
+    @property
     def long_name(self):
         return '--%s' % self.attr.replace('_', '-')
 

@@ -10,10 +10,11 @@ BASE = 'http://localhost:8082'
 
 
 class TestCmd(Command):
-    paths = Arg(help="%(default)s", default="bar")
     long = Option('-l', action="store_true")
     foo = Option(help="foo")
     bar = Option(nargs="*")
+    arg1 = Arg(help="%(default)s", default="bar")
+    arg2 = Arg()
 
     def __call__(self, *args, **kwargs):
         pass
@@ -31,7 +32,11 @@ class TestCommandOptions(unittest.TestCase):
     def test_option_help(self):
         self.assertEqual(self.cmd.options['foo'].help, 'foo')
         self.assertEqual(self.cmd.options['bar'].help, '')
-        self.assertEqual(self.cmd.args['paths'].help, 'bar')
+        self.assertEqual(self.cmd.args['arg1'].help, 'bar')
+
+    def test_option_need_value(self):
+        self.assertTrue(self.cmd.options['foo'].need_value)
+        self.assertFalse(self.cmd.options['long'].need_value)
 
     def test_option_strings(self):
         self.assertEqual(['--long', '-l'], self.cmd.options['long'].option_strings)
@@ -41,7 +46,7 @@ class TestCommandOptions(unittest.TestCase):
         self.assertEqual(['bar', 'foo', 'long'], list(self.cmd.options.keys()))
 
     def test_cmd_args(self):
-        self.assertEqual(['paths'], list(self.cmd.args.keys()))
+        self.assertEqual(['arg1', 'arg2'], list(self.cmd.args.keys()))
 
 
 class TestParser(unittest.TestCase):
@@ -79,9 +84,11 @@ class TestParser(unittest.TestCase):
         parsed = [o.short_name or o.long_name for o in parser.available_options]
         self.assertEqual(parsed, expected)
 
-    # def test_arg_parsing(self):
-        # parser = CommandParser('test-cmd --foo bar -l res1')
-        # self.assertEqual(list(parser.used_args), [('args', 'res1')])
+    def test_arg_parsing(self):
+        parser = CommandParser('test-cmd --foo bar arg1_value -l arg2_value')
+        self.assertEqual(list(parser.used_args), ['arg1_value', 'arg2_value'])
+        parser = CommandParser('test-cmd arg1_value -l')
+        self.assertEqual(list(parser.used_args), ['arg1_value'])
 
 
 if __name__ == "__main__":

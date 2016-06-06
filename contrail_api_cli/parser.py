@@ -58,9 +58,19 @@ class CommandParser(object):
                     option not in list(self.used_options)):
                 yield option
 
-    def get_last_option(self, last_word):
+    @property
+    def used_args(self):
+        for idx, c in enumerate(self.cmd_line[1:]):
+            if c.startswith('-'):
+                continue
+            option_str = self.cmd_line[1:][idx - 1]
+            option = self.get_option(option_str)
+            if option is None or not option.need_value:
+                yield c
+
+    def get_option(self, option_str):
         for option in self.used_options:
-            if last_word in option.option_strings:
+            if option_str in option.option_strings:
                 return option
 
     def get_completions(self, cache, document, current_path):
@@ -79,7 +89,7 @@ class CommandParser(object):
                                      display_meta=option.help)
             raise StopIteration
 
-        option = self.get_last_option(last_word)
+        option = self.get_option(last_word)
         if option is not None:
             # complete choices
             for choice in option.kwargs.get('choices', []):
