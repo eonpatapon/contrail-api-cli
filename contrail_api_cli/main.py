@@ -3,6 +3,7 @@ import os
 import sys
 import argparse
 import logging
+import logging.config
 from six import text_type
 
 from keystoneclient import session as ksession, auth
@@ -37,6 +38,12 @@ def main():
     # early setup for logging
     if '-d' in argv or '--debug' in argv:
         logging.basicConfig(level=logging.DEBUG)
+    if '--logging-conf' in argv:
+        try:
+            path = argv[argv.index('--logging-conf') + 1]
+            logging.config.fileConfig(path)
+        except IndexError:
+            pass
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--host', '-H',
@@ -56,6 +63,8 @@ def main():
     parser.add_argument('--schema-version',
                         default=os.environ.get('CONTRAIL_API_VERSION', None),
                         choices=list_available_schema_version())
+    parser.add_argument('--logging-conf',
+                        help="python logging configuration file")
 
     ksession.Session.register_cli_options(parser)
     # Default auth plugin will be http unless OS_AUTH_PLUGIN envvar is set
