@@ -19,6 +19,7 @@ from pygments.token import Token
 from prompt_toolkit import prompt
 from prompt_toolkit.history import FileHistory
 from prompt_toolkit.completion import Completer, Completion
+from prompt_toolkit.document import Document
 
 from .manager import CommandManager
 from .resource import Resource, ResourceCache
@@ -28,7 +29,7 @@ from .utils import CONFIG_DIR, Path, classproperty, continue_prompt, printo, par
 from .style import default as default_style
 from .exceptions import CommandError, CommandNotFound, \
     ResourceNotFound, CollectionNotFound, NotFound, CommandInvalid
-from .parser import CommandParser, NoCompletions
+from .parser import CommandParser
 
 
 class ArgumentParser(argparse.ArgumentParser):
@@ -310,7 +311,8 @@ class ShellCompleter(Completer):
         text = self.aliases.apply(document.text)
         try:
             parser = CommandParser(text)
-            for c in parser.get_completions(self.cache, document, ShellContext.current_path):
+            for c in parser.get_completions(self.cache, Document(text=text),
+                                            ShellContext.current_path):
                 yield c
         except CommandNotFound:
             for cmd_name, cmd in self.mgr.list:
@@ -424,7 +426,7 @@ class Shell(Command):
 class Cd(Command):
     description = "Change resource context"
     path = Arg(nargs="?", help="Resource path", default='',
-               metavar='path')
+               metavar='path', complete="collections::path")
 
     def __call__(self, path=''):
         ShellContext.current_path = ShellContext.current_path / path
