@@ -12,6 +12,9 @@ import re
 import sys
 
 
+logger = logging.getLogger(__name__)
+
+
 class IDLParser(object):
     class Property(object):
         # def __init__(self, prop_name):
@@ -43,7 +46,6 @@ class IDLParser(object):
                 try:
                     eval("self._%s" % (stmt))
                 except TypeError:
-                    logger = logging.getLogger('idl_parser')
                     logger.debug('ERROR statement: %s', stmt)
                 # self._ParseExpression(stmt)
         return self._ElementDict
@@ -69,11 +71,9 @@ class IDLParser(object):
             return (None, None, None)
 
     def _Type(self, type_name, attrs):
-        logger = logging.getLogger('idl_parser')
         logger.debug('Type(%s, %s)', type_name, attrs)
 
     def _Property(self, prop_name, ident_name):
-        logger = logging.getLogger('idl_parser')
         logger.debug('Property(%s, %s)', prop_name, ident_name)
         try:
             idl_prop, idents = self._ElementDict[prop_name]
@@ -84,7 +84,6 @@ class IDLParser(object):
             self._ElementDict[prop_name] = (idl_prop, [ident_name])
 
     def _ListProperty(self, prop_name, ident_name):
-        logger = logging.getLogger('idl_parser')
         logger.debug('ListProperty(%s, %s)', prop_name, ident_name)
         try:
             idl_prop, idents = self._ElementDict[prop_name]
@@ -94,11 +93,9 @@ class IDLParser(object):
             self._ElementDict[prop_name] = (idl_prop, [ident_name])
 
     def _Exclude(self, elem_name, excluded):
-        logger = logging.getLogger('idl_parser')
         logger.debug('Exclude(%s, %s)', elem_name, excluded)
 
     def _Link(self, link_name, from_name, to_name, attrs):
-        logger = logging.getLogger('idl_parser')
 
         mch = re.match(r'(.*):(.*)', from_name)
         if mch:
