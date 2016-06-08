@@ -1,35 +1,18 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
-import os.path
 import sys
-import tempfile
 import inspect
 import argparse
-import pipes
 import abc
-import re
 from fnmatch import fnmatch
 from collections import OrderedDict
 from six import add_metaclass, text_type
 
-from keystoneclient.exceptions import ClientException, HttpError
-
-from pygments.token import Token
-
-from prompt_toolkit import prompt
-from prompt_toolkit.history import FileHistory
-from prompt_toolkit.completion import Completer, Completion
-from prompt_toolkit.document import Document
-
-from .manager import CommandManager
-from .resource import Resource, ResourceCache
+from .resource import Resource
 from .resource import Collection, RootCollection
-from .client import ContrailAPISession
-from .utils import CONFIG_DIR, Path, classproperty, continue_prompt, printo, parallel_map
-from .style import default as default_style
-from .exceptions import CommandError, CommandNotFound, \
-    ResourceNotFound, CollectionNotFound, NotFound, CommandInvalid
-from .parser import CommandParser
+from .utils import Path, classproperty, parallel_map
+from .exceptions import CommandError, NotFound
+from .context import Context
 
 
 class ArgumentParser(argparse.ArgumentParser):
@@ -157,9 +140,9 @@ def expand_paths(paths=None, predicate=None, filters=None, parent_uuid=None):
     :raises BadPath: path cannot be resolved
     """
     if not paths:
-        paths = [ShellContext.current_path]
+        paths = [Context().shell.current_path]
     else:
-        paths = [ShellContext.current_path / res for res in paths]
+        paths = [Context().shell.current_path / res for res in paths]
 
     # use a dict to have unique paths
     # but keep them ordered
@@ -202,7 +185,7 @@ class Command(object):
 
         :rtype: str
         """
-        return str(resource.path.relative_to(ShellContext.current_path))
+        return str(resource.path.relative_to(Context().shell.current_path))
 
     @property
     def is_piped(self):
@@ -261,209 +244,3 @@ class Command(object):
 
         :rtype: unicode | str
         """
-
-
-@experimental
-class Rm(Command):
-    description = "Delete a resource"
-    paths = Arg(nargs="*", help="Resource path(s)",
-                metavar='path')
-    recursive = Option("-r", action="store_true",
-                       default=False,
-                       help="Recursive delete of back_refs resources")
-    force = Option("-f", action="store_true",
-                   default=False,
-                   help="Don't ask for confirmation")
-
-    def _get_back_refs(self, resources, back_refs):
-        for resource in resources:
-            resource.fetch()
-            if resource in back_refs:
-                back_refs.remove(resource)
-            back_refs.append(resource)
-            for back_ref in resource.back_refs:
-                back_refs = self._get_back_refs([back_ref], back_refs)
-        return back_refs
-
-    def __call__(self, paths=None, recursive=False, force=False):
-        resources = expand_paths(paths,
-                                 predicate=lambda r: isinstance(r, Resource))
-        if recursive:
-            resources = self._get_back_refs(resources, [])
-        if resources:
-            message = """About to delete:
- - %s""" % "\n - ".join([self.current_path(r) for r in resources])
-            if force or continue_prompt(message=message):
-                for r in reversed(resources):
-                    print("Deleting %s" % self.current_path(r))
-                    r.delete()
-
-
-class ShellCompleter(Completer):
-
-    def __init__(self, aliases=None):
-        self.mgr = CommandManager()
-        self.cache = ResourceCache()
-        self.aliases = aliases or ShellAliases()
-
-    def get_completions(self, document, complete_event):
-        text_before_cursor = document.get_word_before_cursor(WORD=True)
-        text = self.aliases.apply(document.text)
-        try:
-            parser = CommandParser(text)
-            for c in parser.get_completions(self.cache, Document(text=text),
-                                            ShellContext.current_path):
-                yield c
-        except CommandNotFound:
-            for cmd_name, cmd in self.mgr.list:
-                if cmd_name.startswith(text_before_cursor):
-                    yield Completion(cmd_name,
-                                     -len(text_before_cursor),
-                                     display_meta=cmd.description)
-            raise StopIteration
-        except CommandInvalid:
-            raise StopIteration
-
-
-class ShellContext(object):
-    current_path = Path("/")
-
-
-class ShellAliases(object):
-
-    def __init__(self):
-        self._aliases = {}
-
-    def set(self, alias):
-        if '=' not in alias:
-            raise CommandError('Alias %s is incorrect' % alias)
-        alias, cmd = alias.split('=')
-        self._aliases[alias.strip()] = cmd.strip()
-
-    def apply(self, cmd):
-        cmd = re.split(r'(\s+)', cmd)
-        cmd = [self._aliases.get(c, c) for c in cmd]
-        return ' '.join(cmd)
-
-
-class Shell(Command):
-    description = "Run an interactive shell"
-
-    def __call__(self):
-
-        def get_prompt_tokens(cli):
-            return [
-                (Token.Username, ContrailAPISession.user or ''),
-                (Token.At, '@' if ContrailAPISession.user else ''),
-                (Token.Host, ContrailAPISession.host),
-                (Token.Colon, ':'),
-                (Token.Path, str(ShellContext.current_path)),
-                (Token.Pound, '> ')
-            ]
-
-        history = FileHistory(os.path.join(CONFIG_DIR, 'history'))
-        commands = CommandManager()
-        commands.load_namespace('contrail_api_cli.shell_command')
-        aliases = ShellAliases()
-        for cmd_name, cmd in commands.list:
-            map(aliases.set, cmd.aliases)
-        completer = ShellCompleter(aliases=aliases)
-        # load home resources
-        try:
-            RootCollection(fetch=True)
-        except ClientException as e:
-            return str(e)
-
-        while True:
-            try:
-                action = prompt(get_prompt_tokens=get_prompt_tokens,
-                                history=history,
-                                completer=completer,
-                                style=default_style)
-                action = aliases.apply(action)
-            except (EOFError, KeyboardInterrupt):
-                break
-            try:
-                action = action.split('|')
-                pipe_cmds = action[1:]
-                action = action[0].split()
-                cmd = commands.get(action[0])
-                args = action[1:]
-                if pipe_cmds:
-                    p = pipes.Template()
-                    for pipe_cmd in pipe_cmds:
-                        p.append(str(pipe_cmd.strip()), '--')
-                    cmd.is_piped = True
-                else:
-                    cmd.is_piped = False
-            except IndexError:
-                continue
-            except CommandNotFound as e:
-                printo(text_type(e))
-                continue
-            try:
-                result = cmd.parse_and_call(*args)
-            except (HttpError, ClientException, CommandError,
-                    ResourceNotFound, CollectionNotFound, NotFound) as e:
-                printo(text_type(e))
-                continue
-            except KeyboardInterrupt:
-                continue
-            except EOFError:
-                break
-            else:
-                if not result:
-                    continue
-                elif pipe_cmds:
-                    t = tempfile.NamedTemporaryFile('r')
-                    with p.open(t.name, 'w') as f:
-                        f.write(result)
-                    printo(t.read().strip())
-                else:
-                    printo(result)
-
-
-class Cd(Command):
-    description = "Change resource context"
-    path = Arg(nargs="?", help="Resource path", default='',
-               metavar='path', complete="collections::path")
-
-    def __call__(self, path=''):
-        ShellContext.current_path = ShellContext.current_path / path
-
-
-class Exit(Command):
-    description = "Exit from shell"
-
-    def __call__(self):
-        raise EOFError
-
-
-class Help(Command):
-    description = "List all available commands"
-
-    def __call__(self):
-        commands = CommandManager()
-        return "Available commands: %s" % " ".join(
-            [name for name, cmd in commands.list])
-
-
-class Python(Command):
-    description = 'Run a python interpreter'
-
-    def __call__(self):
-        try:
-            from ptpython.repl import embed
-            embed(globals(), None)
-        except ImportError:
-            try:
-                from IPython import embed
-                embed()
-            except ImportError:
-                import code
-                code.interact(banner="Launching standard python repl", readfunc=None, local=globals())
-
-
-def make_api_session(options):
-    ContrailAPISession.make(options.os_auth_plugin,
-                            **vars(options))

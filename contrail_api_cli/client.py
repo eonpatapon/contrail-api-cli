@@ -179,3 +179,8 @@ class ContrailAPISession(Session):
             'attr': attr
         }
         return self.post_json(self.make_url("/ref-update"), data)
+
+
+def make_api_session(options):
+    ContrailAPISession.make(options.os_auth_plugin,
+                            **vars(options))

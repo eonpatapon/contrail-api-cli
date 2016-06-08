@@ -14,7 +14,7 @@ from .exceptions import CommandError, ResourceNotFound, CollectionNotFound, NotF
 from .utils import CONFIG_DIR, printo
 from .schema import create_schema_from_version, list_available_schema_version, DummySchema
 from .context import Context
-from . import command
+from .client import make_api_session
 
 
 logger = logging.getLogger(__name__)
@@ -77,7 +77,7 @@ def main():
     if not os.path.exists(CONFIG_DIR):
         os.makedirs(CONFIG_DIR)
 
-    command.make_api_session(options)
+    make_api_session(options)
 
     if options.schema_version:
         Context().schema = create_schema_from_version(options.schema_version)
