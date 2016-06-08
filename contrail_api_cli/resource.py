@@ -648,11 +648,6 @@ class Resource(ResourceBase, UserDict):
         """
         return to_json(self.data, cls=ResourceEncoder)
 
-    def __str__(self):
-        if hasattr(self, 'data'):
-            return str(self.data)
-        return str({})
-
 
 class Actions:
     STORE = 'STORE'
