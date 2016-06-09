@@ -64,27 +64,40 @@ class Shell(Command):
         key_bindings_registry = KeyBindingManager.for_prompt().registry
         manager = CommandManager()
         manager.load_namespace('contrail_api_cli.shell_command')
-        aliases = ShellAliases()
+        cmd_aliases = ShellAliases()
         for cmd_name, cmd in manager.list:
-            map(aliases.set, cmd.aliases)
+            map(cmd_aliases.set, cmd.aliases)
+        # load home resources to have them in cache
+        # also build shortcut list for resource types
+        # typing vmi/ will be expanded to virtual-machine-interface/
+        # automagically
+        res_aliases = ShellAliases()
+        try:
+            for c in RootCollection(fetch=True):
+                short_name = "".join([p[0].lower() for p in c.type.split('-')])
+                res_aliases.set("%s = %s" % (short_name, c.type))
+        except ClientException as e:
+            return text_type(e)
 
-        @key_bindings_registry.add_binding(' ')
-        def _(event):
+        def _(event, aliases, char):
             b = event.cli.current_buffer
             w = b.document.get_word_before_cursor()
             if w is not None:
                 if not w == aliases.get(w):
                     b.delete_before_cursor(count=len(w))
                     b.insert_text(aliases.get(w))
-            b.insert_text(' ')
+            b.insert_text(char)
+
+        @key_bindings_registry.add_binding(' ')
+        def _sa(event):
+            _(event, cmd_aliases, ' ')
+
+        @key_bindings_registry.add_binding('/')
+        def _ra(event):
+            _(event, res_aliases, '/')
 
         history = FileHistory(os.path.join(CONFIG_DIR, 'history'))
         completer = ShellCompleter()
-        # load home resources
-        try:
-            RootCollection(fetch=True)
-        except ClientException as e:
-            return str(e)
 
         while True:
             try:
@@ -93,7 +106,7 @@ class Shell(Command):
                                 completer=completer,
                                 style=default_style,
                                 key_bindings_registry=key_bindings_registry)
-                action = aliases.apply(action)
+                action = cmd_aliases.apply(action)
             except (EOFError, KeyboardInterrupt):
                 break
             try:
