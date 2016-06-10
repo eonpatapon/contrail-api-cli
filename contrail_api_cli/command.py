@@ -90,7 +90,7 @@ def experimental(cls):
     return cls
 
 
-def _path_to_resource(path, predicate=None, filters=None, parent_uuid=None):
+def _path_to_resources(path, predicate=None, filters=None, parent_uuid=None):
     if any([c in str(path) for c in ('*', '?')]):
         if any([c in path.base for c in ('*', '?')]):
             col = RootCollection(fetch=True,
@@ -107,7 +107,7 @@ def _path_to_resource(path, predicate=None, filters=None, parent_uuid=None):
             paths = [r.path,
                      Path('/', r.type, str(r.fq_name))]
             if any([fnmatch(str(p), str(path)) for p in paths]):
-                return r
+                yield r
     elif path.is_resource:
         if path.is_uuid:
             kwargs = {'uuid': path.name}
@@ -117,16 +117,15 @@ def _path_to_resource(path, predicate=None, filters=None, parent_uuid=None):
                      check=True,
                      **kwargs)
         if predicate and not predicate(r):
-            return
-        return r
+            raise StopIteration
+        yield r
     elif path.is_collection:
         c = Collection(path.base,
                        filters=filters,
                        parent_uuid=parent_uuid)
         if predicate and not predicate(c):
-            return
-        return c
-    return
+            raise StopIteration
+        yield c
 
 
 def expand_paths(paths=None, predicate=None, filters=None, parent_uuid=None):
@@ -156,12 +155,12 @@ def expand_paths(paths=None, predicate=None, filters=None, parent_uuid=None):
     # use a dict to have unique paths
     # but keep them ordered
     result = OrderedDict()
-    for r in parallel_map(_path_to_resource, paths,
-                          kwargs={'predicate': predicate,
-                                  'filters': filters,
-                                  'parent_uuid': parent_uuid},
-                          workers=50):
-        if r is not None:
+    for res in parallel_map(_path_to_resources, paths,
+                            kwargs={'predicate': predicate,
+                                    'filters': filters,
+                                    'parent_uuid': parent_uuid},
+                            workers=50):
+        for r in res:
             result[r.path] = r
 
     resources = list(result.values())

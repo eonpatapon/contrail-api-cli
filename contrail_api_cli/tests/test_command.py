@@ -73,6 +73,43 @@ class TestCommand(unittest.TestCase):
         result = self.mgr.get('ls')()
         self.assertEqual('instance-ip', result)
 
+        mock_session.get_json.side_effect = [
+            {
+                'href': BASE,
+                'links': [
+                    {'link': {'href': BASE + '/foos',
+                              'path': Path('/foos'),
+                              'name': 'foo',
+                              'rel': 'collection'}},
+                    {'link': {'href': BASE + '/bars',
+                              'path': Path('/bars'),
+                              'name': 'bar',
+                              'rel': 'collection'}}
+                ]
+            },
+            {
+                'foos': [
+                    {'href': BASE + '/foo/ec1afeaa-8930-43b0-a60a-939f23a50724',
+                     'uuid': 'ec1afeaa-8930-43b0-a60a-939f23a50724'},
+                    {'href': BASE + '/foo/c2588045-d6fb-4f37-9f46-9451f653fb6a',
+                     'uuid': 'c2588045-d6fb-4f37-9f46-9451f653fb6a'}
+                ]
+            },
+            {
+                'bars': [
+                    {'href': BASE + '/bar/ffe8de43-a141-4336-8d70-bf970813bbf7',
+                     'uuid': 'ffe8de43-a141-4336-8d70-bf970813bbf7'}
+                ]
+            }
+        ]
+
+        ShellContext.current_path = Path('/')
+        expected_result = """foo/ec1afeaa-8930-43b0-a60a-939f23a50724
+foo/c2588045-d6fb-4f37-9f46-9451f653fb6a
+bar/ffe8de43-a141-4336-8d70-bf970813bbf7"""
+        result = self.mgr.get('ls')(paths=['*'])
+        self.assertEqual(result, expected_result)
+
     @mock.patch('contrail_api_cli.resource.ResourceBase.session')
     def test_resource_collection(self, mock_session):
         mock_session.get_json.return_value = {
