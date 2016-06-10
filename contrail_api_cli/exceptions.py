@@ -53,3 +53,27 @@ class CollectionNotFound(NotFound):
         if self.c is None:
             return "Collection not found"
         return "Collection %s not found" % self.c.path
+
+
+class Exists(Exception):
+
+    def __init__(self, resources=None):
+        self.resources = []
+        if resources is not None:
+            self.resources = resources
+
+    @property
+    def _paths(self):
+        return ", ".join([text_type(c.path) for c in self.resources])
+
+
+class ChildrenExists(Exists):
+
+    def __str__(self):
+        return "Children %s exists" % self._paths
+
+
+class BackRefsExists(Exists):
+
+    def __str__(self):
+        return "Back references from %s exists" % self._paths

@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
 import json
 import string
+import re
 from uuid import UUID
 from six import string_types, text_type
 from functools import wraps
@@ -15,12 +16,18 @@ import datrie
 from keystoneclient.exceptions import HTTPError
 
 from .utils import FQName, Path, Observable, to_json
-from .exceptions import ResourceNotFound, ResourceMissing, CollectionNotFound
+from .exceptions import ResourceNotFound, ResourceMissing, CollectionNotFound, ChildrenExists, BackRefsExists
 
 
-def http_404_handler(f):
+def http_error_handler(f):
     """Handle 404 errors returned by the API server
     """
+
+    def hrefs_to_resources(hrefs):
+        for href in hrefs.replace(',', '').split():
+            type, uuid = href.split('/')[-2:]
+            yield Resource(type, uuid=uuid)
+
     @wraps(f)
     def wrapper(self, *args, **kwargs):
         try:
@@ -34,6 +41,15 @@ def http_404_handler(f):
                     raise ResourceNotFound(resource=self)
                 elif isinstance(self, Collection):
                     raise CollectionNotFound(collection=self)
+            elif e.http_status == 409:
+                matches = re.match('^Children (.*) still exist$', e.message)
+                if matches:
+                    raise ChildrenExists(
+                        resources=list(hrefs_to_resources(matches.group(1))))
+                matches = re.match('^Back-References from (.*) still exist$', e.message)
+                if matches:
+                    raise BackRefsExists(
+                        resources=list(hrefs_to_resources(matches.group(1))))
             raise
     return wrapper
 
@@ -137,7 +153,7 @@ class Collection(ResourceBase, UserList):
             self.fetch(recursive=recursive)
         self.emit('created', self)
 
-    @http_404_handler
+    @http_error_handler
     def __len__(self):
         """Return the number of items of the collection
 
@@ -205,7 +221,7 @@ class Collection(ResourceBase, UserList):
     def _fetch_fields(self, fields=None):
         return self.fields + (fields or [])
 
-    @http_404_handler
+    @http_error_handler
     def fetch(self, recursive=1, fields=None, detail=None, filters=None, parent_uuid=None):
         """
         Fetch collection from API server
@@ -323,11 +339,11 @@ class Resource(ResourceBase, UserDict):
             self['fq_name'] = self._check_uuid(self.uuid)
         return True
 
-    @http_404_handler
+    @http_error_handler
     def _check_uuid(self, uuid):
         return self.session.id_to_fqname(uuid, type=self.type)['fq_name']
 
-    @http_404_handler
+    @http_error_handler
     def _check_fq_name(self, fq_name):
         return self.session.fqname_to_id(fq_name, self.type)
 
@@ -398,7 +414,7 @@ class Resource(ResourceBase, UserDict):
         created = self['id_perms']['created']
         return datetime.strptime(created, '%Y-%m-%dT%H:%M:%S.%f')
 
-    @http_404_handler
+    @http_error_handler
     def save(self):
         """Save the resource to the API server
 
@@ -415,7 +431,7 @@ class Resource(ResourceBase, UserDict):
                                   cls=ResourceEncoder)
         self.fetch(exclude_children=True, exclude_back_refs=True)
 
-    @http_404_handler
+    @http_error_handler
     def delete(self):
         """Delete resource from the API server
         """
@@ -423,7 +439,7 @@ class Resource(ResourceBase, UserDict):
         self.emit('deleted', self)
         return res
 
-    @http_404_handler
+    @http_error_handler
     def fetch(self, recursive=1, exclude_children=False, exclude_back_refs=False):
         """Fetch resource from the API server
 
