@@ -66,6 +66,10 @@ class Exists(Exception):
     def _paths(self):
         return ", ".join([text_type(c.path) for c in self.resources])
 
+    def __repr__(self):
+        return "%s(%s)" % (self.__class__.__name__,
+                           ", ".join([repr(r) for r in self.resources]))
+
 
 class ChildrenExists(Exists):
 
