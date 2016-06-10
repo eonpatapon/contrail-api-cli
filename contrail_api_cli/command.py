@@ -27,7 +27,7 @@ from .client import ContrailAPISession
 from .utils import CONFIG_DIR, Path, classproperty, continue_prompt, printo, parallel_map
 from .style import default as default_style
 from .exceptions import CommandError, CommandNotFound, \
-    ResourceNotFound, CollectionNotFound, NotFound, CommandInvalid
+    NotFound, Exists, CommandInvalid
 from .parser import CommandParser
 
 
@@ -421,7 +421,7 @@ class Shell(Command):
             try:
                 result = cmd.parse_and_call(*args)
             except (HttpError, ClientException, CommandError,
-                    ResourceNotFound, CollectionNotFound, NotFound) as e:
+                    NotFound, Exists) as e:
                 printo(text_type(e))
                 continue
             except KeyboardInterrupt:
