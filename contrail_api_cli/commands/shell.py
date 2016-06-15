@@ -12,6 +12,7 @@ from pygments.token import Token
 
 from prompt_toolkit import prompt
 from prompt_toolkit.history import FileHistory
+from prompt_toolkit.key_binding.manager import KeyBindingManager
 
 from ..resource import RootCollection
 from ..completer import ShellCompleter
@@ -36,9 +37,12 @@ class ShellAliases(object):
         alias, cmd = alias.split('=')
         self._aliases[alias.strip()] = cmd.strip()
 
+    def get(self, alias):
+        return self._aliases.get(alias, alias)
+
     def apply(self, cmd):
         cmd = re.split(r'(\s+)', cmd)
-        cmd = [self._aliases.get(c, c) for c in cmd]
+        cmd = [self.get(c) for c in cmd]
         return ' '.join(cmd)
 
 
@@ -57,12 +61,24 @@ class Shell(Command):
                 (Token.Pound, '> ')
             ]
 
-        history = FileHistory(os.path.join(CONFIG_DIR, 'history'))
+        key_bindings_registry = KeyBindingManager.for_prompt().registry
         manager = CommandManager()
         manager.load_namespace('contrail_api_cli.shell_command')
         aliases = ShellAliases()
         for cmd_name, cmd in manager.list:
             map(aliases.set, cmd.aliases)
+
+        @key_bindings_registry.add_binding(' ')
+        def _(event):
+            b = event.cli.current_buffer
+            w = b.document.get_word_before_cursor()
+            if w is not None:
+                if not w == aliases.get(w):
+                    b.delete_before_cursor(count=len(w))
+                    b.insert_text(aliases.get(w))
+            b.insert_text(' ')
+
+        history = FileHistory(os.path.join(CONFIG_DIR, 'history'))
         completer = ShellCompleter()
         # load home resources
         try:
@@ -75,7 +91,8 @@ class Shell(Command):
                 action = prompt(get_prompt_tokens=get_prompt_tokens,
                                 history=history,
                                 completer=completer,
-                                style=default_style)
+                                style=default_style,
+                                key_bindings_registry=key_bindings_registry)
                 action = aliases.apply(action)
             except (EOFError, KeyboardInterrupt):
                 break
