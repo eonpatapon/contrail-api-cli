@@ -12,12 +12,17 @@ from .utils import Singleton
 @add_metaclass(Singleton)
 class CommandManager(object):
 
-    def __init__(self, namespaces=['contrail_api_cli.command']):
+    def __init__(self, load_default=True):
         """Load commands from namespace
+
+        :param load_default: tell the manager to load the default
+                             namespace for commands (contrail_api_cli.command).
+                             (True by default)
+        :type load_default: bool
         """
         self.mgrs = []
-        for ns in namespaces:
-            self.load_namespace(ns)
+        if load_default is True:
+            self.load_namespace('contrail_api_cli.command')
 
     def load_namespace(self, ns):
         """Load commands from namespace.
