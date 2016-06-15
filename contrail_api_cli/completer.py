@@ -140,8 +140,8 @@ class ShellCompleter(Completer):
             # depending on the cursor position, use a relative
             # parser to get the current argument
             p = CommandParser(Document(text=" ".join(words)))
-            arg = list(p.used_args)[-1]
+            arg = list(p.available_args)[0]
         # get the next arg in line
         else:
-            arg = self.parser.available_args.next()
+            arg = next(self.parser.available_args)
         return arg

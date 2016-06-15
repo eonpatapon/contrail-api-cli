@@ -63,6 +63,18 @@ class TestCompleter(CLITest):
         completions = comp.get_completions(mock_document, None)
         self.assertEqual(len(list(completions)), 2)
 
+        mock_document = Document(text='ln  foo', cursor_position=3)
+        completions = comp.get_completions(mock_document, None)
+        self.assertEqual(len(list(completions)), 2)
+
+        mock_document = Document(text='ln  foo bar', cursor_position=3)
+        completions = comp.get_completions(mock_document, None)
+        self.assertEqual(len(list(completions)), 0)
+
+        mock_document = Document(text='ln foo bar', cursor_position=6)
+        completions = comp.get_completions(mock_document, None)
+        self.assertEqual(len(list(completions)), 1)
+
     @mock.patch('contrail_api_cli.resource.ResourceBase.session')
     def test_fq_name_completion(self, mock_session):
         mock_document = Document(text='cat bar/default-dom')

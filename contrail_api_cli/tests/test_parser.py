@@ -98,7 +98,7 @@ class TestParser(unittest.TestCase):
         self.assertEqual(parsed, expected)
 
     def test_arg_parsing(self):
-        parser = CommandParser(Document('test-cmd --foo bar arg1_value -l arg2_value'))
+        parser = CommandParser(Document('test-cmd --foo bar arg1_value -l arg2_value '))
         self.assertEqual(list(parser.used_args), [self.cmd.args['arg1'], self.cmd.args['arg2']])
         parser = CommandParser(Document('test-cmd arg1_value -l'))
         self.assertEqual(list(parser.used_args), [self.cmd.args['arg1']])

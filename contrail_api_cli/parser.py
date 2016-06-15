@@ -75,7 +75,7 @@ class CommandParser(object):
             option_str = self.words[1:][idx - 1]
             option = self.get_option(option_str)
             if option is None or not option.need_value:
-                values.append(c)
+                values.append((c, c == self.document.get_word_before_cursor(WORD=True)))
         logger.debug("Found args values %s" % values)
         # consume values
         for arg in self.cmd.args.values():
@@ -86,8 +86,10 @@ class CommandParser(object):
                 yield arg
             elif type(arg.nargs) is int:
                 for _ in range(arg.nargs):
-                    values = values[1:]
-                    yield arg
+                    value = values.pop(0)
+                    # not the current argument
+                    if value[1] is False:
+                        yield arg
                     if not values:
                         raise StopIteration
 

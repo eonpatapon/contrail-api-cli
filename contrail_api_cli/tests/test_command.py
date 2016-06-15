@@ -14,7 +14,6 @@ from contrail_api_cli.utils import Path, FQName
 from contrail_api_cli.context import Context
 from contrail_api_cli.resource import Resource, Collection
 from contrail_api_cli.exceptions import ResourceNotFound, CommandError
-from contrail_api_cli.context import Context
 from contrail_api_cli.schema import create_schema_from_version, DummySchema
 from contrail_api_cli.manager import CommandManager
 
