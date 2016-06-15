@@ -63,7 +63,7 @@ class Shell(Command):
         aliases = ShellAliases()
         for cmd_name, cmd in manager.list:
             map(aliases.set, cmd.aliases)
-        completer = ShellCompleter(aliases, Context().shell, manager)
+        completer = ShellCompleter()
         # load home resources
         try:
             RootCollection(fetch=True)

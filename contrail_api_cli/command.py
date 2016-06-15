@@ -44,6 +44,12 @@ class BaseOption(object):
         return self.kwargs.get('nargs') in ('*', '+') or \
             self.kwargs.get('action') in ('append',)
 
+    @property
+    def nargs(self):
+        if self.kwargs.get('nargs') == '?':
+            return 1
+        return self.kwargs.get('nargs', 1)
+
     def __repr__(self):
         return '%s(%s)' % (self.__class__.__name__, self.attr)
 
