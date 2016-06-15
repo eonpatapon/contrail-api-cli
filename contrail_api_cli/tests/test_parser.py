@@ -1,6 +1,8 @@
 from __future__ import unicode_literals
 import unittest
 
+from prompt_toolkit.document import Document
+
 from contrail_api_cli.command import Command, Arg, Option
 from contrail_api_cli.manager import CommandManager
 from contrail_api_cli.parser import CommandParser
@@ -69,44 +71,44 @@ class TestParser(unittest.TestCase):
 
     def test_bad_cmd(self):
         with self.assertRaises(CommandInvalid):
-            CommandParser('foo -h')
+            CommandParser(Document('foo -h'))
         with self.assertRaises(CommandInvalid):
-            CommandParser('bar ')
+            CommandParser(Document('bar '))
         with self.assertRaises(CommandNotFound):
-            CommandParser('')
+            CommandParser(Document())
         with self.assertRaises(CommandNotFound):
-            CommandParser('ex')
+            CommandParser(Document('ex'))
 
     def test_cmd(self):
-        parser = CommandParser('test-cmd')
+        parser = CommandParser(Document('test-cmd'))
         self.assertEqual(parser.cmd, self.mgr.get('test-cmd'))
         self.assertEqual(parser.cmd_name, 'test-cmd')
 
     def test_option_parsing(self):
-        parser = CommandParser('test-cmd -h')
+        parser = CommandParser(Document('test-cmd -h'))
         self.assertEqual(len(list(parser.used_options)), 0)
         expected = ['--bar', '--foo', '-l']
         parsed = [o.short_name or o.long_name for o in parser.available_options]
         self.assertEqual(parsed, expected)
 
-        parser = CommandParser('test-cmd --bar -h')
+        parser = CommandParser(Document('test-cmd --bar -h'))
         self.assertEqual(len(list(parser.used_options)), 1)
         expected = ['--bar', '--foo', '-l']
         parsed = [o.short_name or o.long_name for o in parser.available_options]
         self.assertEqual(parsed, expected)
 
     def test_arg_parsing(self):
-        parser = CommandParser('test-cmd --foo bar arg1_value -l arg2_value')
+        parser = CommandParser(Document('test-cmd --foo bar arg1_value -l arg2_value'))
         self.assertEqual(list(parser.used_args), [self.cmd.args['arg1'], self.cmd.args['arg2']])
-        parser = CommandParser('test-cmd arg1_value -l')
+        parser = CommandParser(Document('test-cmd arg1_value -l'))
         self.assertEqual(list(parser.used_args), [self.cmd.args['arg1']])
         self.assertEqual(list(parser.available_args), [self.cmd.args['arg2']])
 
-        parser = CommandParser('test-cmd2 arg1_value -l')
+        parser = CommandParser(Document('test-cmd2 arg1_value -l'))
         self.assertEqual(list(parser.available_args), [self.cmd2.args['arg2']])
-        parser = CommandParser('test-cmd2 arg1_value -l arg2_value')
+        parser = CommandParser(Document('test-cmd2 arg1_value -l arg2_value'))
         self.assertEqual(list(parser.available_args), [self.cmd2.args['arg2']])
-        parser = CommandParser('test-cmd2 arg1_value -l arg2_value arg2_value2')
+        parser = CommandParser(Document('test-cmd2 arg1_value -l arg2_value arg2_value2'))
         self.assertEqual(list(parser.available_args), [self.cmd2.args['arg2']])
 
 
