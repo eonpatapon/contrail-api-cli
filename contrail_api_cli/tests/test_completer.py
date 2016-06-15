@@ -51,6 +51,19 @@ class TestCompleter(CLITest):
         r2.delete()
 
     @mock.patch('contrail_api_cli.resource.ResourceBase.session')
+    def test_cursor_position(self, mock_session):
+        mock_document = Document(text='cat bar --foo bar', cursor_position=6)
+        comp = ShellCompleter()
+        Resource('bar', uuid='4c6d3711-61f1-4505-b8df-189d32b52872')
+        Resource('foo', uuid='7413a49b-4f17-4340-b93f-7e03b29b5a9d')
+        completions = comp.get_completions(mock_document, None)
+        self.assertEqual(len(list(completions)), 1)
+
+        mock_document = Document(text='ls -P  foo', cursor_position=6)
+        completions = comp.get_completions(mock_document, None)
+        self.assertEqual(len(list(completions)), 2)
+
+    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
     def test_fq_name_completion(self, mock_session):
         mock_document = Document(text='cat bar/default-dom')
 
