@@ -1,0 +1,2 @@
+version=3
+https://github.com/eonpatapon/contrail-api-cli/tags .*/(\d[\d\.]+[a-z]*[0-9]*)\.tar\.gz
