@@ -22,6 +22,14 @@ var/
 *.egg-info/
 .installed.cfg
 *.egg
+*.orig.tar.gz
+*.debian.tar.gz
+
+# Editor and OS-specific garbage
+.ropeproject
+*.swp
+.DS_Store
+.DS_Store?
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
