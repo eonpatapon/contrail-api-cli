@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 install_requires = [
     'pygments',
     'prompt_toolkit>=0.53',
-    'python-keystoneclient',
+    'python-keystoneclient>=0.11',
     'gevent',
     'datrie'
 ]
