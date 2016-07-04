@@ -76,7 +76,8 @@ class Shell(Command):
         res_aliases = ShellAliases()
         try:
             for c in RootCollection(fetch=True):
-                short_name = "".join([p[0].lower() for p in c.type.split('-')])
+                short_name = "".join([p if p == "ip" else p[0].lower()
+                                      for p in c.type.split('-')])
                 res_aliases.set("%s = %s" % (short_name, c.type))
         except ClientException as e:
             return text_type(e)
