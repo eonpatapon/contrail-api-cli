@@ -38,5 +38,8 @@ class Tree(Command):
     def __call__(self, paths=None, reverse=False, parent=False):
         resources = expand_paths(paths,
                                  predicate=lambda r: isinstance(r, Resource))
-        trees = parallel_map(self._create_tree, resources, args=(reverse, parent))
+        trees = parallel_map(self._create_tree,
+                             resources,
+                             args=(reverse, parent),
+                             workers=50)
         return '\n'.join([format_tree(tree) for tree in trees])
