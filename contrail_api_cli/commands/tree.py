@@ -6,8 +6,6 @@ from ..resource import Resource
 from ..utils import format_tree, parallel_map
 from ..exceptions import ResourceMissing
 
-NB_WORKERS = 100
-
 
 class Tree(Command):
     description = "Tree of resource references"
@@ -20,11 +18,10 @@ class Tree(Command):
                     help="Show tree of parents",
                     action="store_true", default=False)
 
-    def _create_tree(self, resource, reverse, parent, visited):
+    def _create_tree(self, resource, reverse, parent):
         tree = {}
         resource.fetch()
         tree['node'] = [str(self.current_path(resource)), str(resource.fq_name)]
-        visited.append(resource.uuid)
         if parent:
             try:
                 childs = [resource.parent]
@@ -35,16 +32,11 @@ class Tree(Command):
         else:
             childs = resource.refs
         if childs:
-            childs = [c for c in childs if c.uuid not in visited]
-            tree['childs'] = parallel_map(self._create_tree, childs,
-                                          args=(reverse, parent, visited),
-                                          workers=NB_WORKERS)
+            tree['childs'] = parallel_map(self._create_tree, childs, args=(reverse, parent))
         return tree
 
     def __call__(self, paths=None, reverse=False, parent=False):
         resources = expand_paths(paths,
                                  predicate=lambda r: isinstance(r, Resource))
-        trees = parallel_map(self._create_tree, resources,
-                             args=(reverse, parent, []),
-                             workers=NB_WORKERS)
+        trees = parallel_map(self._create_tree, resources, args=(reverse, parent))
         return '\n'.join([format_tree(tree) for tree in trees])
