@@ -20,17 +20,33 @@ class Schema(Command):
         ├── children
         │   ├── access-control-list
         │   ├── routing-instance
+        │   ├── alias-ip-pool
         │   └── floating-ip-pool
         ├── refs
         │   ├── route-table
         │   ├── network-policy
-        │   ├── qos-forwarding-class
+        │   ├── qos-config
         │   └── network-ipam
-        └── back_refs
-            ├── logical-router
-            ├── instance-ip
-            ├── physical-router
-            └── virtual-machine-interface
+        ├── back_refs
+        │   ├── instance-ip
+        │   ├── physical-router
+        │   ├── logical-router
+        │   └── virtual-machine-interface
+        └── properties
+            ├── import-route-target-list
+            ├── export-route-target-list
+            ├── provider-properties
+            ├── multi-policy-service-chains-enabled
+            ├── flood-unknown-unicast
+            ├── virtual-network-network-id
+            ├── router-external
+            ├── virtual-network-properties
+            ├── route-target-list
+            ├── is-shared
+            ├── external-ipam
+            ├── id-perms
+            ├── perms2
+            └── display-name
     """
     description = "Explore schema resources"
     schema_version = Option('-v',
@@ -57,7 +73,7 @@ class Schema(Command):
             'node': resource_name,
             'childs': []
         }
-        for type in ('parent', 'children', 'refs', 'back_refs'):
+        for type in ('parent', 'children', 'refs', 'back_refs', 'properties'):
             childs = getattr(resource, type)
             if not childs:
                 continue
@@ -65,7 +81,7 @@ class Schema(Command):
                 childs = [childs]
             tree['childs'].append({
                 'node': type,
-                'childs': [{'node': c} for c in childs]
+                'childs': [{'node': '%s' % c} for c in childs]
             })
         return format_tree(tree)
 

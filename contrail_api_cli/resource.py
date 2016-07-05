@@ -116,6 +116,13 @@ class LinkedResources(object):
         return itertools.chain(*[getattr(self, res_type)
                                  for res_type in self.linked_types])
 
+    def __getitem__(self, key):
+        return list(self.__iter__())[key]
+
+    def __dir__(self):
+        return sorted(set(dir(type(self)) + list(self.__dict__) +
+                      [t.replace('-', '_') for t in self.linked_types]))
+
     def encode(self, data, recursive=1):
         for attr, _ in list(data.items()):
             type = self._attr_to_type(attr)
@@ -134,7 +141,7 @@ class LinkedResources(object):
         return data
 
     def __repr__(self):
-        return '%s(%s)' % (self.__class__.__name__, self.link_type)
+        return '%s' % list(self.__iter__())
 
 
 class ResourceEncoder(json.JSONEncoder):
@@ -431,7 +438,18 @@ class Resource(ResourceBase, UserDict):
         if fetch:
             self.fetch(recursive=recursive)
 
+        self.properties = {prop.key: prop for prop in self.schema.properties}
         self.emit('created', self)
+
+    def __getattr__(self, attr):
+        if attr in self.properties:
+            return self.get(attr, self.properties[attr].default)
+        msg = "'{0}' object has no attribute '{1}'"
+        raise AttributeError(msg.format(type(self).__name__, attr))
+
+    def __dir__(self):
+        return sorted(set(dir(type(self)) + list(self.__dict__) +
+                      self.properties.keys()))
 
     @property
     def schema(self):

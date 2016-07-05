@@ -112,6 +112,7 @@ def fill_schema_from_xsd_file(filename, schema):
 
     """
     ifmap_statements = _parse_xsd_file(filename)
+    properties_all = []
 
     for v in ifmap_statements.values():
         if (isinstance(v[0], IDLParser.Link)):
@@ -125,6 +126,17 @@ def fill_schema_from_xsd_file(filename, schema):
             if "ref" in v[3]:
                 src.refs.append(target_name)
                 target.back_refs.append(src_name)
+        elif isinstance(v[0], IDLParser.Property):
+            target_name = v[1][0]
+            prop = ResourceProperty(v[0].name, is_list=v[0].is_list, is_map=v[0].is_map)
+            if target_name != 'all':
+                target = schema._get_or_add_resource(target_name)
+                target.properties.append(prop)
+            else:
+                properties_all.append(prop)
+
+    for r in schema.all_resources():
+        schema.resource(r).properties += properties_all
 
 
 class Schema(object):
@@ -151,6 +163,25 @@ class Schema(object):
         return self._schema[resource_name]
 
 
+class ResourceProperty(object):
+
+    def __init__(self, name, is_list=False, is_map=False):
+        if is_list is True:
+            self.default = []
+        elif is_map is True:
+            self.default = {}
+        else:
+            self.default = None
+        self.name = name
+        self.key = name.replace('-', '_')
+
+    def __unicode__(self):
+        return "%s" % self.name
+
+    def __repr__(self):
+        return '%s(%s)' % (self.__class__.__name__, self.key)
+
+
 class ResourceSchema(object):
 
     def __init__(self):
@@ -158,12 +189,14 @@ class ResourceSchema(object):
         self.parent = None
         self.refs = []
         self.back_refs = []
+        self.properties = []
 
     def json(self):
         data = {'children': self.children,
                 'parent': self.parent,
                 'refs': self.refs,
-                'back_refs': self.back_refs}
+                'back_refs': self.back_refs,
+                'properties': self.properties}
         return to_json(data)
 
 
