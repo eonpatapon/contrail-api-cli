@@ -13,7 +13,7 @@ from six import string_types, text_type, b
 import collections
 import logging
 
-from prompt_toolkit import prompt
+from prompt_toolkit.shortcuts import prompt, create_eventloop
 
 from .exceptions import AbsPathRequired
 
@@ -191,6 +191,16 @@ class classproperty(object):
         return self.f(klass)
 
 
+def eventloop():
+    # Allow to keep gevent greenlets running
+    # while waiting for some input on the cli
+    def inputhook(context):
+        while not context.input_is_ready():
+            gevent.sleep(0.1)
+
+    return create_eventloop(inputhook=inputhook)
+
+
 def continue_prompt(message=""):
     """Prompt the user to continue or not
 
@@ -204,7 +214,7 @@ def continue_prompt(message=""):
     answer = False
     message = message + "\n'Yes' or 'No' to continue: "
     while answer not in ('Yes', 'No'):
-        answer = prompt(message)
+        answer = prompt(message, eventloop=eventloop())
         if answer == "Yes":
             answer = True
             break

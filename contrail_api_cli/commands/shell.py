@@ -20,7 +20,7 @@ from ..exceptions import CommandError, CollectionNotFound, \
     ResourceNotFound, CommandNotFound, NotFound
 from ..command import Command, Arg
 from ..client import ContrailAPISession
-from ..utils import CONFIG_DIR, printo
+from ..utils import CONFIG_DIR, printo, eventloop
 from ..style import default as default_style
 from ..manager import CommandManager
 from ..context import Context
@@ -105,6 +105,7 @@ class Shell(Command):
                                 history=history,
                                 completer=completer,
                                 style=default_style,
+                                eventloop=eventloop(),
                                 key_bindings_registry=key_bindings_registry)
                 action = cmd_aliases.apply(action)
             except (EOFError, KeyboardInterrupt):
