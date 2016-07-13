@@ -15,7 +15,7 @@ class Ln(Command):
     remove = Option('-r', help='remove link',
                     action='store_true', default=False)
 
-    def __call__(self, resources=None, remove=None, schema_version=None):
+    def call(self, resources=None, remove=None, schema_version=None):
         if isinstance(Context().schema, DummySchema):
             raise CommandError("Can't use ln without specifying a schema version")
 

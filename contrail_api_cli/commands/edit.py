@@ -21,7 +21,7 @@ class Edit(Command):
                       action="store_true", default=False)
     aliases = ['vim = edit', 'emacs = edit', 'nano = edit']
 
-    def __call__(self, path='', template=False):
+    def call(self, path='', template=False):
         resources = expand_paths([path],
                                  predicate=lambda r: isinstance(r, Resource))
         if len(resources) > 1:

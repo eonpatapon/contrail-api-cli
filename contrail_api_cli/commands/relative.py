@@ -46,7 +46,7 @@ class Relative(Command):
         else:
             return (None, None)
 
-    def __call__(self, path=None, resource_name_path=None,
+    def call(self, path=None, resource_name_path=None,
                  show_intermediate=False):
 
         def long_format(resource_type, resource_path):

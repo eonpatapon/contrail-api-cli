@@ -18,7 +18,7 @@ class TestCmd(Command):
     arg1 = Arg(help="%(default)s", default="bar")
     arg2 = Arg()
 
-    def __call__(self, *args, **kwargs):
+    def call(self, *args, **kwargs):
         pass
 
 
@@ -27,7 +27,7 @@ class TestCmd2(Command):
     arg1 = Arg(help="%(default)s", default="bar")
     arg2 = Arg(nargs="*")
 
-    def __call__(self, *args, **kwargs):
+    def call(self, *args, **kwargs):
         pass
 
 

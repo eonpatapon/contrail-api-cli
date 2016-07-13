@@ -78,13 +78,13 @@ class Arg(BaseOption):
 
 
 def experimental(cls):
-    old_call = cls.__call__
+    old_call = cls.call
 
     def new_call(self, *args, **kwargs):
         print("This command is experimental. Use at your own risk.")
         old_call(self, *args, **kwargs)
 
-    cls.__call__ = new_call
+    cls.call = new_call
     return cls
 
 
@@ -242,8 +242,31 @@ class Command(object):
         args = self.parser.parse_args(args=args)
         return self.__call__(**vars(args))
 
-    @abc.abstractmethod
     def __call__(self, **kwargs):
+        self.pre_call(**kwargs)
+        try:
+            result = self.call(**kwargs)
+        except:
+            # do some cleanup if needed
+            self.post_call(**kwargs)
+            raise
+        self.post_call(**kwargs)
+        return result
+
+    def pre_call(self, **kwargs):
+        """Allow to do things before running
+        the command.
+
+        Does nothing by default.
+
+        :param kwargs: options of the command
+
+        :rtype: None
+        """
+        pass
+
+    @abc.abstractmethod
+    def call(self, **kwargs):
         """Command must implement this method.
 
         The command must return an unicode string
@@ -253,3 +276,15 @@ class Command(object):
 
         :rtype: unicode | str
         """
+
+    def post_call(self, **kwargs):
+        """Allow to do things after running
+        the command.
+
+        Does nothing by default.
+
+        :param kwargs: options of the command
+
+        :rtype: None
+        """
+        pass

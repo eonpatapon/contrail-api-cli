@@ -40,11 +40,11 @@ In ``howto/__init__.py`` we define our command::
     class Hello(Command):
         description = 'Hello world command'
 
-        def __call__(self):
+        def call(self):
             return 'Hello world !'
 
 Any command must inherit from the Command class. The final output of the
-command should be returned by the ``__call__`` method. The output needs to be
+command should be returned by the ``call`` method. The output needs to be
 unicode so that the terminal encoding is handled properly.
 
 Register the command in the cli
@@ -104,13 +104,13 @@ We will include an option in our command to greet someone::
         description = 'Hello world command'
         who = Arg(nargs='?', default='cli', help='Person to greet')
 
-        def __call__(self, who=None):
+        def call(self, who=None):
             return 'Hello world %s !' % who
 
 The options are added as class attributes using the ``Arg`` class which can take the same
 arguments as ``argparse.ArgumentParser.add_argument``. The only difference is that if you
 don't specicy the option name, the attribute name will be used instead. In our case the argument
-name will be ``who``. All arguments are passed to the ``__call__`` method as keyword arguments.
+name will be ``who``. All arguments are passed to the ``call`` method as keyword arguments.
 
 We can see the result using the ``-h`` option.
 

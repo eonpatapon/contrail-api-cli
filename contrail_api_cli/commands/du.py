@@ -11,7 +11,7 @@ class Du(Command):
     paths = Arg(nargs="*", help="Collections path(s)", complete='collections::path')
     aliases = ['count = du']
 
-    def __call__(self, paths=None):
+    def call(self, paths=None):
         try:
             collections = expand_paths(paths,
                                        predicate=lambda r: isinstance(r, Collection))

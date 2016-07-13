@@ -46,7 +46,7 @@ class Schema(Command):
             })
         return format_tree(tree)
 
-    def __call__(self, schema_version=None,
+    def call(self, schema_version=None,
                  list_version=False, resource_name=None):
 
         if list_version:

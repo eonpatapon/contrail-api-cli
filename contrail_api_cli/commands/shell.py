@@ -49,7 +49,7 @@ class ShellAliases(object):
 class Shell(Command):
     description = "Run an interactive shell"
 
-    def __call__(self):
+    def call(self):
 
         def get_prompt_tokens(cli):
             return [
@@ -155,21 +155,21 @@ class Cd(Command):
     path = Arg(nargs="?", help="Resource path", default='',
                metavar='path', complete="collections::path")
 
-    def __call__(self, path=''):
+    def call(self, path=''):
         Context().shell.current_path = Context().shell.current_path / path
 
 
 class Exit(Command):
     description = "Exit from shell"
 
-    def __call__(self):
+    def call(self):
         raise EOFError
 
 
 class Help(Command):
     description = "List all available commands"
 
-    def __call__(self):
+    def call(self):
         commands = CommandManager()
         return "Available commands: %s" % " ".join(
             [name for name, cmd in commands.list])

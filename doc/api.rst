@@ -22,7 +22,6 @@ Command
 
 .. autoclass:: contrail_api_cli.command.Command
     :members:
-    :special-members: __call__
     :inherited-members: description
 
 Utils

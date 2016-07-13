@@ -76,7 +76,7 @@ Basically doing ``ls /`` in the CLI gives you all collections::
     class ListVRouter(Command):
         description = 'List vrouters'
 
-        def __call__(self):
+        def call(self):
             vrouters = Collection('virtual-router', fetch=True)
             for vrouter in vrouters:
                 vrouter.fetch()
@@ -130,7 +130,7 @@ for it just in case::
                               choices=['tor-service-mode', 'embedded'],
                               default=None)
 
-        def __call__(self, vrouter_ip=None, vrouter_name=None, vrouter_type=None):
+        def call(self, vrouter_ip=None, vrouter_name=None, vrouter_type=None):
             global_config = Resource('global-system-config',
                                      fq_name='default-global-system-config')
             vrouter = Resource('virtual-router',
@@ -175,7 +175,7 @@ and try to delete it with the :func:`Resource.delete` method::
         description = 'Remove vrouter'
         vrouter_name = Arg(help='Hostname of compute node')
 
-        def __call__(self, vrouter_name=None):
+        def call(self, vrouter_name=None):
             vrouter = Resource('virtual-router',
                                fq_name='default-global-system-config:%s' % vrouter_name,
                                check=True)

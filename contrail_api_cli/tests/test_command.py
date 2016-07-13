@@ -23,7 +23,7 @@ from .utils import CLITest
 class Cmd(cmds.Command):
     description = "Not a real command"
 
-    def __call__(self):
+    def call(self):
         if self._is_piped:
             return "piped"
         else:

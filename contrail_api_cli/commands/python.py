@@ -7,7 +7,7 @@ from ..command import Command
 class Python(Command):
     description = 'Run a python interpreter'
 
-    def __call__(self):
+    def call(self):
         try:
             from ptpython.repl import embed
             embed(globals(), None)

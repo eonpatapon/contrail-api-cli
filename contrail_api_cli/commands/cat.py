@@ -18,7 +18,7 @@ class Cat(Command):
                          JsonLexer(indent=2),
                          Terminal256Formatter(bg="dark"))
 
-    def __call__(self, paths=None):
+    def call(self, paths=None):
         resources = expand_paths(paths,
                                  predicate=lambda r: isinstance(r, Resource))
         result = []

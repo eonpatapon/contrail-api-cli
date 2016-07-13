@@ -73,7 +73,7 @@ class Ls(Command):
                 value = str(value)
         return (name, value)
 
-    def __call__(self, paths=None, long=False, fields=None,
+    def call(self, paths=None, long=False, fields=None,
                  filters=None, parent_uuid=None):
         if not long:
             fields = []

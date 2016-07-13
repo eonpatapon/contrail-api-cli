@@ -48,7 +48,7 @@ class Tree(Command):
                                            args=(resource.path,))
         return tree
 
-    def __call__(self, paths=None, reverse=False, parent=False):
+    def call(self, paths=None, reverse=False, parent=False):
         resources = expand_paths(paths,
                                  predicate=lambda r: isinstance(r, Resource))
         self.reverse = reverse

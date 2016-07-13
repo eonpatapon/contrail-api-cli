@@ -10,5 +10,5 @@ class Exec(Command):
     script = Arg(help="script path to run",
                  type=argparse.FileType('r'))
 
-    def __call__(self, script=None):
+    def call(self, script=None):
         exec(script)

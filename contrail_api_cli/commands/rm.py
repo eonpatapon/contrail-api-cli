@@ -28,7 +28,7 @@ class Rm(Command):
                 back_refs = self._get_back_refs([back_ref], back_refs)
         return back_refs
 
-    def __call__(self, paths=None, recursive=False, force=False):
+    def call(self, paths=None, recursive=False, force=False):
         resources = expand_paths(paths,
                                  predicate=lambda r: isinstance(r, Resource))
         if recursive:
