@@ -180,6 +180,54 @@ class ContrailAPISession(Session):
         }
         return self.post_json(self.make_url("/ref-update"), data)
 
+    def search_kv_store(self, key):
+        """Search for a key in the key-value store.
+        :param key: string
+        :rtype: string
+        """
+        data = {
+            'operation': 'RETRIEVE',
+            'key': key
+        }
+        return self.post_json(self.make_url("/useragent-kv"), data)['value']
+
+    def get_kv_store(self):
+        """Retrieve all key-value store elements.
+
+        :rtype: [{key, value}] where key and value are strings.
+        """
+        data = {
+            'operation': 'RETRIEVE',
+            'key': None
+        }
+        return self.post_json(self.make_url("/useragent-kv"), data)['value']
+
+    def add_kv_store(self, key, value):
+        """Add a key-value store entry.
+
+        :param key: string
+        :param value: string
+        """
+        data = {
+            'operation': 'STORE',
+            'key': key,
+            'value': value
+        }
+        return self.post(self.make_url("/useragent-kv"), data=to_json(data),
+                         headers=self.default_headers).text
+
+    def remove_kv_store(self, key):
+        """Remove a key-value store entry.
+
+        :param key: string
+        """
+        data = {
+            'operation': 'DELETE',
+            'key': key
+        }
+        return self.post(self.make_url("/useragent-kv"), data=to_json(data),
+                         headers=self.default_headers).text
+
 
 def make_api_session(options):
     ContrailAPISession.make(options.os_auth_plugin,
