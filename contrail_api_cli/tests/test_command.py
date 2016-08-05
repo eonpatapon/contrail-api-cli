@@ -30,6 +30,13 @@ class Cmd(cmds.Command):
             return "not piped"
 
 
+class ArgTest(cmds.Command):
+    arg = cmds.Arg()
+
+    def __call__(self, arg=None):
+        return arg
+
+
 class TestCommand(CLITest):
 
     def setUp(self):
@@ -37,6 +44,7 @@ class TestCommand(CLITest):
         self.mgr = CommandManager()
         self.mgr.load_namespace('contrail_api_cli.shell_command')
         self.mgr.add('cmd', Cmd('cmd'))
+        self.mgr.add('arg-test', ArgTest('arg-test'))
 
     def test_cd(self):
         self.mgr.get('cd')('foo')
@@ -429,6 +437,21 @@ bar/ffe8de43-a141-4336-8d70-bf970813bbf7"""
         sys.stdout = old_stdout
         result = out.getvalue()
         self.assertEqual(result, b'piped\nnot piped\n')
+
+    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
+    @mock.patch('contrail_api_cli.commands.shell.prompt')
+    def test_shell_args(self, mock_prompt, mock_session):
+        old_stdout = sys.stdout
+        out = io.BytesIO()
+        sys.stdout = out
+        mock_prompt.side_effect = [
+            "arg-test \"foo  bar\"",
+            "exit"
+        ]
+        self.mgr.get('shell')()
+        sys.stdout = old_stdout
+        result = out.getvalue()
+        self.assertEqual(result, b'foo  bar\n')
 
     @mock.patch('contrail_api_cli.resource.ResourceBase.session')
     def test_ln(self, mock_session):
