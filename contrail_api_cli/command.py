@@ -74,10 +74,7 @@ class Option(BaseOption):
 
 
 class Arg(BaseOption):
-
-    def __init__(self, order=10, **kwargs):
-        BaseOption.__init__(self, **kwargs)
-        self.order = order
+    pass
 
 
 def experimental(cls):
@@ -228,16 +225,10 @@ class Command(object):
         if cls._args is not None:
             return cls._args
         cls._args = OrderedDict()
-        ordered_args = {}
         for attr, arg in inspect.getmembers(cls):
             if isinstance(arg, Arg):
                 arg.attr = attr
-                if arg.order not in ordered_args:
-                    ordered_args[arg.order] = []
-                ordered_args[arg.order].append(arg)
-        for order in sorted(list(ordered_args.keys())):
-            for arg in ordered_args[order]:
-                cls._args[text_type(arg.attr)] = arg
+                cls._args[text_type(attr)] = arg
         return cls._args
 
     @classmethod
