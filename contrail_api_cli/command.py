@@ -23,6 +23,7 @@ class ArgumentParser(argparse.ArgumentParser):
 
 
 class BaseOption(object):
+    _creation_idx = 0
 
     def __init__(self, *args, **kwargs):
         self.attr = ''
@@ -30,6 +31,9 @@ class BaseOption(object):
         if 'complete' in kwargs:
             self.complete = kwargs.pop('complete')
         self.kwargs = kwargs
+        # keep track of options order
+        self._creation_idx = BaseOption._creation_idx
+        BaseOption._creation_idx += 1
 
     @property
     def help(self):
@@ -214,10 +218,11 @@ class Command(object):
         if cls._options is not None:
             return cls._options
         cls._options = OrderedDict()
-        for attr, option in inspect.getmembers(cls):
-            if isinstance(option, Option):
-                option.attr = attr
-                cls._options[text_type(attr)] = option
+        for attr, option in sorted(
+                inspect.getmembers(cls, lambda o: isinstance(o, Option)),
+                key=lambda i: i[1]._creation_idx):
+            option.attr = attr
+            cls._options[text_type(attr)] = option
         return cls._options
 
     @classproperty
@@ -225,10 +230,11 @@ class Command(object):
         if cls._args is not None:
             return cls._args
         cls._args = OrderedDict()
-        for attr, arg in inspect.getmembers(cls):
-            if isinstance(arg, Arg):
-                arg.attr = attr
-                cls._args[text_type(attr)] = arg
+        for attr, arg in sorted(
+                inspect.getmembers(cls, lambda o: isinstance(o, Arg)),
+                key=lambda i: i[1]._creation_idx):
+            arg.attr = attr
+            cls._args[text_type(attr)] = arg
         return cls._args
 
     @classmethod

@@ -54,7 +54,7 @@ class TestCommandOptions(unittest.TestCase):
         self.assertEqual(['--bar'], self.cmd.options['bar'].option_strings)
 
     def test_cmd_options(self):
-        self.assertEqual(['bar', 'foo', 'long'], list(self.cmd.options.keys()))
+        self.assertEqual(['long', 'foo', 'bar'], list(self.cmd.options.keys()))
 
     def test_cmd_args(self):
         self.assertEqual(['arg1', 'arg2'], list(self.cmd.args.keys()))
@@ -87,13 +87,13 @@ class TestParser(unittest.TestCase):
     def test_option_parsing(self):
         parser = CommandParser(Document('test-cmd -h'))
         self.assertEqual(len(list(parser.used_options)), 0)
-        expected = ['--bar', '--foo', '-l']
+        expected = ['-l', '--foo', '--bar']
         parsed = [o.short_name or o.long_name for o in parser.available_options]
         self.assertEqual(parsed, expected)
 
         parser = CommandParser(Document('test-cmd --bar -h'))
         self.assertEqual(len(list(parser.used_options)), 1)
-        expected = ['--bar', '--foo', '-l']
+        expected = ['-l', '--foo', '--bar']
         parsed = [o.short_name or o.long_name for o in parser.available_options]
         self.assertEqual(parsed, expected)
 
