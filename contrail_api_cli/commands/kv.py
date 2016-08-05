@@ -2,7 +2,7 @@
 from __future__ import unicode_literals
 
 from ..command import Command, Option
-from ..utils import to_json
+from ..utils import to_json, highlight_json
 from ..client import ContrailAPISession
 
 
@@ -35,4 +35,7 @@ class Kv(Command):
         else:
             return "Error: One option must be specified.\n\n" + self.parser.format_help()
 
-        return to_json(result)
+        if self.is_piped:
+            return to_json(result)
+        else:
+            return highlight_json(to_json(result))

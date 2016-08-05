@@ -13,6 +13,10 @@ from six import string_types, text_type, b
 import collections
 import logging
 
+from pygments import highlight
+from pygments.lexers import JsonLexer
+from pygments.formatters import Terminal256Formatter
+
 from prompt_toolkit.shortcuts import prompt, create_eventloop
 
 from .exceptions import AbsPathRequired
@@ -235,6 +239,12 @@ def to_json(resource_dict, cls=None):
                       sort_keys=True,
                       skipkeys=True,
                       cls=cls)
+
+
+def highlight_json(json_data):
+    return highlight(json_data,
+                     JsonLexer(indent=2),
+                     Terminal256Formatter(bg="dark"))
 
 
 def md5(fname):

@@ -1,22 +1,15 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
-from pygments import highlight
-from pygments.lexers import JsonLexer
-from pygments.formatters import Terminal256Formatter
 
 from ..command import Command, Arg, expand_paths
 from ..resource import Resource
+from ..utils import highlight_json
 
 
 class Cat(Command):
     description = "Print a resource"
     paths = Arg(nargs="*", help="Resource path(s)",
                 metavar='path', complete='resources::path')
-
-    def colorize(self, json_data):
-        return highlight(json_data,
-                         JsonLexer(indent=2),
-                         Terminal256Formatter(bg="dark"))
 
     def __call__(self, paths=None):
         resources = expand_paths(paths,
@@ -28,5 +21,5 @@ class Cat(Command):
             if self.is_piped:
                 result.append(json_data)
             else:
-                result.append(self.colorize(json_data))
+                result.append(highlight_json(json_data))
         return "".join(result)

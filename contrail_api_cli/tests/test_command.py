@@ -181,9 +181,9 @@ bar/ffe8de43-a141-4336-8d70-bf970813bbf7"""
         self.mgr.get('ls')(paths=['foo'], parent_uuid='1ad831be-3b21-4870-aadf-8efc2b0a480d')
         mock_session.get_json.assert_called_with(self.BASE + '/foos', parent_id='1ad831be-3b21-4870-aadf-8efc2b0a480d')
 
-    @mock.patch('contrail_api_cli.commands.cat.Cat.colorize')
+    @mock.patch('contrail_api_cli.commands.cat.highlight_json')
     @mock.patch('contrail_api_cli.resource.ResourceBase.session')
-    def test_resource_cat(self, mock_session, mock_colorize):
+    def test_resource_cat(self, mock_session, mock_highlight_json):
         # bind original method to mock_session
         mock_session.id_to_fqname = client.ContrailAPISession.id_to_fqname.__get__(mock_session)
         mock_session.make_url = client.ContrailAPISession.make_url.__get__(mock_session)
@@ -208,7 +208,7 @@ bar/ffe8de43-a141-4336-8d70-bf970813bbf7"""
                 }
 
         mock_session.post_json.side_effect = post
-        mock_colorize.side_effect = lambda d: d
+        mock_highlight_json.side_effect = lambda d: d
         mock_session.get_json.return_value = {
             'foo': {
                 'href': self.BASE + '/foo/ec1afeaa-8930-43b0-a60a-939f23a50724',
