@@ -4,6 +4,7 @@ import os.path
 import re
 import pipes
 import tempfile
+import shlex
 from six import text_type
 
 from keystoneclient.exceptions import ClientException, HttpError
@@ -43,7 +44,7 @@ class ShellAliases(object):
     def apply(self, cmd):
         cmd = re.split(r'(\s+)', cmd)
         cmd = [self.get(c) for c in cmd]
-        return ' '.join(cmd)
+        return ''.join(cmd)
 
 
 class Shell(Command):
@@ -113,7 +114,7 @@ class Shell(Command):
             try:
                 action = action.split('|')
                 pipe_cmds = action[1:]
-                action = action[0].split()
+                action = shlex.split(action[0])
                 cmd = manager.get(action[0])
                 args = action[1:]
                 if pipe_cmds:
