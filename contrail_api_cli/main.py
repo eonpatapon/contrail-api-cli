@@ -14,7 +14,7 @@ from .exceptions import CommandError, NotFound, Exists
 from .utils import CONFIG_DIR, printo
 from .schema import create_schema_from_version, list_available_schema_version, DummySchema
 from .context import Context
-from .client import make_api_session
+from .client import ContrailAPISession
 
 
 logger = logging.getLogger(__name__)
@@ -77,7 +77,7 @@ def main():
     if not os.path.exists(CONFIG_DIR):
         os.makedirs(CONFIG_DIR)
 
-    make_api_session(options)
+    ContrailAPISession.make(**vars(options))
 
     if options.schema_version:
         Context().schema = create_schema_from_version(options.schema_version)

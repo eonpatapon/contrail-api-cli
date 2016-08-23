@@ -51,14 +51,19 @@ class ContrailAPISession(Session):
         return cls.session.auth.username
 
     @classmethod
-    def make(cls, plugin_name, protocol="http", host="localhost", port=8082, **kwargs):
+    def make(cls,
+             protocol="http",
+             host="localhost",
+             port=8082,
+             os_auth_plugin="http",
+             **kwargs):
         """Initialize a session to Contrail API server
 
-        :param plugin_name: auth plugin to use:
+        :param os_auth_plugin: auth plugin to use:
             - http: basic HTTP authentification
             - v2password: keystone v2 auth
             - v3password: keystone v3 auth
-        :type plugin_name: str
+        :type os_auth_plugin: str
 
         :param protocol: protocol used to connect to the API server (default: http)
         :type protocol: str
@@ -72,7 +77,7 @@ class ContrailAPISession(Session):
         cls.protocol = protocol
         cls.host = host
         cls.port = port
-        plugin_cls = base.get_plugin_class(plugin_name)
+        plugin_cls = base.get_plugin_class(os_auth_plugin)
         plugin_options = {opt.dest: kwargs.pop("os_%s" % opt.dest)
                           for opt in plugin_cls.get_options()}
         plugin = plugin_cls.load_from_options(**plugin_options)
@@ -227,8 +232,3 @@ class ContrailAPISession(Session):
         }
         return self.post(self.make_url("/useragent-kv"), data=to_json(data),
                          headers=self.default_headers).text
-
-
-def make_api_session(options):
-    ContrailAPISession.make(options.os_auth_plugin,
-                            **vars(options))

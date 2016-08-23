@@ -12,6 +12,23 @@ Basic auth on localhost:8095
                       --port 8095 \\
                       shell
 
+.. code-block:: python
+
+    from contrail_api_cli.client import ContrailAPISession
+    from contrail_api_cli.resource import Collection
+
+    ContrailAPISession.make(host="localhost",
+                            port=8095,
+                            os_username="admin",
+                            os_password="password",
+                            os_cacert=None,
+                            os_cert=None,
+                            insecure=False,
+                            timeout=1)
+
+    print(len(Collection('virtual-network')))
+
+
 Keystone auth on API_SERVER:8082
 --------------------------------
 
