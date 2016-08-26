@@ -10,7 +10,7 @@ try:
     from rst2ansi import rst2ansi
 except ImportError:
     def rst2ansi(s):
-        return s
+        return s.decode('utf-8')
 
 
 class Man(Command):
@@ -24,6 +24,6 @@ class Man(Command):
     def __call__(self, cmd_name=None):
         cmd = CommandManager().get(cmd_name)
         if cmd.__doc__ is not None:
-            printo(rst2ansi(cmd.__doc__) + "\n")
+            printo(rst2ansi(cmd.__doc__.encode('utf-8')) + "\n")
         else:
             raise CommandError("No doc available for this command")
