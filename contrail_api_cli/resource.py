@@ -7,6 +7,7 @@ from six import string_types, text_type
 from functools import wraps
 from datetime import datetime
 import itertools
+import logging
 try:
     from UserDict import UserDict
     from UserList import UserList
@@ -15,10 +16,14 @@ except ImportError:
 
 import datrie
 from keystoneclient.exceptions import HTTPError
+from prompt_toolkit.completion import Completion
 
 from .utils import FQName, Path, Observable, to_json
 from .exceptions import ResourceNotFound, ResourceMissing, CollectionNotFound, ChildrenExists, BackRefsExists
 from .context import Context
+
+
+logger = logging.getLogger(__name__)
 
 
 def http_error_handler(f):
@@ -720,3 +725,36 @@ class ResourceCache(object):
                 del trie[key]
             except KeyError:
                 pass
+
+    def get_completions(self, word_before_cursor, context, option=None):
+        cache_type, type, attr = option.complete.split(':')
+
+        if attr == 'path':
+            path = context.current_path / word_before_cursor
+            if type and path.base != type:
+                raise StopIteration
+        else:
+            path = Path('/')
+            if type:
+                path = path / type
+            path = path / word_before_cursor
+
+        logger.debug('Search for %s' % path)
+        results = getattr(self, 'search_' + cache_type)([text_type(path)])
+        seen = set()
+        for r in results:
+            if (r.type, r.uuid) in seen:
+                continue
+            seen.add((r.type, r.uuid))
+            if attr == 'path':
+                value = text_type(r.path.relative_to(context.current_path))
+            else:
+                value = text_type(getattr(r, attr))
+            if attr == 'fq_name':
+                meta = r.uuid
+            else:
+                meta = text_type(r.fq_name)
+            if value:
+                yield Completion(value,
+                                 -len(word_before_cursor),
+                                 display_meta=meta)

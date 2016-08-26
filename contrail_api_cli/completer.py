@@ -1,17 +1,16 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 import logging
-from six import text_type
 
 from prompt_toolkit.completion import Completer, Completion
 from prompt_toolkit.document import Document
 
+from stevedore import extension
+
 from .context import Context
-from .resource import ResourceCache
-from .manager import CommandManager
 from .parser import CommandParser, CommandInvalid
 from .exceptions import CommandNotFound
-from .utils import Path
+from .utils import printo
 
 
 logger = logging.getLogger(__name__)
@@ -20,9 +19,16 @@ logger = logging.getLogger(__name__)
 class ShellCompleter(Completer):
 
     def __init__(self):
-        self.manager = CommandManager()
-        self.cache = ResourceCache()
         self.context = Context().shell
+        self.completers = {}
+        for ext in extension.ExtensionManager(namespace="contrail_api_cli.completer",
+                                              invoke_on_load=True,
+                                              on_load_failure_callback=self._on_failure):
+            self.completers[ext.name] = ext.obj
+
+    def _on_failure(self, mgr, entrypoint, exc):
+        printo('Cannot load completer %s: %s' % (entrypoint.name,
+                                                 exc))
 
     def get_completions(self, document, complete_event):
         word_before_cursor = document.get_word_before_cursor(WORD=True)
@@ -30,11 +36,9 @@ class ShellCompleter(Completer):
         try:
             self.parser = CommandParser(document)
         except CommandNotFound:
-            for cmd_name, cmd in self.manager.list:
-                if cmd_name.startswith(word_before_cursor):
-                    yield Completion(cmd_name,
-                                     -len(word_before_cursor),
-                                     display_meta=cmd.description)
+            if 'commands' in self.completers:
+                for c in self.completers['commands'].get_completions(word_before_cursor, self.context):
+                    yield c
             raise StopIteration
         except CommandInvalid:
             raise StopIteration
@@ -60,42 +64,13 @@ class ShellCompleter(Completer):
         arg = self.get_last_arg(word_before_cursor, words)
         if arg is not None and arg.complete is not None:
             logger.debug('Complete using arg matcher %s' % arg.complete)
-            for c in self.get_resource_completion(word_before_cursor, arg):
-                yield c
+            completer_name = arg.complete.split(':')[0]
+            if completer_name in self.completers:
+                for c in self.completers[completer_name].get_completions(word_before_cursor, self.context, arg):
+                    yield c
+            else:
+                logger.warning('No completer found for %s' % completer_name)
             raise StopIteration
-
-    def get_resource_completion(self, word_before_cursor, option):
-        cache_type, type, attr = option.complete.split(':')
-
-        if attr == 'path':
-            path = self.context.current_path / word_before_cursor
-            if type and path.base != type:
-                raise StopIteration
-        else:
-            path = Path('/')
-            if type:
-                path = path / type
-            path = path / word_before_cursor
-
-        logger.debug('Search for %s' % path)
-        results = getattr(self.cache, 'search_' + cache_type)([text_type(path)])
-        seen = set()
-        for r in results:
-            if (r.type, r.uuid) in seen:
-                continue
-            seen.add((r.type, r.uuid))
-            if attr == 'path':
-                value = text_type(r.path.relative_to(self.context.current_path))
-            else:
-                value = text_type(getattr(r, attr))
-            if attr == 'fq_name':
-                meta = r.uuid
-            else:
-                meta = text_type(r.fq_name)
-            if value:
-                yield Completion(value,
-                                 -len(word_before_cursor),
-                                 display_meta=meta)
 
     def get_option_name_completion(self, word_before_cursor):
         logger.debug('Complete option names')
@@ -119,8 +94,12 @@ class ShellCompleter(Completer):
         # complete resources
         elif option.complete is not None:
             logger.debug('Complete using option matcher %s' % option.complete)
-            for c in self.get_resource_completion(word_before_cursor, option):
-                yield c
+            completer_name = option.complete.split(':')[0]
+            if completer_name in self.completers:
+                for c in self.completers[completer_name].get_completions(word_before_cursor, self.context, option):
+                    yield c
+            else:
+                logger.warning('No completer found for %s' % completer_name)
 
     def get_last_option(self, word_before_cursor, words):
         # current option value

@@ -4,6 +4,7 @@ import itertools
 import argparse
 
 from stevedore import extension
+from prompt_toolkit.completion import Completion
 
 from .exceptions import CommandNotFound
 from .utils import Singleton
@@ -102,3 +103,10 @@ class CommandManager(object):
             subparser = subparsers.add_parser(cmd_name, help=cmd.description)
             cmd.add_arguments_to_parser(subparser)
         return mgr
+
+    def get_completions(self, word_before_cursor, context, option=None):
+        for cmd_name, cmd in self.list:
+            if cmd_name.startswith(word_before_cursor):
+                yield Completion(cmd_name,
+                                 -len(word_before_cursor),
+                                 display_meta=cmd.description)

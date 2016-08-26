@@ -58,6 +58,11 @@ setup(
             'cd = contrail_api_cli.commands.shell:Cd',
             'exit = contrail_api_cli.commands.shell:Exit',
             'help = contrail_api_cli.commands.shell:Help',
+        ],
+        'contrail_api_cli.completer': [
+            'resources = contrail_api_cli.resource:ResourceCache',
+            'collections = contrail_api_cli.resource:ResourceCache',
+            'commands = contrail_api_cli.manager:CommandManager',
         ]
     },
     classifiers=[

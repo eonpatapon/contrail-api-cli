@@ -19,7 +19,7 @@ class Man(Command):
     To improve the output you can install the rst2ansi package.
     """
     description = "Show command help"
-    cmd_name = Arg(help="Command name")
+    cmd_name = Arg(help="Command name", complete="commands")
 
     def __call__(self, cmd_name=None):
         cmd = CommandManager().get(cmd_name)
