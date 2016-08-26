@@ -9,6 +9,29 @@ from ..exceptions import CommandError
 
 
 class Schema(Command):
+    """View resources links using contrail schema definition.
+
+    .. code-block:: bash
+
+        admin@localhost:/> schema -v 2.21 virtual-network
+        virtual-network
+        ├── parent
+        │   └── project
+        ├── children
+        │   ├── access-control-list
+        │   ├── routing-instance
+        │   └── floating-ip-pool
+        ├── refs
+        │   ├── route-table
+        │   ├── network-policy
+        │   ├── qos-forwarding-class
+        │   └── network-ipam
+        └── back_refs
+            ├── logical-router
+            ├── instance-ip
+            ├── physical-router
+            └── virtual-machine-interface
+    """
     description = "Explore schema resources"
     schema_version = Option('-v',
                             type=str,

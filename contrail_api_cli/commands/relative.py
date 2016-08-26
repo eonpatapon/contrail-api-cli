@@ -12,6 +12,17 @@ RESOURCE_NAME_PATH_SEPARATOR = "."
 
 
 class Relative(Command):
+    """Find linked resource using a resource-type path.
+
+    .. code-block:: bash
+
+        admin@localhost:/> relative virtual-machine/8cfbddcf-6b55-4cdf-abcb-14eed68e4da7 virtual-machine-interface.floating-ip
+        floating-ip/958234f5-4fae-4afd-ae7c-d0dc3c608e06
+        admin@localhost:/> relative -l virtual-machine/8cfbddcf-6b55-4cdf-abcb-14eed68e4da7 virtual-machine-interface.floating-ip
+        base      virtual-machine/8cfbddcf-6b55-4cdf-abcb-14eed68e4da7
+        back_ref  virtual-machine-interface/d739db3d-b89f-46a4-ae02-97ac796261d0
+        back_ref  floating-ip/958234f5-4fae-4afd-ae7c-d0dc3c608e06
+    """
     description = "Get linked resources by providing a resource name path"
     path = Arg(help="Base resource", metavar='path',
                complete="resources::path")

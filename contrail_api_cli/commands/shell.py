@@ -152,6 +152,23 @@ class Shell(Command):
 
 
 class Cd(Command):
+    """Change current context.
+
+    .. code-block:: bash
+
+        admin@localhost:/> cd virtual-network
+        admin@localhost:/virtual-network> ls
+        1095e416-b7cd-4c65-b0a3-631e8263a4dd
+        49d00de8-4351-446f-b6ee-d16dec3de413
+        [...]
+        admin@localhost:/virtual-network> ls instance-ip
+        No resource found
+        admin@localhost:/virtual-network> ls /instance-ip
+        /instance-ip/f9d25887-2765-4ba0-bf45-54b9dbc5874a
+        /instance-ip/deb82100-00bb-4b5c-8495-4bbe34b5fab8
+        /instance-ip/2f5c047d-0a9c-4709-bcfa-d710ac68cc22
+        /instance-ip/04cb356a-fb1f-44fa-bb2f-d0f0dd4eedfd
+    """
     description = "Change resource context"
     path = Arg(nargs="?", help="Resource path", default='',
                metavar='path', complete="collections::path")

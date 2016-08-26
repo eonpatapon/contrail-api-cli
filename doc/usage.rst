@@ -58,220 +58,89 @@ help
 
 List all available commands.
 
+man
+---
+
+.. automodule:: contrail_api_cli.commands.man
+    :members:
+    :show-inheritance:
+
 ls
 --
 
-List resources and collections.
-
-.. code-block:: bash
-
-    # list API collections
-    admin@localhost:/> ls
-    domain
-    global-vrouter-config
-    instance-ip
-    network-policy
-    virtual-DNS-record
-    route-target
-    loadbalancer-listener
-    floating-ip
-    floating-ip-pool
-    physical-router
-    [...]
-
-    # list collection
-    admin@localhost:/> ls global-system-config
-    global-system-config/d6820999-c8fe-45ae-acb2-48aebddb3b7d
-
-    # long format
-    admin@localhost:/> ls -l virtual-network
-    virtual-network/49d00de8-4351-446f-b6ee-d16dec3de413  default-domain:admin:net2
-    virtual-network/5a9fbd42-a730-42f7-9947-be8a5d808b70  default-domain:admin:net1
-    virtual-network/e3148147-164e-4194-8507-a58eefe072bd  default-domain:default-project:default-virtual-network
-    virtual-network/ba2170ce-741c-4361-ad88-f2d97162faf2  default-domain:default-project:ip-fabric
-    virtual-network/e82ae164-f78a-4766-8ba2-7cb68dacaecb  default-domain:default-project:__link_local__
-
-    # parametrized output format
-    admin@localhost:/> ls -l -c instance_ip_address instance-ip
-    instance-ip/f9d25887-2765-4ba0-bf45-54b9dbc5874a  192.168.20.1
-    instance-ip/deb82100-00bb-4b5c-8495-4bbe34b5fab8  192.168.21.1
-    instance-ip/2f5c047d-0a9c-4709-bcfa-d710ac68cc22  192.168.10.3
-    instance-ip/04cb356a-fb1f-44fa-bb2f-d0f0dd4eedfd  192.168.20.3
-
-    # filter by parent_uuid
-    admin@localhost:/> ls -l -p d0afbb0b-dd83-4a33-a673-9cb2b244e804 virtual-network
-    virtual-network/5a9fbd42-a730-42f7-9947-be8a5d808b70  default-domain:admin:net1
-    virtual-network/49d00de8-4351-446f-b6ee-d16dec3de413  default-domain:admin:net2
-
-    # filter by attribute
-    admin@localhost:/> ls -l -f instance_ip_address=192.168.20.1 instance-ip
-    instance-ip/f9d25887-2765-4ba0-bf45-54b9dbc5874a  f9d25887-2765-4ba0-bf45-54b9dbc5874a
-
+.. automodule:: contrail_api_cli.commands.ls
+    :members:
+    :show-inheritance:
 
 du
 --
 
-Count resources of a collection.
-
-.. code-block:: bash
-
-    admin@localhost:/> du virtual-network
-    6
+.. automodule:: contrail_api_cli.commands.du
+    :members:
+    :show-inheritance:
 
 cd
 --
 
-Change current context.
-
-.. code-block:: bash
-
-    admin@localhost:/> cd virtual-network
-    admin@localhost:/virtual-network> ls
-    1095e416-b7cd-4c65-b0a3-631e8263a4dd
-    49d00de8-4351-446f-b6ee-d16dec3de413
-    [...]
-    admin@localhost:/virtual-network> ls instance-ip
-    No resource found
-    admin@localhost:/virtual-network> ls /instance-ip
-    /instance-ip/f9d25887-2765-4ba0-bf45-54b9dbc5874a
-    /instance-ip/deb82100-00bb-4b5c-8495-4bbe34b5fab8
-    /instance-ip/2f5c047d-0a9c-4709-bcfa-d710ac68cc22
-    /instance-ip/04cb356a-fb1f-44fa-bb2f-d0f0dd4eedfd
+.. autoclass:: contrail_api_cli.commands.shell.Cd
+    :members:
+    :show-inheritance:
 
 cat
 ---
 
-Print resource details in json format.
-
-.. code-block:: bash
-
-    admin@localhost:/> cat instance-ip/2f5c047d-0a9c-4709-bcfa-d710ac68cc22
-    {
-      "display_name": "2f5c047d-0a9c-4709-bcfa-d710ac68cc22",
-      "fq_name": [
-        "2f5c047d-0a9c-4709-bcfa-d710ac68cc22"
-      ],
-      "href": "http://localhost:8082/instance-ip/2f5c047d-0a9c-4709-bcfa-d710ac68cc22",
-      "instance_ip_address": "192.168.10.3",
-      "instance_ip_family": "v4",
-      "name": "2f5c047d-0a9c-4709-bcfa-d710ac68cc22",
-      "subnet_uuid": "96b51c74-090b-4c3e-9f73-ecd8efac294d",
-      "uuid": "2f5c047d-0a9c-4709-bcfa-d710ac68cc22",
-      [...]
-    }
+.. automodule:: contrail_api_cli.commands.cat
+    :members:
+    :show-inheritance:
 
 tree
 ----
 
-Show tree of references of a resource.
-
-.. code-block:: bash
-
-    # tree of references
-    admin@localhost:/> tree logical-router/dd954810-d614-4892-9ec6-9a9595cc64ff
-    /logical-router/dd954810-d614-4892-9ec6-9a9595cc64ff                 default-domain:admin:router1
-    ├── /virtual-machine-interface/18b02f01-4300-427f-a646-0a44351034a6  default-domain:admin:18b02f01-4300-427f-a646-0a44351034a6
-    │   ├── /routing-instance/2f6907e9-20e7-415a-9969-bb5af375574d       default-domain:admin:net2:net2
-    │   │   ├── /route-target/721618d4-0861-4bda-8a33-bb116584d4bb       target:64512:8000005
-    │   │   ├── /route-target/d0e33aea-f63d-403b-a3e7-5bcef88e6053       target:64512:8000003
-    │   │   └── /route-target/ecd725e8-6523-428b-9811-00828926f91b       target:64512:8000002
-    │   ├── /virtual-network/49d00de8-4351-446f-b6ee-d16dec3de413        default-domain:admin:net2
-    │   │   └── /network-ipam/0edc36a1-c802-47be-b230-4b462d905b93       default-domain:default-project:default-network-ipam
-    │   └── /security-group/8282a986-b9fd-4be1-96bd-ab100bd2bb8e         default-domain:admin:default
-    ├── /virtual-machine-interface/6d9637e5-99ae-4d09-950e-50353b29411c  default-domain:admin:6d9637e5-99ae-4d09-950e-50353b29411c
-    │   ├── /routing-instance/5692de00-533a-4911-965b-dd9f6dbc6f55       default-domain:admin:net1:net1
-    │   │   ├── /route-target/79b5278c-a846-49f4-82ab-f1b8c05aff67       target:64512:8000001
-    │   │   └── /route-target/d0e33aea-f63d-403b-a3e7-5bcef88e6053       target:64512:8000003
-    │   ├── /virtual-network/5a9fbd42-a730-42f7-9947-be8a5d808b70        default-domain:admin:net1
-    │   │   └── /network-ipam/0edc36a1-c802-47be-b230-4b462d905b93       default-domain:default-project:default-network-ipam
-    │   └── /security-group/8282a986-b9fd-4be1-96bd-ab100bd2bb8e         default-domain:admin:default
-    └── /route-target/d0e33aea-f63d-403b-a3e7-5bcef88e6053               target:64512:8000003
-
-    # tree of parents
-    admin@localhost:/> tree -p routing-instance/5692de00-533a-4911-965b-dd9f6dbc6f55
-    /routing-instance/5692de00-533a-4911-965b-dd9f6dbc6f55     default-domain:admin:net1:net1
-    └── /virtual-network/5a9fbd42-a730-42f7-9947-be8a5d808b70  default-domain:admin:net1
-        └── /project/d0afbb0b-dd83-4a33-a673-9cb2b244e804      default-domain:admin
-            └── /domain/cbc6051f-fd47-4a26-82ee-cb3482926e17   default-domain
+.. automodule:: contrail_api_cli.commands.tree
+    :members:
+    :show-inheritance:
 
 rm
 --
 
-Delete a resource from the API.
+.. automodule:: contrail_api_cli.commands.rm
+    :members:
+    :show-inheritance:
 
 edit
 ----
 
-Edit the json representation of a resource in an editor. Modification are sent
-to the API server.
+.. automodule:: contrail_api_cli.commands.edit
+    :members:
+    :show-inheritance:
 
 schema
 ------
 
-View resources links using contrail schema definition.
-
-.. code-block:: bash
-
-    admin@localhost:/> schema -v 2.21 virtual-network
-    virtual-network
-    ├── parent
-    │   └── project
-    ├── children
-    │   ├── access-control-list
-    │   ├── routing-instance
-    │   └── floating-ip-pool
-    ├── refs
-    │   ├── route-table
-    │   ├── network-policy
-    │   ├── qos-forwarding-class
-    │   └── network-ipam
-    └── back_refs
-        ├── logical-router
-        ├── instance-ip
-        ├── physical-router
-        └── virtual-machine-interface
+.. automodule:: contrail_api_cli.commands.schema
+    :members:
+    :show-inheritance:
 
 ln
 --
 
-Add or remove a reference link between two resources.
-
-.. code-block:: bash
-
-    admin@localhost:/> tree -r /virtual-machine/8cfbddcf-6b55-4cdf-abcb-14eed68e4da7
-    virtual-machine/8cfbddcf-6b55-4cdf-abcb-14eed68e4da7                default-domain__foo__fa3ea892-3591-4611-ba22-cc45164aee3e__2
-    ├── virtual-machine-interface/d739db3d-b89f-46a4-ae02-97ac796261d0  default-domain:foo:default-domain__foo__fa3ea892-3591-4611-ba22-cc45164aee3e__2__right__1
-    │   ├── floating-ip/958234f5-4fae-4afd-ae7c-d0dc3c608e06            default-domain:admin:public:floating-ip-pool:958234f5-4fae-4afd-ae7c-d0dc3c608e06
-    │   └── instance-ip/bced2a04-0ef9-4c87-95a6-7cce54182c65            7d401b8c-b9d3-4be2-af0b-a0dfff500860
-    └── virtual-router/f6f0b262-745b-45f7-a40a-32ffc1f469bc             default-global-system-config:vrouter-1
-    admin@localhost:/> ln -r virtual-machine/8cfbddcf-6b55-4cdf-abcb-14eed68e4da7 virtual-router/f6f0b262-745b-45f7-a40a-32ffc1f469bc
-    admin@localhost:/> tree -r /virtual-machine/8cfbddcf-6b55-4cdf-abcb-14eed68e4da7
-    virtual-machine/8cfbddcf-6b55-4cdf-abcb-14eed68e4da7                default-domain__foo__fa3ea892-3591-4611-ba22-cc45164aee3e__2
-    └── virtual-machine-interface/d739db3d-b89f-46a4-ae02-97ac796261d0  default-domain:foo:default-domain__foo__fa3ea892-3591-4611-ba22-cc45164aee3e__2__right__1
-        ├── floating-ip/958234f5-4fae-4afd-ae7c-d0dc3c608e06            default-domain:admin:public:floating-ip-pool:958234f5-4fae-4afd-ae7c-d0dc3c608e06
-        └── instance-ip/bced2a04-0ef9-4c87-95a6-7cce54182c65            7d401b8c-b9d3-4be2-af0b-a0dfff500860
-    admin@localhost:/> ln virtual-machine/8cfbddcf-6b55-4cdf-abcb-14eed68e4da7 virtual-router/f6f0b262-745b-45f7-a40a-32ffc1f469bc
-    admin@localhost:/> tree -r /virtual-machine/8cfbddcf-6b55-4cdf-abcb-14eed68e4da7
-    virtual-machine/8cfbddcf-6b55-4cdf-abcb-14eed68e4da7                default-domain__foo__fa3ea892-3591-4611-ba22-cc45164aee3e__2
-    ├── virtual-machine-interface/d739db3d-b89f-46a4-ae02-97ac796261d0  default-domain:foo:default-domain__foo__fa3ea892-3591-4611-ba22-cc45164aee3e__2__right__1
-    │   ├── floating-ip/958234f5-4fae-4afd-ae7c-d0dc3c608e06            default-domain:admin:public:floating-ip-pool:958234f5-4fae-4afd-ae7c-d0dc3c608e06
-    │   └── instance-ip/bced2a04-0ef9-4c87-95a6-7cce54182c65            7d401b8c-b9d3-4be2-af0b-a0dfff500860
-    └── virtual-router/f6f0b262-745b-45f7-a40a-32ffc1f469bc             default-global-system-config:vrouter-1
-
+.. automodule:: contrail_api_cli.commands.ln
+    :members:
+    :show-inheritance:
 
 relative
 --------
 
-Find linked resource using a resource-type path.
+.. automodule:: contrail_api_cli.commands.relative
+    :members:
+    :show-inheritance:
 
-.. code-block:: bash
+kv
+--------
 
-    admin@localhost:/> relative virtual-machine/8cfbddcf-6b55-4cdf-abcb-14eed68e4da7 virtual-machine-interface.floating-ip
-    floating-ip/958234f5-4fae-4afd-ae7c-d0dc3c608e06
-    admin@localhost:/> relative -l virtual-machine/8cfbddcf-6b55-4cdf-abcb-14eed68e4da7 virtual-machine-interface.floating-ip
-    base      virtual-machine/8cfbddcf-6b55-4cdf-abcb-14eed68e4da7
-    back_ref  virtual-machine-interface/d739db3d-b89f-46a4-ae02-97ac796261d0
-    back_ref  floating-ip/958234f5-4fae-4afd-ae7c-d0dc3c608e06
+.. automodule:: contrail_api_cli.commands.kv
+    :members:
+    :show-inheritance:
 
 Advanced usage
 ==============

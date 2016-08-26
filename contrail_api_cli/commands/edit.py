@@ -13,6 +13,15 @@ from ..utils import md5
 
 
 class Edit(Command):
+    """Edit a resource.
+
+    The resource JSON will be opened in an editor. If modifications
+    have been made and the file is saved the resource will be sent
+    to the API server.
+
+    The `--template` option can be used to create a new resource based
+    on an existing resource.
+    """
     description = "Edit resource"
     path = Arg(nargs="?", help="Resource path",
                complete='resources::path')

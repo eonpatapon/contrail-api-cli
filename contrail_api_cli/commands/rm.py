@@ -8,6 +8,13 @@ from ..utils import continue_prompt
 
 @experimental
 class Rm(Command):
+    """Delete a resource from the API.
+
+    .. warning::
+
+        `-r` option can be used to delete recursively back_refs of
+        the resource.
+    """
     description = "Delete a resource"
     paths = Arg(nargs="*", help="Resource path(s)",
                 metavar='path', complete="resources::path")

@@ -7,6 +7,23 @@ from ..client import ContrailAPISession
 
 
 class Kv(Command):
+    """Command to interact with the key-value store.
+
+    .. code-block:: bash
+
+        admin@localhost:/> kv --add my-key my-value
+        admin@localhost:/> kv --get my-key
+        [
+          {
+            "key": "my-key",
+            "value": "my-value"
+          }
+        ]
+
+        admin@localhost:/> kv --delete my-key
+        admin@localhost:/> kv --get my-key
+        Unknown User-Agent key my-key (HTTP 404)
+    """
     description = "Retrieve the key-value store as json"
 
     delete = Option("-D", type=str, metavar='key',

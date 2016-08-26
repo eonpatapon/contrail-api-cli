@@ -7,6 +7,13 @@ from ..exceptions import NotFound, CommandError
 
 
 class Du(Command):
+    """Count resources of a collection.
+
+    .. code-block:: bash
+
+        admin@localhost:/> du virtual-network
+        6
+    """
     description = "Count number of resources"
     paths = Arg(nargs="*", help="Collections path(s)", complete='collections::path')
     aliases = ['count = du']

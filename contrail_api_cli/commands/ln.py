@@ -9,6 +9,30 @@ from ..schema import DummySchema
 
 
 class Ln(Command):
+    """Add or remove a reference link between two resources.
+
+    .. code-block:: bash
+
+        admin@localhost:/> tree -r /virtual-machine/8cfbddcf-6b55-4cdf-abcb-14eed68e4da7
+        virtual-machine/8cfbddcf-6b55-4cdf-abcb-14eed68e4da7                default-domain__foo__fa3ea892-3591-4611-ba22-cc45164aee3e__2
+        ├── virtual-machine-interface/d739db3d-b89f-46a4-ae02-97ac796261d0  default-domain:foo:default-domain__foo__fa3ea892-3591-4611-ba22-cc45164aee3e__2__right__1
+        │   ├── floating-ip/958234f5-4fae-4afd-ae7c-d0dc3c608e06            default-domain:admin:public:floating-ip-pool:958234f5-4fae-4afd-ae7c-d0dc3c608e06
+        │   └── instance-ip/bced2a04-0ef9-4c87-95a6-7cce54182c65            7d401b8c-b9d3-4be2-af0b-a0dfff500860
+        └── virtual-router/f6f0b262-745b-45f7-a40a-32ffc1f469bc             default-global-system-config:vrouter-1
+        admin@localhost:/> ln -r virtual-machine/8cfbddcf-6b55-4cdf-abcb-14eed68e4da7 virtual-router/f6f0b262-745b-45f7-a40a-32ffc1f469bc
+        admin@localhost:/> tree -r /virtual-machine/8cfbddcf-6b55-4cdf-abcb-14eed68e4da7
+        virtual-machine/8cfbddcf-6b55-4cdf-abcb-14eed68e4da7                default-domain__foo__fa3ea892-3591-4611-ba22-cc45164aee3e__2
+        └── virtual-machine-interface/d739db3d-b89f-46a4-ae02-97ac796261d0  default-domain:foo:default-domain__foo__fa3ea892-3591-4611-ba22-cc45164aee3e__2__right__1
+            ├── floating-ip/958234f5-4fae-4afd-ae7c-d0dc3c608e06            default-domain:admin:public:floating-ip-pool:958234f5-4fae-4afd-ae7c-d0dc3c608e06
+            └── instance-ip/bced2a04-0ef9-4c87-95a6-7cce54182c65            7d401b8c-b9d3-4be2-af0b-a0dfff500860
+        admin@localhost:/> ln virtual-machine/8cfbddcf-6b55-4cdf-abcb-14eed68e4da7 virtual-router/f6f0b262-745b-45f7-a40a-32ffc1f469bc
+        admin@localhost:/> tree -r /virtual-machine/8cfbddcf-6b55-4cdf-abcb-14eed68e4da7
+        virtual-machine/8cfbddcf-6b55-4cdf-abcb-14eed68e4da7                default-domain__foo__fa3ea892-3591-4611-ba22-cc45164aee3e__2
+        ├── virtual-machine-interface/d739db3d-b89f-46a4-ae02-97ac796261d0  default-domain:foo:default-domain__foo__fa3ea892-3591-4611-ba22-cc45164aee3e__2__right__1
+        │   ├── floating-ip/958234f5-4fae-4afd-ae7c-d0dc3c608e06            default-domain:admin:public:floating-ip-pool:958234f5-4fae-4afd-ae7c-d0dc3c608e06
+        │   └── instance-ip/bced2a04-0ef9-4c87-95a6-7cce54182c65            7d401b8c-b9d3-4be2-af0b-a0dfff500860
+        └── virtual-router/f6f0b262-745b-45f7-a40a-32ffc1f469bc             default-global-system-config:vrouter-1
+    """
     description = "Link two resources"
     resources = Arg(help='resource to link', metavar='PATH', nargs=2,
                     complete='resources::path')
