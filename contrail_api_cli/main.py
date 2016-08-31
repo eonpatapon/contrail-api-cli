@@ -62,7 +62,8 @@ def main():
                         action="store_true", default=False)
     parser.add_argument('--schema-version',
                         default=os.environ.get('CONTRAIL_API_VERSION', None),
-                        choices=list_available_schema_version())
+                        choices=list_available_schema_version(),
+                        help="schema version used by contrail-api server (default=%(default)s)")
     parser.add_argument('--logging-conf',
                         help="python logging configuration file")
 
