@@ -42,9 +42,9 @@ Run ``contrail-api-cli shell`` to start the cli. Use the ``-h`` option to see al
     
 Type ``help`` to get the list of all available commands.
 
-Here is a screenshot of an example session:
+Here is a screen cast to see contrail-api-cli in action:
 
-![Example session](http://i.imgur.com/X83FVTJ.png)
+[![asciicast](https://asciinema.org/a/8jx1e0ge56auloah7m6hmpcuz.png)](https://asciinema.org/a/8jx1e0ge56auloah7m6hmpcuz)
 
 ## Authentication
 
