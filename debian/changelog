@@ -1,3 +1,15 @@
+contrail-api-cli (0.1-1) trusty; urgency=low
+
+  * New upstream release
+    - schema integration for resource links
+    - improved options and args completion
+    - new man command
+    - improved relative command
+    - fix tree command loops
+    - fix gevent hang while in continue_prompt
+
+ -- Jean-Philippe Braun <eon@patapon.info>  Wed, 31 Aug 2016 10:59:09 +0200
+
 contrail-api-cli (0.1rc2-1) trusty; urgency=low
 
   * New upstream release
