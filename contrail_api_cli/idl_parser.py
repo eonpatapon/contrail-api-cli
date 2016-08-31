@@ -9,8 +9,8 @@ Copyright (c) 2013 Contrail Systems. All rights reserved.
 import logging
 import os
 import re
-import string
 import sys
+
 
 class IDLParser(object):
     class Property(object):
@@ -28,10 +28,10 @@ class IDLParser(object):
             self.description = description
 
         def IsList(self):
-            return self.is_list == True
+            return self.is_list is True
 
         def IsMap(self):
-            return self.is_map == True
+            return self.is_map is True
     # end class Property
 
     class Link(object):
@@ -59,11 +59,11 @@ class IDLParser(object):
             for stmt in statements:
                 # Oper in idl becomes method
                 try:
-                    eval("self._%s" %(stmt.lstrip()))
+                    eval("self._%s" % (stmt.lstrip()))
                 except TypeError:
                     logger = logging.getLogger('idl_parser')
                     logger.debug('ERROR statement: %s', stmt)
-                #self._ParseExpression(stmt)
+                # self._ParseExpression(stmt)
         return self._ElementDict
 
     def Find(self, element):
@@ -135,12 +135,12 @@ class IDLParser(object):
 
         mch = re.match(r'(.*):(.*)', from_name)
         if mch:
-            from_ns = mch.group(1)
+            # from_ns = mch.group(1)
             from_name = mch.group(2)
 
         mch = re.match(r'(.*):(.*)', to_name)
         if mch:
-            to_ns = mch.group(1)
+            # to_ns = mch.group(1)
             to_name = mch.group(2)
 
         # TODO store and handle namespace in identifiers
