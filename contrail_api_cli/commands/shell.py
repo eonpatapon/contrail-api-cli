@@ -17,8 +17,8 @@ from prompt_toolkit.key_binding.manager import KeyBindingManager
 
 from ..resource import RootCollection
 from ..completer import ShellCompleter
-from ..exceptions import CommandError, CollectionNotFound, \
-    ResourceNotFound, CommandNotFound, NotFound
+from ..exceptions import CommandError, CommandNotFound, \
+    NotFound, Exists
 from ..command import Command, Arg
 from ..client import ContrailAPISession
 from ..utils import CONFIG_DIR, printo, eventloop
@@ -132,7 +132,7 @@ class Shell(Command):
             try:
                 result = cmd.parse_and_call(*args)
             except (HttpError, ClientException, CommandError,
-                    ResourceNotFound, CollectionNotFound, NotFound) as e:
+                    NotFound, Exists) as e:
                 printo(text_type(e))
                 continue
             except KeyboardInterrupt:

@@ -55,7 +55,7 @@ class CollectionNotFound(NotFound):
         return "Collection %s not found" % self.c.path
 
 
-class Exists(Exception):
+class Exists(GreenletExit):
 
     def __init__(self, resources=None):
         self.resources = []

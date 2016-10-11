@@ -19,7 +19,8 @@ from keystoneclient.exceptions import HTTPError
 from prompt_toolkit.completion import Completion
 
 from .utils import FQName, Path, Observable, to_json
-from .exceptions import ResourceNotFound, ResourceMissing, CollectionNotFound, ChildrenExists, BackRefsExists
+from .exceptions import ResourceNotFound, ResourceMissing, \
+    CollectionNotFound, ChildrenExists, BackRefsExists
 from .context import Context
 
 
