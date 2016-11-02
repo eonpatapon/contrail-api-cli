@@ -169,6 +169,9 @@ class ResourceSchema(object):
 
 class DummySchema(object):
 
+    def __init__(self):
+        DummyResourceSchema()
+
     @property
     def version(self):
         return "dummy"
