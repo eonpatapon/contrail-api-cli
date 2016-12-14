@@ -157,5 +157,6 @@ class TestLinkResource(unittest.TestCase):
         vn.back_refs.instance_ip.fetch()
         mock_session.get_json.assert_called_with(vn.back_refs.instance_ip.href, back_ref_id=vn.uuid)
 
+
 if __name__ == "__main__":
     unittest.main()

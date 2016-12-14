@@ -149,6 +149,7 @@ class IDLParser(object):
         idl_link = IDLParser.Link(link_name, *args, **kwargs)
         self._ElementDict[link_name] = (idl_link, from_name, to_name, attrs)
 
+
 if __name__ == '__main__':
     if len(sys.argv) < 2:
         sys.exit('Usage: %s schema.xsd' % sys.argv[0])
