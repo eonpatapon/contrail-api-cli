@@ -279,8 +279,11 @@ class Collection(ResourceBase, UserList):
         :param field_name: name of the field to filter on
         :type field_name: str
         :param field_value: value to filter on
+
+        :rtype: Collection
         """
         self.filters.append((field_name, field_value))
+        return self
 
     def _format_fetch_params(self, fields, detail, filters, parent_uuid, back_refs_uuid):
         params = {}
@@ -334,6 +337,8 @@ class Collection(ResourceBase, UserList):
         :type parent_uuid: v4UUID str or list of v4UUID str
         :param back_refs_uuid: filter by back_refs_uuid
         :type back_refs_uuid: v4UUID str or list of v4UUID str
+
+        :rtype: Collection
         """
 
         params = self._format_fetch_params(fields, detail, filters, parent_uuid, back_refs_uuid)
@@ -359,6 +364,8 @@ class Collection(ResourceBase, UserList):
                                   **res.get(self.type, res))
                          for res_type, res_list in data.items()
                          for res in res_list]
+
+        return self
 
 
 class RootCollection(Collection):
@@ -521,6 +528,8 @@ class Resource(ResourceBase, UserDict):
 
         If the resource doesn't have a uuid the resource will be created.
         If uuid is present the resource is updated.
+
+        :rtype: Resource
         """
         if self.path.is_collection:
             self.session.post_json(self.href,
@@ -530,7 +539,7 @@ class Resource(ResourceBase, UserDict):
             self.session.put_json(self.href,
                                   {self.type: dict(self.data)},
                                   cls=ResourceEncoder)
-        self.fetch(exclude_children=True, exclude_back_refs=True)
+        return self.fetch(exclude_children=True, exclude_back_refs=True)
 
     @http_error_handler
     def delete(self):
@@ -550,6 +559,8 @@ class Resource(ResourceBase, UserDict):
         :type exclude_children: bool
         :param exclude_back_refs: don't get back_refs references
         :type exclude_back_refs: bool
+
+        :rtype: Resource
         """
         if not self.path.is_resource and not self.path.is_uuid:
             self.check()
@@ -561,6 +572,7 @@ class Resource(ResourceBase, UserDict):
             params['exclude_back_refs'] = True
         data = self.session.get_json(self.href, **params)[self.type]
         self.from_dict(data)
+        return self
 
     def from_dict(self, data, recursive=1):
         """Populate the resource from a python dict
@@ -618,36 +630,44 @@ class Resource(ResourceBase, UserDict):
 
         :param ref: reference to remove
         :type ref: Resource
+
+        :rtype: Resource
         """
         self.session.remove_ref(self, ref)
-        self.fetch()
+        return self.fetch()
 
     def remove_back_ref(self, back_ref):
         """Remove reference from back_ref to self
 
         :param back_ref: back_ref to remove
         :type back_ref: Resource
+
+        :rtype: Resource
         """
         back_ref.remove_ref(self)
-        self.fetch()
+        return self.fetch()
 
     def add_ref(self, ref, attr=None):
         """Add reference to resource
 
         :param ref: reference to add
         :type ref: Resource
+
+        :rtype: Resource
         """
         self.session.add_ref(self, ref, attr)
-        self.fetch()
+        return self.fetch()
 
     def add_back_ref(self, back_ref, attr=None):
         """Add reference from back_ref to self
 
         :param back_ref: back_ref to add
         :type back_ref: Resource
+
+        :rtype: Resource
         """
         back_ref.add_ref(self, attr)
-        self.fetch()
+        return self.fetch()
 
     def json(self):
         """Return JSON representation of the resource
