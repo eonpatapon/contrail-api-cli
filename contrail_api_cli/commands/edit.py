@@ -23,7 +23,7 @@ class Edit(Command):
     on an existing resource.
     """
     description = "Edit resource"
-    path = Arg(nargs="?", help="Resource path",
+    path = Arg(help="Resource path",
                complete='resources::path')
     template = Option('-t',
                       help="Create new resource from existing",
