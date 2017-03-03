@@ -93,7 +93,7 @@ def experimental(cls):
 
 
 def _path_to_resources(path, predicate=None, filters=None, parent_uuid=None):
-    if any([c in str(path) for c in ('*', '?')]):
+    if any([c in text_type(path) for c in ('*', '?')]):
         if any([c in path.base for c in ('*', '?')]):
             col = RootCollection(fetch=True,
                                  filters=filters,
@@ -107,8 +107,8 @@ def _path_to_resources(path, predicate=None, filters=None, parent_uuid=None):
                 continue
             # list of paths to match against
             paths = [r.path,
-                     Path('/', r.type, str(r.fq_name))]
-            if any([fnmatch(str(p), str(path)) for p in paths]):
+                     Path('/', r.type, text_type(r.fq_name))]
+            if any([fnmatch(text_type(p), text_type(path)) for p in paths]):
                 yield r
     elif path.is_resource:
         if path.is_uuid:
@@ -198,7 +198,7 @@ class Command(object):
 
         :rtype: str
         """
-        return str(resource.path.relative_to(Context().shell.current_path))
+        return text_type(resource.path.relative_to(Context().shell.current_path))
 
     @property
     def is_piped(self):

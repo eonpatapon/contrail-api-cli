@@ -59,7 +59,7 @@ class FQName(collections.Sequence):
         return b(':'.join(self._data))
 
     def __lt__(self, b):
-        return len(str(self)) < len(str(b))
+        return len(text_type(self)) < len(text_type(b))
 
     def __gt__(self, b):
         return not self.__lt__(b)

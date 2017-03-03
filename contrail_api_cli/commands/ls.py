@@ -116,7 +116,7 @@ class Ls(Command):
             try:
                 value = int(value)
             except ValueError:
-                value = str(value)
+                value = text_type(value)
         return (name, value)
 
     def __call__(self, paths=None, long=False, fields=None,
