@@ -23,14 +23,14 @@ class Edit(Command):
     on an existing resource.
     """
     description = "Edit resource"
-    path = Arg(help="Resource path",
+    path = Arg(nargs=1, help="Resource path",
                complete='resources::path')
     template = Option('-t',
                       help="Create new resource from existing",
                       action="store_true", default=False)
     aliases = ['vim = edit', 'emacs = edit', 'nano = edit']
 
-    def __call__(self, path='', template=False):
+    def __call__(self, path=None, template=False):
         resources = expand_paths([path],
                                  predicate=lambda r: isinstance(r, Resource))
         if len(resources) > 1:
