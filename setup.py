@@ -2,6 +2,7 @@ import sys
 from setuptools import setup, find_packages
 
 install_requires = [
+    'requests==2.12.5', # temp to resolv keystoneauth1 dep
     'pygments',
     'prompt_toolkit>=0.53',
     'python-keystoneclient>=0.11',
