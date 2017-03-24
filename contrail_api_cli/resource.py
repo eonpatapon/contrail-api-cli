@@ -248,7 +248,8 @@ class Collection(ResourceBase, UserList):
         :rtype: int
         """
         if not self.data:
-            res = self.session.get_json(self.href, count=True)
+            params = self._format_fetch_params()
+            res = self.session.get_json(self.href, count=True, **params)
             try:
                 return res[self._contrail_name]['count']
             except KeyError:
@@ -285,7 +286,8 @@ class Collection(ResourceBase, UserList):
         self.filters.append((field_name, field_value))
         return self
 
-    def _format_fetch_params(self, fields, detail, filters, parent_uuid, back_refs_uuid):
+    def _format_fetch_params(self, fields=[], detail=False, filters=[],
+                             parent_uuid=None, back_refs_uuid=None):
         params = {}
         detail = detail or self.detail
         fields_str = ",".join(self._fetch_fields(fields))
@@ -341,7 +343,8 @@ class Collection(ResourceBase, UserList):
         :rtype: Collection
         """
 
-        params = self._format_fetch_params(fields, detail, filters, parent_uuid, back_refs_uuid)
+        params = self._format_fetch_params(fields=fields, detail=detail, filters=filters,
+                                           parent_uuid=parent_uuid, back_refs_uuid=back_refs_uuid)
         data = self.session.get_json(self.href, **params)
 
         if not self.type:
