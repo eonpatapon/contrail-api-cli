@@ -34,7 +34,7 @@ class SessionLoader(loading.session.Session):
     def plugin_class(self):
         return ContrailAPISession
 
-    def make(self, os_auth_type="http", **kwargs):
+    def make(self, host="localhost", port=8082, protocol="http", os_auth_type="http", **kwargs):
         """Initialize a session to Contrail API server
 
         :param os_auth_type: auth plugin to use:
@@ -47,7 +47,11 @@ class SessionLoader(loading.session.Session):
         plugin_options = {opt.dest: kwargs.pop("os_%s" % opt.dest)
                           for opt in loader.get_options()}
         plugin = loader.load_from_options(**plugin_options)
-        return self.load_from_argparse_arguments(Namespace(**kwargs), auth=plugin)
+        return self.load_from_argparse_arguments(Namespace(**kwargs),
+                                                 host=host,
+                                                 port=port,
+                                                 protocol=protocol,
+                                                 auth=plugin)
 
     def register_argparse_arguments(self, parser):
         contrail_group = parser.add_argument_group(
