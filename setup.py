@@ -5,7 +5,7 @@ install_requires = [
     'requests==2.12.5', # temp to resolv keystoneauth1 dep
     'pygments',
     'prompt_toolkit>=0.53',
-    'python-keystoneclient>=0.11',
+    'keystoneauth1',
     'gevent',
     'datrie'
 ]
@@ -19,7 +19,7 @@ if sys.version_info[0] == 2:
 
 setup(
     name='contrail-api-cli',
-    version='0.1.2',
+    version='0.2.0',
     description="Simple CLI program to browse Contrail API server",
     long_description=open('README.md').read(),
     author="Jean-Philippe Braun",
@@ -36,8 +36,8 @@ setup(
         'console_scripts': [
             'contrail-api-cli = contrail_api_cli.main:main'
         ],
-        'keystoneclient.auth.plugin': [
-            'http = contrail_api_cli.auth:HTTPAuth'
+        'keystoneauth1.plugin': [
+            'http = contrail_api_cli.auth:HTTPAuthLoader'
         ],
         'contrail_api_cli.command': [
             'ls = contrail_api_cli.commands.ls:Ls',

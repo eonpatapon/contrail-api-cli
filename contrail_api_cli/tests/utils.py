@@ -11,7 +11,7 @@ from contrail_api_cli.schema import DummySchema, DummyResourceSchema
 
 class CLITest(unittest.TestCase):
 
-    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
+    @mock.patch('contrail_api_cli.resource.Context.session')
     def setUp(self, mock_session):
         self.maxDiff = None
         self.BASE = "http://localhost:8082"

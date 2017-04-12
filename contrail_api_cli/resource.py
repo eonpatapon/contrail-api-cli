@@ -15,7 +15,7 @@ except ImportError:
     from collections import UserDict, UserList
 
 import datrie
-from keystoneclient.exceptions import HTTPError
+from keystoneauth1.exceptions.http import HttpError
 from prompt_toolkit.completion import Completion
 
 from .utils import FQName, Path, Observable, to_json
@@ -40,7 +40,7 @@ def http_error_handler(f):
     def wrapper(self, *args, **kwargs):
         try:
             return f(self, *args, **kwargs)
-        except HTTPError as e:
+        except HttpError as e:
             if e.http_status == 404:
                 # remove previously created resource
                 # from the cache
@@ -150,12 +150,6 @@ class ResourceEncoder(json.JSONEncoder):
 
 
 class ResourceBase(Observable):
-    session = None
-
-    def __new__(cls, *args, **kwargs):
-        if cls.session is None:
-            raise ValueError("ContrailAPISession must be initialized first")
-        return super(ResourceBase, cls).__new__(cls, *args, **kwargs)
 
     def __repr__(self):
         return '%s(%s)' % (self.__class__.__name__, self.path)
@@ -166,6 +160,10 @@ class ResourceBase(Observable):
         else:
             ident = (self.type,)
         return hash(ident)
+
+    @property
+    def session(self):
+        return Context().session
 
     @property
     def uuid(self):

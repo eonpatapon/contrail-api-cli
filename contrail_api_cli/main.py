@@ -6,15 +6,15 @@ import logging
 import logging.config
 from six import text_type
 
-from keystoneclient import session as ksession, auth
-from keystoneclient.exceptions import ClientException, HttpError
+from keystoneauth1.loading import cli
+from keystoneauth1.exceptions.http import HttpError, HTTPClientError
 
 from .manager import CommandManager
 from .exceptions import CommandError, NotFound, Exists
 from .utils import CONFIG_DIR, printo
 from .schema import create_schema_from_version, list_available_schema_version, DummySchema
 from .context import Context
-from .client import ContrailAPISession
+from . import client
 
 
 logger = logging.getLogger(__name__)
@@ -46,18 +46,6 @@ def main():
             pass
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--host', '-H',
-                        default=os.environ.get('CONTRAIL_API_HOST', 'localhost'),
-                        type=str,
-                        help="host to connect to (default='%(default)s')")
-    parser.add_argument('--port', '-p',
-                        default=os.environ.get('CONTRAIL_API_PORT', 8082),
-                        type=int,
-                        help="port to connect to (default='%(default)s')")
-    parser.add_argument('--protocol',
-                        type=str,
-                        default=os.environ.get('CONTRAIL_API_PROTOCOL', 'http'),
-                        help="protocol used (default=%(default)s)")
     parser.add_argument('--debug', '-d',
                         action="store_true", default=False)
     parser.add_argument('--schema-version',
@@ -67,9 +55,10 @@ def main():
     parser.add_argument('--logging-conf',
                         help="python logging configuration file")
 
-    ksession.Session.register_cli_options(parser)
+    # contrail api session options
+    client.register_argparse_arguments(parser)
     # Default auth plugin will be http unless OS_AUTH_PLUGIN envvar is set
-    auth.register_argparse_arguments(parser, argv, default="http")
+    cli.register_argparse_arguments(parser, argv, default="http")
     # Add commands to the parser given the namespaces list
     mgr = CommandManager.register_argparse_commands(parser, argv)
 
@@ -78,7 +67,7 @@ def main():
     if not os.path.exists(CONFIG_DIR):
         os.makedirs(CONFIG_DIR)
 
-    ContrailAPISession.make(**vars(options))
+    Context().session = client.load_from_argparse_arguments(options)
 
     if options.schema_version:
         Context().schema = create_schema_from_version(options.schema_version)
@@ -89,7 +78,7 @@ def main():
         subcmd, subcmd_kwargs = get_subcommand_kwargs(mgr, options.subcmd, options)
         logger.debug('Calling %s with %s' % (subcmd, subcmd_kwargs))
         result = subcmd(**subcmd_kwargs)
-    except (HttpError, ClientException, CommandError, Exists, NotFound) as e:
+    except (HTTPClientError, HttpError, CommandError, Exists, NotFound) as e:
         printo(text_type(e), std_type='stderr')
         exit(1)
     except KeyboardInterrupt:

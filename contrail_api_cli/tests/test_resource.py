@@ -6,7 +6,7 @@ try:
 except ImportError:
     import unittest.mock as mock
 
-from keystoneclient.exceptions import HttpError
+from keystoneauth1.exceptions.http import HttpError
 
 from contrail_api_cli.utils import Path, FQName
 from contrail_api_cli.resource import RootCollection, Collection, Resource, ResourceEncoder
@@ -18,7 +18,7 @@ from .utils import CLITest
 
 class TestResource(CLITest):
 
-    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
+    @mock.patch('contrail_api_cli.resource.Context.session')
     def test_resource_base(self, mock_session):
         mock_session.configure_mock(base_url=self.BASE)
 
@@ -50,7 +50,7 @@ class TestResource(CLITest):
         with self.assertRaises(AssertionError):
             r = Resource('bar')
 
-    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
+    @mock.patch('contrail_api_cli.resource.Context.session')
     def test_root_collection(self, mock_session):
         mock_session.configure_mock(base_url=self.BASE)
         mock_session.get_json.return_value = {
@@ -71,7 +71,7 @@ class TestResource(CLITest):
         expected_root_resources = RootCollection(data=[Collection('instance-ip')])
         self.assertEqual(root_collection, expected_root_resources)
 
-    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
+    @mock.patch('contrail_api_cli.resource.Context.session')
     def test_resource_collection(self, mock_session):
         mock_session.get_json.return_value = {
             "foos": [
@@ -104,20 +104,20 @@ class TestResource(CLITest):
 
     # FIXME failed either with python2 or with python3 because
     # of unicode_literals
-    # @mock.patch('contrail_api_cli.resource.ResourceBase.session')
+    # @mock.patch('contrail_api_cli.resource.Context.session')
     # def test_resource_str(self, mock_session):
         # r = Resource('foo', key='foo', key2='bar')
         # self.assertTrue(str(r) in (str({'key': 'foo', 'key2': 'bar'}),
         # str({'key2': 'bar', 'key': 'foo'})))
 
-    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
+    @mock.patch('contrail_api_cli.resource.Context.session')
     def test_resource_fqname(self, mock_session):
         r = Resource('foo', fq_name=['domain', 'foo', 'uuid'])
         self.assertEqual(str(r.fq_name), 'domain:foo:uuid')
         r = Resource('foo', to=['domain', 'foo', 'uuid'])
         self.assertEqual(str(r.fq_name), 'domain:foo:uuid')
 
-    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
+    @mock.patch('contrail_api_cli.resource.Context.session')
     def test_resource(self, mock_session):
         # bind original method to mock_session
         mock_session.make_url = ContrailAPISession.make_url.__get__(mock_session)
@@ -160,7 +160,7 @@ class TestResource(CLITest):
         )
         self.assertEqual(resource, expected_resource)
 
-    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
+    @mock.patch('contrail_api_cli.resource.Context.session')
     def test_resource_fqname_validation(self, mock_session):
         # bind original method to mock_session
         mock_session.fqname_to_id = ContrailAPISession.fqname_to_id.__get__(mock_session)
@@ -188,7 +188,7 @@ class TestResource(CLITest):
             r = Resource('bar', fq_name='domain:bar:nofound', check=True)
             self.assertEqual(str(e), "Resource domain:bar:nofound doesn't exists")
 
-    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
+    @mock.patch('contrail_api_cli.resource.Context.session')
     def test_resource_uuid_validation(self, mock_session):
         # bind original method to mock_session
         mock_session.id_to_fqname = ContrailAPISession.id_to_fqname.__get__(mock_session)
@@ -216,7 +216,7 @@ class TestResource(CLITest):
             r = Resource('bar', uuid='d6e9fae3-628c-448c-bfc5-849d82a9a016', check=True)
             self.assertEqual(str(e), "Resource d6e9fae3-628c-448c-bfc5-849d82a9a016 doesn't exists")
 
-    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
+    @mock.patch('contrail_api_cli.resource.Context.session')
     def test_resource_fetch(self, mock_session):
         mock_session.configure_mock(base_url=self.BASE)
 
@@ -245,7 +245,7 @@ class TestResource(CLITest):
         r.fetch(exclude_back_refs=True)
         mock_session.get_json.assert_called_with(r.href, exclude_back_refs=True)
 
-    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
+    @mock.patch('contrail_api_cli.resource.Context.session')
     def test_resource_save(self, mock_session):
         mock_session.configure_mock(base_url=self.BASE)
         mock_session.fqname_to_id.return_value = '8240f9c7-0f28-4ca7-b92e-2f6441a0a6dd'
@@ -288,7 +288,7 @@ class TestResource(CLITest):
                                                  cls=ResourceEncoder)
         self.assertEqual(r1['attr'], 'foo')
 
-    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
+    @mock.patch('contrail_api_cli.resource.Context.session')
     def test_resource_parent(self, mock_session):
         mock_session.configure_mock(base_url=self.BASE)
 
@@ -305,7 +305,7 @@ class TestResource(CLITest):
             r = Resource('foo', fq_name='domain:foo')
             r.parent
 
-    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
+    @mock.patch('contrail_api_cli.resource.Context.session')
     def test_resource_check(self, mock_session):
         mock_session.configure_mock(base_url=self.BASE)
 
@@ -329,7 +329,7 @@ class TestResource(CLITest):
         ]
         self.assertTrue(r.exists)
 
-    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
+    @mock.patch('contrail_api_cli.resource.Context.session')
     def test_resource_ref_update(self, mock_session):
         mock_session.configure_mock(base_url=self.BASE)
         mock_session.make_url = ContrailAPISession.make_url.__get__(mock_session)
@@ -394,7 +394,7 @@ class TestResource(CLITest):
 
 class TestCollection(CLITest):
 
-    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
+    @mock.patch('contrail_api_cli.resource.Context.session')
     def test_collection_fields(self, mock_session):
         mock_session.configure_mock(base_url=self.BASE)
         c = Collection('foo', fields=['foo', 'bar'], fetch=True)
@@ -404,7 +404,7 @@ class TestCollection(CLITest):
         c.fetch()
         mock_session.get_json.assert_called_with(self.BASE + '/foos', fields='foo,bar')
 
-    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
+    @mock.patch('contrail_api_cli.resource.Context.session')
     def test_collection_filters(self, mock_session):
         mock_session.configure_mock(base_url=self.BASE)
         c = Collection('foo', filters=[('foo', 'bar')], fetch=True)
@@ -417,7 +417,7 @@ class TestCollection(CLITest):
         c.fetch()
         mock_session.get_json.assert_called_with(self.BASE + '/foos', filters='foo=="bar",bar==42')
 
-    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
+    @mock.patch('contrail_api_cli.resource.Context.session')
     def test_collection_detail(self, mock_session):
         mock_session.configure_mock(base_url=self.BASE)
         c = Collection('foo', fields=['foo', 'bar'], detail=True, fetch=True)
@@ -456,7 +456,7 @@ class TestCollection(CLITest):
         self.assertEqual(c.data[0]['bar_refs'][0], Resource('bar', uuid='3042be83-a5f7-4b94-a2a4-9e2ae7fe25be'))
         self.assertEqual(c.data[1], Resource('foo', uuid='9fe7094d-f54e-4284-a813-9ca4df866019'))
 
-    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
+    @mock.patch('contrail_api_cli.resource.Context.session')
     def test_collection_parent_uuid(self, mock_session):
         mock_session.configure_mock(base_url=self.BASE)
         c = Collection('foo', parent_uuid='aa')
@@ -474,7 +474,7 @@ class TestCollection(CLITest):
         expected_parent_id = '0d7d4197-891b-4767-b599-54667370cab1,3a0e179e-fbe6-4390-8e5d-00a630de0b68,a9420bd1-59dc-4576-a548-b28cedbf3e5c'
         mock_session.get_json.assert_called_with(self.BASE + '/foos', parent_id=expected_parent_id)
 
-    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
+    @mock.patch('contrail_api_cli.resource.Context.session')
     def test_collection_count(self, mock_session):
         mock_session.configure_mock(base_url=self.BASE)
         mock_session.get_json.return_value = {
@@ -505,14 +505,14 @@ class TestCollection(CLITest):
         )
         self.assertEqual(mock_session.get_json.mock_calls, expected_calls)
 
-    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
+    @mock.patch('contrail_api_cli.resource.Context.session')
     def test_collection_contrail_name(self, mock_session):
         c = Collection('')
         self.assertEqual(c._contrail_name, '')
         c = Collection('foo')
         self.assertEqual(c._contrail_name, 'foos')
 
-    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
+    @mock.patch('contrail_api_cli.resource.Context.session')
     def test_collection_not_found(self, mock_session):
         mock_session.get_json.side_effect = HttpError(http_status=404)
         with self.assertRaises(CollectionNotFound):

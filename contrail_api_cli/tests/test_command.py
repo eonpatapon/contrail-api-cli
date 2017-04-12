@@ -58,7 +58,7 @@ class TestCommand(CLITest):
         self.mgr.get('cd')('/')
         self.assertEqual(Context().shell.current_path, Path('/'))
 
-    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
+    @mock.patch('contrail_api_cli.resource.Context.session')
     def test_root_collection(self, mock_session):
         Context().shell.current_path = Path('/')
         mock_session.get_json.return_value = {
@@ -114,7 +114,7 @@ bar/ffe8de43-a141-4336-8d70-bf970813bbf7"""
         result = self.mgr.get('ls')(paths=['*'])
         self.assertEqual(result, expected_result)
 
-    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
+    @mock.patch('contrail_api_cli.resource.Context.session')
     def test_resource_collection(self, mock_session):
         mock_session.get_json.return_value = {
             'foos': [
@@ -137,7 +137,7 @@ bar/ffe8de43-a141-4336-8d70-bf970813bbf7"""
                                     'foo/c2588045-d6fb-4f37-9f46-9451f653fb6a']),
                          result)
 
-    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
+    @mock.patch('contrail_api_cli.resource.Context.session')
     def test_resource_ls(self, mock_session):
         mock_session.get_json.return_value = {
             'foo': {
@@ -150,7 +150,7 @@ bar/ffe8de43-a141-4336-8d70-bf970813bbf7"""
         result = self.mgr.get('ls')(paths=['ec1afeaa-8930-43b0-a60a-939f23a50724'])
         self.assertEqual(result, expected_result)
 
-    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
+    @mock.patch('contrail_api_cli.resource.Context.session')
     def test_resource_long_ls(self, mock_session):
         mock_session.id_to_fqname.return_value = {
             'type': 'foo',
@@ -181,7 +181,7 @@ bar/ffe8de43-a141-4336-8d70-bf970813bbf7"""
 
         self.assertTrue(any([result == r for r in expected_results]))
 
-    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
+    @mock.patch('contrail_api_cli.resource.Context.session')
     def test_resource_parent_uuid_ls(self, mock_session):
         mock_session.configure_mock(base_url=self.BASE)
         self.mgr.get('ls')(paths=['foo'])
@@ -190,7 +190,7 @@ bar/ffe8de43-a141-4336-8d70-bf970813bbf7"""
         mock_session.get_json.assert_called_with(self.BASE + '/foos', parent_id='1ad831be-3b21-4870-aadf-8efc2b0a480d')
 
     @mock.patch('contrail_api_cli.commands.cat.highlight_json')
-    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
+    @mock.patch('contrail_api_cli.resource.Context.session')
     def test_resource_cat(self, mock_session, mock_highlight_json):
         # bind original method to mock_session
         mock_session.id_to_fqname = client.ContrailAPISession.id_to_fqname.__get__(mock_session)
@@ -250,17 +250,17 @@ bar/ffe8de43-a141-4336-8d70-bf970813bbf7"""
         result = self.mgr.get('cat')(paths=['ec1afeaa-8930-43b0-a60a-939f23a50724'])
         self.assertEqual(expected_resource.json(), result)
 
-    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
+    @mock.patch('contrail_api_cli.resource.Context.session')
     def test_notfound_fqname_ls(self, mock_session):
         fq_name = 'default-domain:foo'
         Context().shell.current_path = Path('/foo')
-        mock_session.fqname_to_id.side_effect = client.HTTPError(http_status=404)
+        mock_session.fqname_to_id.side_effect = client.HttpError(http_status=404)
         with self.assertRaises(ResourceNotFound) as e:
             self.mgr.get('ls')(paths=[fq_name])
             self.assertEqual("%s doesn't exists" % fq_name, str(e))
         self.assertFalse(mock_session.get_json.called)
 
-    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
+    @mock.patch('contrail_api_cli.resource.Context.session')
     def test_count(self, mock_session):
         mock_session.get_json.return_value = {
             'foos': {
@@ -280,7 +280,7 @@ bar/ffe8de43-a141-4336-8d70-bf970813bbf7"""
         with self.assertRaises(CommandError):
             self.mgr.get('du')()
 
-    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
+    @mock.patch('contrail_api_cli.resource.Context.session')
     @mock.patch('contrail_api_cli.commands.rm.continue_prompt')
     def test_rm(self, mock_continue_prompt, mock_session):
         mock_session.configure_mock(base_url=self.BASE)
@@ -293,7 +293,7 @@ bar/ffe8de43-a141-4336-8d70-bf970813bbf7"""
         ])
         self.assertFalse(mock_continue_prompt.called)
 
-    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
+    @mock.patch('contrail_api_cli.resource.Context.session')
     def test_rm_multiple_resources(self, mock_session):
         mock_session.configure_mock(base_url=self.BASE)
         Context().shell.current_path = Path('/foo')
@@ -306,7 +306,7 @@ bar/ffe8de43-a141-4336-8d70-bf970813bbf7"""
             mock.call(self.BASE + '/foo/6b6a7f47-807e-4c39-8ac6-3adcf2f5498f')
         ])
 
-    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
+    @mock.patch('contrail_api_cli.resource.Context.session')
     def test_rm_wildcard_resources(self, mock_session):
         mock_session.configure_mock(base_url=self.BASE)
         Context().shell.current_path = Path('/foo')
@@ -340,7 +340,7 @@ bar/ffe8de43-a141-4336-8d70-bf970813bbf7"""
             mock.call(self.BASE + '/foo/ec1afeaa-8930-43b0-a60a-939f23a50724')
         ])
 
-    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
+    @mock.patch('contrail_api_cli.resource.Context.session')
     @mock.patch('contrail_api_cli.commands.rm.continue_prompt')
     def test_rm_noconfirm(self, mock_continue_prompt, mock_session):
         Context().shell.current_path = Path('/')
@@ -349,7 +349,7 @@ bar/ffe8de43-a141-4336-8d70-bf970813bbf7"""
         self.mgr.get('rm')(paths=t)
         self.assertFalse(mock_session.delete.called)
 
-    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
+    @mock.patch('contrail_api_cli.resource.Context.session')
     @mock.patch('contrail_api_cli.commands.rm.continue_prompt')
     def test_rm_recursive(self, mock_continue_prompt, mock_session):
         Context().shell.current_path = Path('/')
@@ -422,7 +422,7 @@ bar/ffe8de43-a141-4336-8d70-bf970813bbf7"""
         ]
         mock_session.delete.assert_has_calls(expected_calls)
 
-    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
+    @mock.patch('contrail_api_cli.resource.Context.session')
     @mock.patch('contrail_api_cli.commands.shell.prompt')
     def test_pipes(self, mock_prompt, mock_session):
         old_stdout = sys.stdout
@@ -438,7 +438,7 @@ bar/ffe8de43-a141-4336-8d70-bf970813bbf7"""
         result = out.getvalue()
         self.assertEqual(result, b'piped\nnot piped\n')
 
-    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
+    @mock.patch('contrail_api_cli.resource.Context.session')
     @mock.patch('contrail_api_cli.commands.shell.prompt')
     def test_shell_args(self, mock_prompt, mock_session):
         old_stdout = sys.stdout
@@ -453,7 +453,7 @@ bar/ffe8de43-a141-4336-8d70-bf970813bbf7"""
         result = out.getvalue()
         self.assertEqual(result, b'foo  bar\n')
 
-    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
+    @mock.patch('contrail_api_cli.resource.Context.session')
     def test_ln(self, mock_session):
         Context().schema = create_schema_from_version('2.21')
         r1 = Resource('virtual-network', uuid='9174e7d3-865b-4faf-ab0f-c083e43fee6d')

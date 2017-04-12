@@ -14,17 +14,22 @@ Basic auth on localhost:8095
 
 .. code-block:: python
 
-    from contrail_api_cli.client import ContrailAPISession
+    from contrail_api_cli.client import SessionLoader
     from contrail_api_cli.resource import Collection
+    from contrail_api_cli.context import Context
+    from contrail_api_cli.schema import DummySchema
 
-    ContrailAPISession.make(host="localhost",
-                            port=8095,
-                            os_username="admin",
-                            os_password="password",
-                            os_cacert=None,
-                            os_cert=None,
-                            insecure=False,
-                            timeout=1)
+    session = SessionLoader().make(host="localhost",
+                                   port=8095,
+                                   os_username="admin",
+                                   os_password="password",
+                                   os_cacert=None,
+                                   os_cert=None,
+                                   insecure=False,
+                                   timeout=1)
+
+    Context().session = session
+    Context().schema = DummySchema()
 
     print(len(Collection('virtual-network')))
 

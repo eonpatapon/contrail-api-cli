@@ -5,7 +5,7 @@ try:
 except ImportError:
     import unittest.mock as mock
 
-from keystoneclient.exceptions import HttpError
+from keystoneauth1.exceptions.http import HttpError
 
 from prompt_toolkit.document import Document
 
@@ -19,7 +19,7 @@ from .utils import CLITest
 
 class TestCompleter(CLITest):
 
-    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
+    @mock.patch('contrail_api_cli.resource.Context.session')
     def test_add_del_resource(self, mock_session):
         mock_document = Document(text='cat bar')
 
@@ -36,7 +36,7 @@ class TestCompleter(CLITest):
         self.assertTrue(str(r2.path.relative_to(Context().shell.current_path)) not in
                         [c.text for c in completions])
 
-    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
+    @mock.patch('contrail_api_cli.resource.Context.session')
     def test_add_same_resource(self, mock_session):
         mock_document = Document(text='cat bar')
 
@@ -50,7 +50,7 @@ class TestCompleter(CLITest):
         self.assertEqual(len(list(completions)), 0)
         r2.delete()
 
-    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
+    @mock.patch('contrail_api_cli.resource.Context.session')
     def test_cursor_position(self, mock_session):
         mock_document = Document(text='cat bar --foo bar', cursor_position=6)
         comp = ShellCompleter()
@@ -75,7 +75,7 @@ class TestCompleter(CLITest):
         completions = comp.get_completions(mock_document, None)
         self.assertEqual(len(list(completions)), 1)
 
-    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
+    @mock.patch('contrail_api_cli.resource.Context.session')
     def test_fq_name_completion(self, mock_session):
         mock_document = Document(text='cat bar/default-dom')
 
@@ -93,7 +93,7 @@ class TestCompleter(CLITest):
         completions = comp.get_completions(mock_document, None)
         self.assertEqual(len(list(completions)), 0)
 
-    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
+    @mock.patch('contrail_api_cli.resource.Context.session')
     def test_not_found(self, mock_session):
         mock_session.id_to_fqname.side_effect = HttpError(http_status=404)
         mock_document = Document(text='cat foo')

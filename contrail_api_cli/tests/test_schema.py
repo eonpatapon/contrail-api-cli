@@ -33,7 +33,7 @@ class TestLinkResource(unittest.TestCase):
     def tearDown(self):
         Context().schema = None
 
-    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
+    @mock.patch('contrail_api_cli.resource.Context.session')
     def test_attr_transformations(self, mock_session):
         lr = LinkedResources(LinkType.REF,
                              Resource('virtual-machine-interface', fq_name='foo'))
@@ -55,7 +55,7 @@ class TestLinkResource(unittest.TestCase):
         self.assertEqual(lr._attr_to_type('virtual_machines'), 'virtual-machine')
         self.assertEqual(lr._attr_to_type('virtual_machine_refs'), 'virtual-machine-ref')
 
-    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
+    @mock.patch('contrail_api_cli.resource.Context.session')
     def test_schema_refs(self, mock_session):
         mock_session.get_json.return_value = {
             "virtual-machine-interface": {
@@ -85,7 +85,7 @@ class TestLinkResource(unittest.TestCase):
         self.assertEqual(len(vmi.refs.bar), 0)
         self.assertEqual([r.uuid for r in vmi.refs], ['15315402-8a21-4116-aeaa-b6a77dceb191'])
 
-    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
+    @mock.patch('contrail_api_cli.resource.Context.session')
     def test_schema_children(self, mock_session):
         mock_session.get_json.side_effect = [
             {
@@ -121,7 +121,7 @@ class TestLinkResource(unittest.TestCase):
         vmi.children.virtual_network.fetch()
         mock_session.get_json.assert_called_with(vmi.children.virtual_network.href, parent_id=vmi.uuid)
 
-    @mock.patch('contrail_api_cli.resource.ResourceBase.session')
+    @mock.patch('contrail_api_cli.resource.Context.session')
     def test_schema_back_refs(self, mock_session):
         mock_session.get_json.side_effect = [
             {

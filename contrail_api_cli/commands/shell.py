@@ -7,7 +7,7 @@ import tempfile
 import shlex
 from six import text_type
 
-from keystoneclient.exceptions import ClientException, HttpError
+from keystoneauth1.exceptions.http import HttpError, HTTPClientError
 
 from pygments.token import Token
 
@@ -20,7 +20,6 @@ from ..completer import ShellCompleter
 from ..exceptions import CommandError, CommandNotFound, \
     NotFound, Exists
 from ..command import Command, Arg
-from ..client import ContrailAPISession
 from ..utils import CONFIG_DIR, printo, eventloop
 from ..style import default as default_style
 from ..manager import CommandManager
@@ -54,9 +53,9 @@ class Shell(Command):
 
         def get_prompt_tokens(cli):
             return [
-                (Token.Username, ContrailAPISession.user or ''),
-                (Token.At, '@' if ContrailAPISession.user else ''),
-                (Token.Host, ContrailAPISession.host),
+                (Token.Username, Context().session.user or ''),
+                (Token.At, '@' if Context().session.user else ''),
+                (Token.Host, Context().session.host),
                 (Token.Colon, ':'),
                 (Token.Path, text_type(Context().shell.current_path)),
                 (Token.Pound, '> ')
@@ -80,7 +79,7 @@ class Shell(Command):
                 short_name = "".join([p if p == "ip" else p[0].lower()
                                       for p in c.type.split('-')])
                 res_aliases.set("%s = %s" % (short_name, c.type))
-        except ClientException as e:
+        except HTTPClientError as e:
             return text_type(e)
 
         def _(event, aliases, char):
@@ -131,7 +130,7 @@ class Shell(Command):
                 continue
             try:
                 result = cmd.parse_and_call(*args)
-            except (HttpError, ClientException, CommandError,
+            except (HttpError, HTTPClientError, CommandError,
                     NotFound, Exists) as e:
                 printo(text_type(e))
                 continue

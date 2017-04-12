@@ -9,6 +9,10 @@ class SchemaNotInitialized(Exception):
     pass
 
 
+class SessionNotInitialized(Exception):
+    pass
+
+
 class ShellContext(object):
     current_path = Path("/")
 
@@ -17,6 +21,7 @@ class ShellContext(object):
 class Context(object):
     _schema = None
     _shell = ShellContext
+    _session = None
 
     @property
     def schema(self):
@@ -28,6 +33,17 @@ class Context(object):
     @schema.setter
     def schema(self, schema):
         self._schema = schema
+
+    @property
+    def session(self):
+        if self._session is None:
+            raise SessionNotInitialized("The session must be first initialized")
+        else:
+            return self._session
+
+    @session.setter
+    def session(self, session):
+        self._session = session
 
     @property
     def shell(self):

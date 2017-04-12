@@ -2,8 +2,21 @@ from __future__ import unicode_literals
 import base64
 from six import b
 
-from oslo_config import cfg
-from keystoneclient.auth.base import BaseAuthPlugin
+from keystoneauth1.plugin import BaseAuthPlugin
+from keystoneauth1.loading import Opt, base
+
+
+class HTTPAuthLoader(base.BaseLoader):
+
+    @property
+    def plugin_class(self):
+        return HTTPAuth
+
+    def get_options(self):
+        return [
+            Opt('username', help='username for basic HTTP authentication'),
+            Opt('password', help='password for basic HTTP authentication')
+        ]
 
 
 class HTTPAuth(BaseAuthPlugin):
@@ -17,10 +30,3 @@ class HTTPAuth(BaseAuthPlugin):
             return {}
         auth = "%s:%s" % (self.username, self.password)
         return {'Authorization': 'Basic %s' % base64.b64encode(b(auth)).decode('utf-8')}
-
-    @classmethod
-    def get_options(cls):
-        return [
-            cfg.StrOpt('username', help='username for basic HTTP authentication'),
-            cfg.StrOpt('password', help='password for basic HTTP authentication')
-        ]

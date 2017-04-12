@@ -1,24 +1,24 @@
 from __future__ import unicode_literals
+import os
 import platform
 from argparse import Namespace
 from functools import wraps
 
-from keystoneclient.auth import base
-from keystoneclient.session import Session
-from keystoneclient.exceptions import HTTPError
+from keystoneauth1 import loading
+from keystoneauth1.session import Session
+from keystoneauth1.exceptions.http import HttpError
 
-from .utils import FQName, classproperty, to_json
-from .resource import ResourceBase
+from .utils import FQName, to_json
 
 
 def contrail_error_handler(f):
-    """Handle HTTPErrors returned by the API server
+    """Handle HTTP errors returned by the API server
     """
     @wraps(f)
     def wrapper(*args, **kwargs):
         try:
             return f(*args, **kwargs)
-        except HTTPError as e:
+        except HttpError as e:
             # Replace message by details to provide a
             # meaningful message
             if e.details:
@@ -28,65 +28,81 @@ def contrail_error_handler(f):
     return wrapper
 
 
+class SessionLoader(loading.session.Session):
+
+    @property
+    def plugin_class(self):
+        return ContrailAPISession
+
+    def make(self, os_auth_type="http", **kwargs):
+        """Initialize a session to Contrail API server
+
+        :param os_auth_type: auth plugin to use:
+            - http: basic HTTP authentification
+            - v2password: keystone v2 auth
+            - v3password: keystone v3 auth
+        :type os_auth_type: str
+        """
+        loader = loading.base.get_plugin_loader(os_auth_type)
+        plugin_options = {opt.dest: kwargs.pop("os_%s" % opt.dest)
+                          for opt in loader.get_options()}
+        plugin = loader.load_from_options(**plugin_options)
+        return self.load_from_argparse_arguments(Namespace(**kwargs), auth=plugin)
+
+    def register_argparse_arguments(self, parser):
+        contrail_group = parser.add_argument_group(
+            'Contrail API Connection Options',
+            'Options controlling the Contrail HTTP API Connections')
+
+        contrail_group.add_argument('--host', '-H',
+                                    default=os.environ.get('CONTRAIL_API_HOST', 'localhost'),
+                                    type=str,
+                                    help="host to connect to (default='%(default)s')")
+        contrail_group.add_argument('--port', '-p',
+                                    default=os.environ.get('CONTRAIL_API_PORT', 8082),
+                                    type=int,
+                                    help="port to connect to (default='%(default)s')")
+        contrail_group.add_argument('--protocol',
+                                    type=str,
+                                    default=os.environ.get('CONTRAIL_API_PROTOCOL', 'http'),
+                                    help="protocol used (default=%(default)s)")
+        super(SessionLoader, self).register_argparse_arguments(parser)
+
+
+def load_from_argparse_arguments(options):
+    return SessionLoader().make(**vars(options))
+
+
+def register_argparse_arguments(parser):
+    return SessionLoader().register_argparse_arguments(parser)
+
+
 class ContrailAPISession(Session):
     user_agent = "contrail-api-cli"
     protocol = None
     host = None
     port = None
-    session = None
     default_headers = {
         'X-Contrail-Useragent': '%s:%s' % (platform.node(), 'contrail-api-cli'),
         "Content-Type": "application/json"
     }
 
-    @classproperty
-    def base_url(cls):
-        return "%s://%s:%s" % (cls.protocol, cls.host, cls.port)
+    def __init__(self, host="localhost", port=8082, protocol="http", **kwargs):
+        self.host = host
+        self.port = port
+        self.protocol = protocol
+        super(ContrailAPISession, self).__init__(**kwargs)
+
+    @property
+    def user(self):
+        return self.auth.username
+
+    @property
+    def base_url(self):
+        return "%s://%s:%s" % (self.protocol, self.host, self.port)
 
     def make_url(self, uri):
         return self.base_url + uri
-
-    @classproperty
-    def user(cls):
-        return cls.session.auth.username
-
-    @classmethod
-    def make(cls,
-             protocol="http",
-             host="localhost",
-             port=8082,
-             os_auth_plugin="http",
-             **kwargs):
-        """Initialize a session to Contrail API server
-
-        :param os_auth_plugin: auth plugin to use:
-            - http: basic HTTP authentification
-            - v2password: keystone v2 auth
-            - v3password: keystone v3 auth
-        :type os_auth_plugin: str
-
-        :param protocol: protocol used to connect to the API server (default: http)
-        :type protocol: str
-        :param host: API server host (default: localhost)
-        :type host: str
-        :param port: API server port (default: 8082)
-        :type port: int
-
-        :param kwargs: plugin arguments
-        """
-        cls.protocol = protocol
-        cls.host = host
-        cls.port = port
-        plugin_cls = base.get_plugin_class(os_auth_plugin)
-        plugin_options = {opt.dest: kwargs.pop("os_%s" % opt.dest)
-                          for opt in plugin_cls.get_options()}
-        plugin = plugin_cls.load_from_options(**plugin_options)
-        args = Namespace(**kwargs)
-        session = cls.load_from_cli_options(args,
-                                            auth=plugin)
-        ResourceBase.session = session
-        cls.session = session
-        return session
 
     @contrail_error_handler
     def get_json(self, url, **kwargs):
@@ -134,7 +150,7 @@ class ContrailAPISession(Session):
         :type type: str
 
         :rtype: UUIDv4 str
-        :raises HTTPError: fq_name not found
+        :raises HttpError: fq_name not found
         """
         data = {
             "type": type,
@@ -156,7 +172,7 @@ class ContrailAPISession(Session):
         :type type: str
 
         :rtype: dict {'type': str, 'fq_name': FQName}
-        :raises HTTPError: uuid not found
+        :raises HttpError: uuid not found
         """
         data = {
             "uuid": uuid
@@ -164,7 +180,7 @@ class ContrailAPISession(Session):
         result = self.post_json(self.make_url("/id-to-fqname"), data)
         result['fq_name'] = FQName(result['fq_name'])
         if type is not None and not result['type'].replace('_', '-') == type:
-            raise HTTPError('uuid %s not found for type %s' % (uuid, type), http_status=404)
+            raise HttpError('uuid %s not found for type %s' % (uuid, type), http_status=404)
         return result
 
     def add_ref(self, r1, r2, attr=None):
