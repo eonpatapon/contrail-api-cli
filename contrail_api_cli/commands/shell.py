@@ -24,6 +24,7 @@ from ..utils import CONFIG_DIR, printo, eventloop
 from ..style import default as default_style
 from ..manager import CommandManager
 from ..context import Context
+from ..schema import SchemaError
 
 
 class ShellAliases(object):
@@ -131,7 +132,7 @@ class Shell(Command):
             try:
                 result = cmd.parse_and_call(*args)
             except (HttpError, HTTPClientError, CommandError,
-                    NotFound, Exists) as e:
+                    SchemaError, NotFound, Exists) as e:
                 printo(text_type(e))
                 continue
             except KeyboardInterrupt:

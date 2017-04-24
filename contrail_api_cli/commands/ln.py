@@ -4,8 +4,7 @@ from __future__ import unicode_literals
 from ..command import Command, Arg, Option, expand_paths
 from ..exceptions import CommandError
 from ..resource import Resource
-from ..context import Context
-from ..schema import DummySchema
+from ..schema import require_schema
 
 
 class Ln(Command):
@@ -39,10 +38,8 @@ class Ln(Command):
     remove = Option('-r', help='remove link',
                     action='store_true', default=False)
 
+    @require_schema()
     def __call__(self, resources=None, remove=None, schema_version=None):
-        if isinstance(Context().schema, DummySchema):
-            raise CommandError("Can't use ln without specifying a schema version")
-
         for idx, r in enumerate(resources):
             resources[idx] = expand_paths([r],
                                           predicate=lambda r: isinstance(r, Resource))[0]

@@ -12,7 +12,7 @@ from keystoneauth1.exceptions.http import HttpError, HTTPClientError
 from .manager import CommandManager
 from .exceptions import CommandError, NotFound, Exists
 from .utils import CONFIG_DIR, printo
-from .schema import create_schema_from_version, list_available_schema_version, DummySchema
+from .schema import create_schema_from_version, list_available_schema_version, DummySchema, SchemaError
 from .context import Context
 from . import client
 
@@ -78,7 +78,7 @@ def main():
         subcmd, subcmd_kwargs = get_subcommand_kwargs(mgr, options.subcmd, options)
         logger.debug('Calling %s with %s' % (subcmd, subcmd_kwargs))
         result = subcmd(**subcmd_kwargs)
-    except (HTTPClientError, HttpError, CommandError, Exists, NotFound) as e:
+    except (HTTPClientError, HttpError, CommandError, SchemaError, Exists, NotFound) as e:
         printo(text_type(e), std_type='stderr')
         exit(1)
     except KeyboardInterrupt:

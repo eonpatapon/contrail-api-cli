@@ -11,6 +11,7 @@ schema files.
 from os import listdir
 from os.path import isfile, join
 import logging
+import functools
 
 from six import add_metaclass
 
@@ -18,6 +19,7 @@ import contrail_api_cli
 from .utils import to_json, Singleton
 from .resource import RootCollection
 from .idl_parser import IDLParser
+from .context import Context
 
 logger = logging.getLogger(__name__)
 
@@ -26,14 +28,18 @@ default_schemas_directory_path = join(contrail_api_cli.__path__[0],
                                       default_schemas_directory_name)
 
 
-class SchemaVersionNotAvailable(Exception):
+class SchemaError(Exception):
+    pass
+
+
+class SchemaVersionNotAvailable(SchemaError):
     def __init__(self, version):
         self.version = version
         msg = "Schema version %s is not available" % self.version
         Exception.__init__(self, msg)
 
 
-class ResourceNotDefined(Exception):
+class ResourceNotDefined(SchemaError):
     def __init__(self, resource_name):
         self.resource_name = resource_name
         msg = "Resource '%s' is not defined in the schema" % self.resource_name
@@ -228,3 +234,16 @@ class DummyResourceSchema(ResourceSchema):
         # resources in the json representation
         self.children = self.refs = self.back_refs = \
             [c.type for c in RootCollection(fetch=True)]
+
+
+def require_schema(version=None):
+    def decorated(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            if isinstance(Context().schema, DummySchema):
+                raise SchemaError("Schema is required")
+            if version is not None and not Context().schema.version == version:
+                raise SchemaError("Schema must be in version %s" % version)
+            return func(*args, **kwargs)
+        return wrapper
+    return decorated
