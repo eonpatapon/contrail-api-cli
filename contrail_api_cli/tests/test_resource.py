@@ -391,6 +391,11 @@ class TestResource(CLITest):
         mock_session.post_json.assert_called_with(self.BASE + '/ref-update', data)
         self.assertTrue('bar_refs' not in r1)
 
+    def test_resource_with_defined_session_2(self):
+        mock_session = mock.MagicMock(base_url=self.BASE)
+        Resource('foo', uuid="fake_uuid", session=mock_session, fetch=True)
+        mock_session.get_json.assert_called_with(self.BASE + '/foo/fake_uuid')
+
 
 class TestCollection(CLITest):
 
@@ -517,6 +522,11 @@ class TestCollection(CLITest):
         mock_session.get_json.side_effect = HttpError(http_status=404)
         with self.assertRaises(CollectionNotFound):
             Collection('foo', fetch=True)
+
+    def test_collection_with_defined_session(self):
+        mock_session = mock.MagicMock(base_url=self.BASE)
+        Collection('foo', session=mock_session, fetch=True)
+        mock_session.get_json.assert_called_with(self.BASE + '/foos')
 
 
 if __name__ == "__main__":
