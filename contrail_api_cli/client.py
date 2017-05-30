@@ -45,7 +45,8 @@ class SessionLoader(loading.session.Session):
         """
         loader = loading.base.get_plugin_loader(os_auth_type)
         plugin_options = {opt.dest: kwargs.pop("os_%s" % opt.dest)
-                          for opt in loader.get_options()}
+                          for opt in loader.get_options()
+                          if 'os_%s' % opt.dest in kwargs}
         plugin = loader.load_from_options(**plugin_options)
         return self.load_from_argparse_arguments(Namespace(**kwargs),
                                                  host=host,
@@ -99,7 +100,10 @@ class ContrailAPISession(Session):
 
     @property
     def user(self):
-        return self.auth.username
+        if hasattr(self.auth, 'username'):
+            return self.auth.username
+        else:
+            return 'unknown'
 
     @property
     def base_url(self):

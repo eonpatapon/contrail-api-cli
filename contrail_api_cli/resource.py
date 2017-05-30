@@ -158,6 +158,9 @@ class ResourceEncoder(json.JSONEncoder):
 
 class ResourceBase(Observable):
 
+    def __init__(self, session=None):
+        self._session = session
+
     def __repr__(self):
         return '%s(%s)' % (self.__class__.__name__, self.path)
 
@@ -170,6 +173,8 @@ class ResourceBase(Observable):
 
     @property
     def session(self):
+        if self._session is not None:
+            return self._session
         return Context().session
 
     @property
@@ -234,7 +239,8 @@ class Collection(ResourceBase, UserList):
     def __init__(self, type, fetch=False, recursive=1,
                  fields=None, detail=None, filters=None,
                  parent_uuid=None, back_refs_uuid=None,
-                 data=None):
+                 data=None, session=None):
+        super(Collection, self).__init__(session=session)
         UserList.__init__(self, initlist=data)
         self.type = type
         self.fields = fields or []
@@ -422,8 +428,9 @@ class Resource(ResourceBase, UserDict):
     """
 
     def __init__(self, type, fetch=False, check=False,
-                 parent=None, recursive=1, **kwargs):
+                 parent=None, recursive=1, session=None, **kwargs):
         assert('fq_name' in kwargs or 'uuid' in kwargs or 'to' in kwargs)
+        super(Resource, self).__init__(session=session)
         self.type = type
 
         UserDict.__init__(self, kwargs)
