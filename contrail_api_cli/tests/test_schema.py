@@ -157,6 +157,26 @@ class TestLinkResource(unittest.TestCase):
         vn.back_refs.instance_ip.fetch()
         mock_session.get_json.assert_called_with(vn.back_refs.instance_ip.href, back_ref_id=vn.uuid)
 
+    def test_require_schema(self):
+
+        @schema.require_schema(version='> 3')
+        def test_gt():
+            pass
+
+        @schema.require_schema(version='< 3')
+        def test_lt():
+            pass
+
+        @schema.require_schema(version='2.21')
+        def test_eq():
+            pass
+
+        with self.assertRaises(schema.SchemaError):
+            test_gt()
+
+        test_lt()
+        test_eq()
+
 
 if __name__ == "__main__":
     unittest.main()

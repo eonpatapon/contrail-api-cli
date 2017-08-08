@@ -12,6 +12,8 @@ from os import listdir
 from os.path import isfile, join
 import logging
 import functools
+from pkg_resources import parse_version
+import operator
 
 from six import add_metaclass
 
@@ -236,14 +238,32 @@ class DummyResourceSchema(ResourceSchema):
             [c.type for c in RootCollection(fetch=True)]
 
 
+op_map = {
+    '>': operator.gt,
+    '<': operator.lt,
+    '>=': operator.ge,
+    '<=': operator.le,
+    '=': operator.eq
+}
+
+
 def require_schema(version=None):
     def decorated(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             if isinstance(Context().schema, DummySchema):
                 raise SchemaError("Schema is required")
-            if version is not None and not Context().schema.version == version:
-                raise SchemaError("Schema must be in version %s" % version)
+            current_version = parse_version(Context().schema.version)
+            if version is not None:
+                parts = version.split()
+                if len(parts) == 2:
+                    op = op_map[parts[0]]
+                    vers = parse_version(parts[1])
+                else:
+                    op = operator.eq
+                    vers = parse_version(parts[0])
+                if not op(current_version, vers):
+                    raise SchemaError("Schema version must be %s" % version)
             return func(*args, **kwargs)
         return wrapper
     return decorated
