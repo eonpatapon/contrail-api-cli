@@ -1,3 +1,14 @@
+contrail-api-cli (0.2.0-1) trusty; urgency=medium
+
+  * New upstream release
+    - move to keystoneauth1 instead of keystoneclient
+    - resource properties are parsed from the schema
+    - contrail 3.2 schemas added
+    - add support to use different HTTP sessions
+    - fix bug on `kv` command
+
+ -- Jean-Philippe Braun <eon@patapon.info>  Thu, 28 Sep 2017 10:30:29 +0200
+
 contrail-api-cli (0.1.2-1) trusty; urgency=medium
 
   * New upstream release
