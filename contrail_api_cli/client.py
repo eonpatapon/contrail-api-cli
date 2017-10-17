@@ -3,6 +3,7 @@ import os
 import platform
 from argparse import Namespace
 from functools import wraps
+import requests
 
 from keystoneauth1 import loading
 from keystoneauth1.session import Session
@@ -96,7 +97,11 @@ class ContrailAPISession(Session):
         self.host = host
         self.port = port
         self.protocol = protocol
-        super(ContrailAPISession, self).__init__(**kwargs)
+        session = requests.Session()
+        adapter = requests.adapters.HTTPAdapter(pool_connections=100, pool_maxsize=100)
+        session.mount('http://', adapter)
+        session.mount('https://', adapter)
+        super(ContrailAPISession, self).__init__(session=session, **kwargs)
 
     @property
     def user(self):
