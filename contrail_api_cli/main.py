@@ -54,6 +54,9 @@ def main():
                         help="schema version used by contrail-api server (default=%(default)s)")
     parser.add_argument('--logging-conf',
                         help="python logging configuration file")
+    parser.add_argument('--config-dir',
+                        help="path of configuration directory (default=%(default)s)",
+                        default=os.environ.get('CONTRAIL_API_CLI_CONFIG_DIR', CONFIG_DIR))
 
     # contrail api session options
     client.register_argparse_arguments(parser)
@@ -64,8 +67,8 @@ def main():
 
     options = parser.parse_args()
 
-    if not os.path.exists(CONFIG_DIR):
-        os.makedirs(CONFIG_DIR)
+    if not os.path.exists(options.config_dir):
+        os.makedirs(options.config_dir)
 
     Context().session = client.load_from_argparse_arguments(options)
 
