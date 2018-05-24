@@ -47,7 +47,7 @@ class Relative(Command):
     def _selector_to_python(self, selector):
         try:
             sel, value = selector.split('=')
-        except:
+        except ValueError:
             raise CommandError('Bad selector format %s\n'
                                'Selector must be of form "key1=value,key2.keyA=value"'
                                % selector)

@@ -20,7 +20,7 @@ except ImportError:
 try:
     curses.setupterm()
     nb_colors = curses.tigetnum("colors")
-except:
+except Exception:
     nb_colors = 256
 
 if nb_colors == 8:

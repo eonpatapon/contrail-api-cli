@@ -283,7 +283,7 @@ def printo(msg, encoding=None, errors='replace', std_type='stdout'):
     if encoding is None:
         try:
             encoding = std.encoding
-        except:
+        except AttributeError:
             encoding = None
     # Fallback to ascii if no encoding is found
     if encoding is None:
