@@ -673,6 +673,28 @@ class Resource(ResourceBase, UserDict):
         back_ref.remove_ref(self)
         return self.fetch()
 
+    def set_ref(self, ref, attr=None):
+        """Set reference to resource
+
+        Can be used to set references on a resource
+        that is not already created.
+
+        :param ref: reference to add
+        :type ref: Resource
+
+        :rtype: Resource
+        """
+        ref_attr = '%s_refs' % ref.type.replace('-', '_')
+        ref = {
+            'to': ref.fq_name,
+            'uuid': ref.uuid,
+        }
+        if ref_attr in self:
+            self[ref_attr].append(ref)
+        else:
+            self[ref_attr] = [ref]
+        return self
+
     def add_ref(self, ref, attr=None):
         """Add reference to resource
 
