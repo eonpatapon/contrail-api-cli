@@ -41,7 +41,7 @@ class BaseOption(object):
 
     @property
     def dest(self):
-        return self.kwargs.get('get', self.attr)
+        return self.kwargs.get('dest', self.attr)
 
     @property
     def is_multiple(self):
