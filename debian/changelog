@@ -1,3 +1,12 @@
+contrail-api-cli (0.2.2-1) trusty; urgency=medium
+
+  * New upstream release
+    - add Resource.set_ref method
+    - fix flakes8 warnings
+    - fix options with dest param
+
+ -- Jean-Philippe Braun <eon@patapon.info>  Thu, 31 May 2018 08:12:32 +0200
+
 contrail-api-cli (0.2.1-1) trusty; urgency=medium
 
   * New upstream release
