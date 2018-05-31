@@ -6,7 +6,7 @@ install_requires = [
     'prompt_toolkit>=0.53',
     'keystoneauth1',
     'requests!=2.12.2,!=2.13.0,>=2.10.0',
-    'gevent',
+    'gevent<1.3',
     'datrie'
 ]
 
