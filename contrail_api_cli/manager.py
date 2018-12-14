@@ -1,9 +1,8 @@
 from __future__ import unicode_literals
 from six import add_metaclass
-import itertools
 import argparse
 
-from stevedore import extension
+from reentry import manager
 from prompt_toolkit.completion import Completion
 
 from .exceptions import CommandNotFound
@@ -21,7 +20,7 @@ class CommandManager(object):
                              (True by default)
         :type load_default: bool
         """
-        self.mgrs = []
+        self.commands = {}
         if load_default is True:
             self.load_namespace('contrail_api_cli.command')
 
@@ -31,26 +30,30 @@ class CommandManager(object):
         :param ns: namespace name
         :type ns: str
         """
-        mgr = extension.ExtensionManager(namespace=ns,
-                                         verify_requirements=True,
-                                         on_load_failure_callback=self._on_failure)
-        # Load commands from ns
-        for ext in mgr.extensions:
+        for ext in manager.iter_entry_points(group=ns):
             try:
-                obj = ext.plugin(ext.name)
+                obj = ext.load()
+                self.commands[ext.name] = obj(ext.name)
             except Exception as err:
                 self._on_failure(self, ext, err)
-                obj = None
-            ext.obj = obj
-
-        self.mgrs.append(mgr)
+                self.commands[ext.name] = None
 
     def unload_namespace(self, ns):
-        self.mgrs = [mgr for mgr in self.mgrs if not mgr.namespace == ns]
+        for ext in manager.iter_entry_points(group=ns):
+            del self.commands[ext.name]
 
     def _on_failure(self, mgr, entrypoint, exc):
         print('Cannot load command %s: %s' % (entrypoint.name,
                                               exc))
+
+    @property
+    def list(self):
+        """Generator of command instances
+
+        :rtype: (name, Command)
+        """
+        for name, cmd in self.commands.items():
+            yield (name, cmd)
 
     def get(self, name):
         """Return command instance of loaded
@@ -59,31 +62,19 @@ class CommandManager(object):
         :param name: name of the command
         :type name: str
         """
-        for cmd_name, cmd in self.list:
-            if cmd_name == name:
-                return cmd
-        raise CommandNotFound('Command %s not found. Type help for all commands' % name)
-
-    @property
-    def extensions(self):
-        return itertools.chain(*[mgr.extensions for mgr in self.mgrs])
-
-    @property
-    def list(self):
-        """Generator of command instances
-
-        :rtype: (name, Command)
-        """
-        for ext in self.extensions:
-            # don't return ext that failed
-            # to load earlier
-            if ext.obj is None:
-                continue
-            yield (ext.name, ext.obj)
+        if name not in self.commands:
+            raise CommandNotFound('Command %s not found. Type help for all commands' % name)
+        return self.commands[name]
 
     def add(self, name, cmd):
-        ext = extension.Extension(name, None, cmd.__class__, cmd)
-        self.mgrs[0].extensions.append(ext)
+        """Add command to manager
+
+        :param name: name of the command
+        :type name: str
+        :param cmd: command instance
+        :type cmd: Command
+        """
+        self.commands[name] = cmd
 
     @classmethod
     def register_argparse_commands(cls, parser, argv):

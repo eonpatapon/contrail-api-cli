@@ -7,7 +7,8 @@ install_requires = [
     'keystoneauth1',
     'requests!=2.12.2,!=2.13.0,>=2.10.0',
     'gevent<1.3',
-    'datrie'
+    'datrie',
+    'reentry',
 ]
 
 test_requires = []
