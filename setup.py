@@ -5,7 +5,7 @@ install_requires = [
     'pygments',
     'prompt_toolkit<2',
     'keystoneauth1',
-    'requests!=2.12.2,!=2.13.0,>=2.10.0',
+    'requests>=2.20.0',
     'gevent<1.3',
     'datrie',
     'reentry',
