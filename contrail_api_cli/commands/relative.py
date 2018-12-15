@@ -124,7 +124,7 @@ class Relative(Command):
         resource_name_paths_selectors = []
         for path in resource_name_paths:
             if '[' in path:
-                matches = re.match('^([^[]*)\[([^]]+)\]$', path)
+                matches = re.match(r'^([^[]*)\[([^]]+)\]$', path)
                 if matches is not None:
                     selectors = [self._selector_to_python(s.strip())
                                  for s in matches.group(2).split(',')]
