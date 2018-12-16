@@ -14,7 +14,7 @@ install:
     - pip install nose
     - pip install .
 before_script:
-    - flake8 --ignore E501 contrail_api_cli
+    - flake8 --ignore E501,W504 contrail_api_cli
 script:
     - nosetests --with-coverage
 after_success:

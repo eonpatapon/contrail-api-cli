@@ -4,8 +4,7 @@ import logging
 
 from prompt_toolkit.completion import Completer, Completion
 from prompt_toolkit.document import Document
-
-from stevedore import extension
+from reentry import manager
 
 from .context import Context
 from .parser import CommandParser, CommandInvalid
@@ -21,10 +20,12 @@ class ShellCompleter(Completer):
     def __init__(self):
         self.context = Context().shell
         self.completers = {}
-        for ext in extension.ExtensionManager(namespace="contrail_api_cli.completer",
-                                              invoke_on_load=True,
-                                              on_load_failure_callback=self._on_failure):
-            self.completers[ext.name] = ext.obj
+        for ext in manager.iter_entry_points(group="contrail_api_cli.completer"):
+            try:
+                obj = ext.load()
+                self.completers[ext.name] = obj()
+            except Exception as err:
+                self._on_failure(self, ext, err)
 
     def _on_failure(self, mgr, entrypoint, exc):
         printo('Cannot load completer %s: %s' % (entrypoint.name,
