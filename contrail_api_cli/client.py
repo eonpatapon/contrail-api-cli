@@ -1,11 +1,13 @@
 from __future__ import unicode_literals
 import os
+import sys
 import platform
 from argparse import Namespace
 from functools import wraps
 import requests
 
 from keystoneauth1 import loading
+from keystoneauth1.loading import cli
 from keystoneauth1.session import Session
 from keystoneauth1.exceptions.http import HttpError
 
@@ -35,20 +37,24 @@ class SessionLoader(loading.session.Session):
     def plugin_class(self):
         return ContrailAPISession
 
-    def make(self, host="localhost", port=8082, protocol="http", os_auth_type="http", **kwargs):
+    def make(self, host="localhost", port=8082, protocol="http", os_auth_type=None, **kwargs):
         """Initialize a session to Contrail API server
 
         :param os_auth_type: auth plugin to use:
+            - None: no authentification
             - http: basic HTTP authentification
             - v2password: keystone v2 auth
             - v3password: keystone v3 auth
-        :type os_auth_type: str
+        :type os_auth_type: None|str
         """
-        loader = loading.base.get_plugin_loader(os_auth_type)
-        plugin_options = {opt.dest: kwargs.pop("os_%s" % opt.dest)
-                          for opt in loader.get_options()
-                          if 'os_%s' % opt.dest in kwargs}
-        plugin = loader.load_from_options(**plugin_options)
+        if os_auth_type:
+            loader = loading.base.get_plugin_loader(os_auth_type)
+            plugin_options = {opt.dest: kwargs.pop("os_%s" % opt.dest)
+                              for opt in loader.get_options()
+                              if 'os_%s' % opt.dest in kwargs}
+            plugin = loader.load_from_options(**plugin_options)
+        else:
+            plugin = None
         return self.load_from_argparse_arguments(Namespace(**kwargs),
                                                  host=host,
                                                  port=port,
@@ -72,6 +78,16 @@ class SessionLoader(loading.session.Session):
                                     type=str,
                                     default=os.environ.get('CONTRAIL_API_PROTOCOL', 'http'),
                                     help="protocol used (default=%(default)s)")
+        contrail_group.add_argument('--auth-plugin',
+                                    type=str,
+                                    default=os.environ.get('OS_AUTH_PLUGIN', None),
+                                    choices=["v2password", "v3password", "http"],
+                                    help="auth plugin used (default=%(default)s)")
+        # Default auth plugin will be http unless OS_AUTH_PLUGIN envvar is set
+        argv = sys.argv[1:]
+        if '--auth-plugin' in argv:
+            plugin = argv[argv.index('--auth-plugin') + 1]
+            cli.register_argparse_arguments(parser, argv, default=plugin)
         super(SessionLoader, self).register_argparse_arguments(parser)
 
 

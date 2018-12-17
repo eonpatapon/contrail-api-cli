@@ -6,7 +6,6 @@ import logging
 import logging.config
 from six import text_type
 
-from keystoneauth1.loading import cli
 from keystoneauth1.exceptions.http import HttpError, HTTPClientError
 
 from .manager import CommandManager
@@ -60,8 +59,6 @@ def main():
 
     # contrail api session options
     client.register_argparse_arguments(parser)
-    # Default auth plugin will be http unless OS_AUTH_PLUGIN envvar is set
-    cli.register_argparse_arguments(parser, argv, default="http")
     # Add commands to the parser given the namespaces list
     mgr = CommandManager.register_argparse_commands(parser, argv)
 
