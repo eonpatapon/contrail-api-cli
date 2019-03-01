@@ -88,8 +88,6 @@ class Ls(Command):
         return text_type(fval)
 
     def _get_field(self, resource, field):
-        # elif field.startswith('.'):
-            # value = jq(field).transform(resource.json())
         value = '_'
         if field == 'path':
             value = self.current_path(resource)
