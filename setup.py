@@ -52,6 +52,7 @@ setup(
             'relative = contrail_api_cli.commands.relative:Relative',
             'ln = contrail_api_cli.commands.ln:Ln',
             'exec = contrail_api_cli.commands.exec:Exec',
+            'batch = contrail_api_cli.commands.batch:Batch',
             'kv = contrail_api_cli.commands.kv:Kv',
             'man = contrail_api_cli.commands.man:Man',
         ],
