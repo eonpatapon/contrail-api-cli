@@ -1,0 +1,567 @@
+
+<!--
+      Copyright (c) 2017 Juniper Networks, Inc. All rights reserved.
+ -->
+<xsd:schema
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+    xmlns:smi="urn:ietf:params:xml:ns:opsawg:smi:base:1.0">
+
+<xsd:complexType name="PlaybookInfoType">
+    <xsd:all>
+        <xsd:element name="playbook-uri" type="xsd:string" required="true"
+                     description="uri to the playbook location on the file server"/>
+        <xsd:element name="vendor" type="xsd:string" required="optional"
+                     description="Vendor name"/>
+        <xsd:element name="device-family" type="xsd:string" required="optional"
+                     description="Device family name"/>
+        <xsd:element name="job-completion-weightage" type="xsd:integer" default='100'
+                     description="Job percentage completion when this playbook is completed. This atttribute value should 100 if there is only one playbook defined in the job template. The job-completion-weigtages for all playbooks in the same job-template should add up to 100 exact."/>
+    </xsd:all>
+</xsd:complexType>
+
+<xsd:complexType name="PlaybookInfoListType">
+    <xsd:all>
+        <xsd:element name="playbook-info" type="PlaybookInfoType" maxOccurs="unbounded"/>
+    </xsd:all>
+</xsd:complexType>
+
+<xsd:complexType name="DeviceCredential">
+    <xsd:all>
+        <xsd:element name="credential" type="UserCredentials" required="true"/>
+        <xsd:element name="vendor" type="xsd:string" required="optional"/>
+        <xsd:element name="device-family" type="xsd:string" required="optional"/>
+    </xsd:all>
+</xsd:complexType>
+
+<xsd:complexType name="DeviceCredentialList">
+    <xsd:all>
+        <xsd:element name="device-credential" type="DeviceCredential" maxOccurs="unbounded"/>
+    </xsd:all>
+</xsd:complexType>
+
+<xsd:simpleType name="FabricNetworkType">
+     <xsd:restriction base="xsd:string">
+         <xsd:enumeration value="management"/>
+         <xsd:enumeration value="loopback"/>
+         <xsd:enumeration value="ip-fabric"/>
+     </xsd:restriction>
+</xsd:simpleType>
+
+<xsd:complexType name="FabricNetworkTag">
+    <xsd:all>
+        <xsd:element name="network-type" type="FabricNetworkType"/>
+    </xsd:all>
+</xsd:complexType>
+
+<xsd:complexType name="SerialNumListType">
+    <xsd:all>
+        <xsd:element name="serial-num" type="xsd:string" maxOccurs="unbounded"/>
+    </xsd:all>
+</xsd:complexType>
+
+<xsd:complexType name="AsnRangeType">
+     <xsd:all>
+         <xsd:element name="asn_min" type="xsd:integer"/>
+         <xsd:element name="asn_max" type="xsd:integer"/>
+     </xsd:all>
+</xsd:complexType>
+
+<xsd:simpleType name="NamespaceType">
+     <xsd:restriction base="xsd:string">
+         <xsd:enumeration value="IPV4-CIDR"/>
+         <xsd:enumeration value="ASN"/>
+         <xsd:enumeration value="ASN_RANGE"/>
+         <xsd:enumeration value="MAC_ADDR"/>
+         <xsd:enumeration value="SERIAL_NUM"/>
+     </xsd:restriction>
+</xsd:simpleType>
+
+<xsd:complexType name="NamespaceValue">
+    <xsd:choice>
+        <xsd:element name="ipv4-cidr" type="SubnetListType" required="optional"
+             description="Namespace as IPV4 CIDR addresses"/>
+        <xsd:element name="asn" type="AutonomousSystemsType" required="optional"
+             description="Namespace as Autonomous System Numbers"/>
+        <xsd:element name="mac-addr" type="MacAddressesType" required="optional"
+             description="Namespace as MAC addresses"/>
+        <xsd:element name="asn-ranges" type="AsnRangeType" required="optional" maxOccurs="unbounded"
+             description="Namespace as ASN ranges"/>
+        <xsd:element name="serial-nums" type="xsd:string" required="optional" maxOccurs="unbounded"
+             description="Namespace as MAC addresses"/>
+    </xsd:choice>
+</xsd:complexType>
+
+<xsd:complexType name="DevicePlatformListType">
+    <xsd:element name="platform-name" type="xsd:string" maxOccurs="unbounded"/>
+</xsd:complexType>
+
+<xsd:simpleType name="PhysicalInterfaceType">
+     <xsd:restriction base='xsd:string'>
+         <xsd:enumeration value='regular'/>
+         <xsd:enumeration value='lag'/>
+     </xsd:restriction>
+</xsd:simpleType>
+
+<xsd:simpleType name="LogicalInterfaceType">
+     <xsd:restriction base='xsd:string'>
+         <xsd:enumeration value='l2'/>
+         <xsd:enumeration value='l3'/>
+     </xsd:restriction>
+</xsd:simpleType>
+
+<xsd:simpleType name="PhysicalRouterRole">
+     <xsd:restriction base='xsd:string'>
+         <xsd:enumeration value='spine'/>
+         <xsd:enumeration value='leaf'/>
+         <xsd:enumeration value='e2-access'/>
+         <xsd:enumeration value='e2-provider'/>
+         <xsd:enumeration value='e2-internet'/>
+         <xsd:enumeration value='e2-vrr'/>
+     </xsd:restriction>
+</xsd:simpleType>
+
+<xsd:simpleType name="InterfaceType">
+     <xsd:restriction base="xsd:string">
+         <xsd:enumeration value="fc"/>
+         <xsd:enumeration value="ge"/>
+         <xsd:enumeration value="xe"/>
+         <xsd:enumeration value="xle"/>
+         <xsd:enumeration value="et"/>
+         <xsd:enumeration value="fte"/>
+         <xsd:enumeration value="me"/>
+         <xsd:enumeration value="em"/>
+     </xsd:restriction>
+</xsd:simpleType>
+
+<xsd:simpleType name="PortSpeedType">
+     <xsd:restriction base="xsd:string">
+         <xsd:enumeration value="1G"/>
+         <xsd:enumeration value="10G"/>
+         <xsd:enumeration value="40G"/>
+         <xsd:enumeration value="100G"/>
+     </xsd:restriction>
+</xsd:simpleType>
+
+<xsd:complexType name="PortInfoType">
+     <xsd:all>
+         <xsd:element name="name" type="xsd:string"/>
+         <xsd:element name="type" type="InterfaceType"/>
+         <xsd:element name="port-speed" type="PortSpeedType"/>
+         <xsd:element name="channelized" type="xsd:boolean" default="false"/>
+         <xsd:element name="channelized-port-speed" type="PortSpeedType"/>
+     </xsd:all>
+</xsd:complexType>
+
+<xsd:complexType name="InterfaceMapType">
+     <xsd:element name="port-info" type="PortInfoType" maxOccurs="unbounded"/>
+</xsd:complexType>
+
+<xsd:complexType name="RoutingBridgingRolesType">
+    <xsd:element name="rb-roles" type="xsd:string" maxOccurs="unbounded"/>
+</xsd:complexType>
+
+<xsd:complexType name="NodeProfileRolesType">
+    <xsd:element name="role-mappings" type="NodeProfileRoleType" maxOccurs="unbounded"/>
+</xsd:complexType>
+
+<xsd:complexType name="NodeProfileRoleType">
+     <xsd:element name="physical-role" type="xsd:string" />
+     <xsd:element name="rb-roles" type="xsd:string" maxOccurs="unbounded"/>
+</xsd:complexType>
+
+<xsd:complexType name="UserCredentials">
+    <xsd:all>
+        <xsd:element name="username" type="xsd:string"/>
+        <xsd:element name="password" type="xsd:string"/>
+    </xsd:all>
+</xsd:complexType>
+
+<xsd:complexType name="SNMPCredentials">
+    <xsd:all>
+        <xsd:element name="version" type='xsd:integer' default='2'/>
+        <xsd:element name="local-port" type='xsd:integer'/>
+        <xsd:element name="retries" type='xsd:integer'/>
+        <xsd:element name="timeout" type='xsd:integer'/>
+        <xsd:element name="v2-community" type='xsd:string'/>
+        <xsd:element name="v3-security-name" type='xsd:string'/>
+        <xsd:element name="v3-security-level" type='xsd:string'/>
+        <xsd:element name="v3-security-engine-id" type='xsd:string'/>
+        <xsd:element name="v3-context" type='xsd:string'/>
+        <xsd:element name="v3-context-engine-id" type='xsd:string'/>
+        <xsd:element name="v3-authentication-protocol" type='xsd:string'/>
+        <xsd:element name="v3-authentication-password" type='xsd:string'/>
+        <xsd:element name="v3-privacy-protocol" type='xsd:string'/>
+        <xsd:element name="v3-privacy-password" type='xsd:string'/>
+        <xsd:element name="v3-engine-id" type='xsd:string'/>
+        <xsd:element name="v3-engine-boots" type='xsd:integer'/>
+        <xsd:element name="v3-engine-time" type='xsd:integer'/>
+    </xsd:all>
+</xsd:complexType>
+
+<xsd:simpleType name="JobConcurrencyLevelType">
+    <xsd:restriction base='xsd:string'>
+        <xsd:enumeration value='fabric'/>
+        <xsd:enumeration value='device'/>
+    </xsd:restriction>
+</xsd:simpleType>
+
+<xsd:element name="job-template" type="ifmap:IdentityType"/>
+
+<xsd:element name="global-system-config-job-template"/>
+<!--#IFMAP-SEMANTICS-IDL
+          Link('global-system-config-job-template',
+             'global-system-config', 'job-template', ['has'], 'optional', 'CRUD',
+             'List of job templates supported by the system.') -->
+
+<xsd:element name="job-template-multi-device-job" type="xsd:boolean"/>
+<!--#IFMAP-SEMANTICS-IDL
+          Property('job-template-multi-device-job', 'job-template', 'required', 'CRUD',
+              'if set to true, the "/execute-job" action url allows device list as additional parameter to run the job template on multiple device in one job') -->
+<xsd:element name="job-template-concurrency-level" type="JobConcurrencyLevelType"/>
+<!--#IFMAP-SEMANTICS-IDL
+          Property('job-template-concurrency-level', 'job-template', 'required', 'CRUD',
+              'This attribute controls the number concurrent job execution against the same fabric. When this attribute set to "fabric", there could only one job execution per fabric When this attribute set to "device", there could be only one playbook execution running against the same device at the time. ') -->
+<xsd:element name="job-template-playbooks" type="PlaybookInfoListType"/>
+<!--#IFMAP-SEMANTICS-IDL
+          ListProperty('job-template-playbooks', 'job-template', 'required', 'CRUD',
+              'List of vendor specific playbooks that achieve the same functionality on each vendor device. All the vendor specific playbooks listed here share the same input/output schema defined in the job template') -->
+<xsd:element name="job-template-input-schema" type="xsd:string"/>
+<!--#IFMAP-SEMANTICS-IDL
+          Property('job-template-input-schema', 'job-template', 'optional', 'CRUD',
+              'JSON schema of the job input parameters which will be used to validate the job input json or generate UI form for user to enter the job parameters. This property stores the JSON schema content as string. Here is an example fo the image upgrade job template input schema:
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "title": "Image upgrade input",
+    "type": "object",
+    "properties": {
+        "image_uuid": {
+            "type": "string"
+        }
+    },
+    "required": ["image_uuid"]
+}') -->
+<xsd:element name="job-template-output-schema" type="xsd:string"/>
+<!--#IFMAP-SEMANTICS-IDL
+          Property('job-template-output-schema', 'job-template', 'optional', 'CRUD',
+              'JSON schema of the job output that describes the output from the job and could be used by UI to render the output automatically. This property stores the JSON schema content as string.') -->
+
+<xsd:element name="fabric" type="ifmap:IdentityType"/>
+
+<xsd:element name="fabric-ztp" type="xsd:boolean"/>
+<!--#IFMAP-SEMANTICS-IDL
+          Property('fabric-ztp', 'fabric', 'optional', 'CRUD',
+              'This attribute to indicate if the fabric is zero-touch provisioned or not. If this attribute is set to "True", user should not be allowed to remove any existing namespaces from the fabric as they may be used to provision the devices.') -->
+
+<xsd:element name="fabric-virtual-network" type="FabricNetworkTag"/>
+<!--#IFMAP-SEMANTICS-IDL
+          Link('fabric-virtual-network',
+             'fabric', 'virtual-network', ['ref'], 'optional', 'CRUD',
+             'Similar to using virtual-machine to model the bare metal server, we are using virtual-network to model various underlay networks such as the management network and IP fabric network. This would allow us the re-use the same IPAM data model and code base to manage the IP auto-assignments for the underlay physical networks.') -->
+
+<xsd:element name="global-system-config-fabric"/>
+<!--#IFMAP-SEMANTICS-IDL
+          Link('global-system-config-fabric',
+             'global-system-config', 'fabric', ['has'], 'optional', 'CRUD',
+             'List of fabrics in the system. Each fabric is an administrative domain for all the network devices in one or multiple CLOS.') -->
+
+<xsd:element name="supported-fabric-annotations" type="KeyValuePairs"/>
+<!--#IFMAP-SEMANTICS-IDL
+          Property('supported-fabric-annotations', 'global-system-config', 'optional', 'CRUD',
+              'List of supported annotations that can be used to annotate a Contrail Fabric. These annoations are used as directives, or hints to assign resources defined in namespaces to the network devices. For example, `igp-protocol: ospf` attribute could be used by the underlay provisioning playbook to choose which IGP protocol to use for the IP fabric.') -->
+
+<xsd:element name="physical-router-fabric"/>
+<!--#IFMAP-SEMANTICS-IDL
+          Link('physical-router-fabric',
+             'physical-router', 'fabric', ['ref'], 'optional', 'CRUD',
+             'Fabric that this physical-router belongs to.') -->
+
+<xsd:element name="fabric-credentials" type="DeviceCredentialList"/>
+<!--#IFMAP-SEMANTICS-IDL
+          ListProperty('fabric-credentials', 'fabric', 'optional', 'CRUD',
+              'List of device credentials to manage the network devices in the fabric.') -->
+
+<xsd:element name="fabric-namespace" type="ifmap:IdentityType"/>
+
+<xsd:element name="fabric-fabric-namespace"/>
+<!--#IFMAP-SEMANTICS-IDL
+          Link('fabric-fabric-namespace', 'fabric', 'fabric-namespace', ['has'], 'optional', 'CRUD',
+             'list of fabric namespaces that define a set of resources that can be used to configure the network devices in the fabric.') -->
+
+<xsd:element name="fabric-namespace-type" type="NamespaceType"/>
+<!--#IFMAP-SEMANTICS-IDL
+          Property('fabric-namespace-type', 'fabric-namespace', 'optional', 'CRUD',
+              'Supported namespace types') -->
+<xsd:element name="fabric-namespace-value" type="NamespaceValue"/>
+<!--#IFMAP-SEMANTICS-IDL
+          Property('fabric-namespace-value', 'fabric-namespace', 'optional', 'CRUD',
+              'namespace value of type defined by the namespace-type.') -->
+
+<xsd:element name="hardware" type="ifmap:IdentityType"
+    description="This resource contains the information about the device hardware info. This resource name must follow the convention: '[vendor name]-[hardware platform name]', for example, 'juniper-mx80'."/>
+
+<xsd:element name="card" type="ifmap:IdentityType"
+    description="This resource contains the information about the interface card in a hardware platform."/>
+<xsd:element name="interfacd-map" type="InterfaceMapType"/>
+<!--#IFMAP-SEMANTICS-IDL
+          Property('interface-map', 'card', 'required', 'CRUD',
+              'Interface map of all the physical ports on a physical interface card.') -->
+
+<xsd:element name="hardware-card"/>
+<!--#IFMAP-SEMANTICS-IDL
+          Link('hardware-card', 'hardware', 'card', ['ref'], 'optional', 'CRUD',
+             'List of installed interface cards in a specific hardware platform.') -->
+
+<xsd:element name="node-profile" type="ifmap:IdentityType"
+    description="Node profile contains the meta-data to profile/categorize the devices so that a list of supported capabilities/roles by the device are known to the system. For example, we can define a node profile to specify list of capabilities/roles supported by a set of QFX10K devices with certain hardware/software installed. It also contains the default config parameter values for each supported roles/capability. These are the config parameters that are not modeled in the VNC data model. They could be vendor specific config parameters that we allow user to tweak via API or some kind of auto generated UI from job template input schema. The UML diagram for node-profile can be found at https://github.com/jnpr-tjiang/cfm-data-model/blob/master/5.0.1-data-model/images/node_profile.png"/>
+
+<xsd:element name="node-profile-vendor" type="xsd:string"/>
+<!--#IFMAP-SEMANTICS-IDL
+          Property('node-profile-vendor', 'node-profile', 'required', 'CRUD',
+              'Vendor name (e.g. Juniper) that this node profile can be used for.') -->
+<xsd:element name="node-profile-device-family" type="xsd:string"/>
+<!--#IFMAP-SEMANTICS-IDL
+          Property('node-profile-device-family', 'node-profile', 'required', 'CRUD',
+              'Device family name that this node profile can be used to match.') -->
+<xsd:element name="node-profile-roles" type="NodeProfileRolesType"/>
+<!--#IFMAP-SEMANTICS-IDL
+          Property('node-profile-roles', 'node-profile', 'required', 'CRUD',
+              'List of capable physical and routing-bridging role combinations supported by the devices that matches one of the hardware list defined in this node profile.') -->
+<xsd:element name="global-system-config-node-profile"/>
+<!--#IFMAP-SEMANTICS-IDL
+          Link('global-system-config-node-profile', 'global-system-config', 'node-profile', ['has'], 'optional', 'CRUD',
+             'list of node profiles supported by the system.') -->
+<xsd:element name="fabric-node-profile" type='SerialNumListType'/>
+<!--#IFMAP-SEMANTICS-IDL
+          Link('fabric-node-profile', 'fabric', 'node-profile', ['ref'], 'optional', 'CRUD',
+             'node profiles assignd to the fabric. The serial number list on the link is used to auto assign node-profile during ZTP so that port channelization could be bootstrapped based on the hardware spec in the node profile.') -->
+<xsd:element name="physical-router-node-profile"/>
+<!--#IFMAP-SEMANTICS-IDL
+          Link('physical-router-node-profile', 'physical-router', 'node-profile', ['ref'], 'optional', 'CRUD',
+             'Node profile assigned to the physical router during device discovery/onboarding.') -->
+
+<xsd:element name="node-profile-hardware"/>
+<!--#IFMAP-SEMANTICS-IDL
+          Link('node-profile-hardware', 'node-profile', 'hardware', ['ref'], 'optional', 'CRUD',
+             'Hardware info defined in a node profile that are used to categorize the devices') -->
+
+<xsd:element name="role-config" type="ifmap:IdentityType"
+    description="This resource exposes to users additional parameters to configure a specify physical or routing/switching roles. These are the config parameters that are mot modeled in VNC data model and we don't want to hard code in the fabric ansible playbooks. These could be vendor specific parameters or could be extended by the field or customer who might want to tweak the playbooks. The schema for the role config are defined in the job-template.input_schema. This schema could be used by the UI to generically render the form for user to edit the config."/>
+
+<xsd:element name="node-profile-role-config"/>
+<!--#IFMAP-SEMANTICS-IDL
+               Link('node-profile-role-config', 'node-profile', 'role-config', ['has'], 'optional', 'CRUD',
+             'list of role configs for those physical or routing/bridging roles defined in the node-profile.') -->
+<xsd:element name="role-config-job-template"/>
+<!--#IFMAP-SEMANTICS-IDL
+               Link('role-config-job-template', 'role-config', 'job-template', ['ref'], 'optional', 'CRUD',
+             'This reference associates the role config to a job-template that contains a playbook that generates device
+              specific role config and deploys it to the device. The role-config.config attribtue value must be in JSON
+              format and conform to the input_schema defined in the job-template.') -->
+<xsd:element name="role-config-config" type="xsd:string"/>
+<!--#IFMAP-SEMANTICS-IDL
+          Property('role-config-config', 'role-config', 'required', 'CRUD',
+              'role config in JSON format. This JSON config must conform to the input-schema of the job template for the role provisioning.') -->
+
+<xsd:element name="physical-router" type="ifmap:IdentityType"/>
+<xsd:element name="global-system-config-physical-router"/>
+<!--#IFMAP-SEMANTICS-IDL
+          Link('global-system-config-physical-router',
+             'global-system-config', 'physical-router', ['has'], 'optional', 'CRUD',
+             'Physical router object represent any physical device that participates in virtual networking, like routers, switches, servers, firewalls etc.') -->
+
+<xsd:element name="physical-router-device-image"/>
+<!--#IFMAP-SEMANTICS-IDL
+         Link('physical-router-device-image', 'physical-router', 'device-image', ['ref'], 'optional', 'CRUD',
+         'Intended device image for this PRouter. Each PRouter can have one and only one device image assigned. If this image is successfully installed on the PRouter, the PRouterUVE.os_version should match the os-version property of the image') -->
+
+<xsd:element name="physical-router-link-aggregation-group"/>
+<!--#IFMAP-SEMANTICS-IDL
+         Link('physical-router-link-aggregation-group', 'physical-router', 'link-aggregation-group', ['has'], 'optional', 'CRUD',
+         'List of link aggregation groups on this PRouter.') -->
+
+<xsd:element name="physical-interface" type="ifmap:IdentityType"/>
+<xsd:element name="ethernet-segment-identifier" type="xsd:string"/>
+<!--#IFMAP-SEMANTICS-IDL
+          Property('ethernet-segment-identifier', 'physical-interface', 'optional', 'CRUD',
+              'Ethernet Segment Id configured for the Physical Interface. In a multihomed environment, user should configure the peer Physical interface with the same ESI.') -->
+
+<xsd:element name="physical-interface-type" type="PhysicalInterfaceType"/>
+<!--#IFMAP-SEMANTICS-IDL
+          Property('physical-interface-type', 'physical-interface', 'optional', 'CRUD',
+              'Physical interface type that can be either regular physical interface or LAG interface.') -->
+
+<xsd:element name="physical-interface-mac-addresses" type="MacAddressesType"/>
+<!--#IFMAP-SEMANTICS-IDL
+          Property('physical-interface-mac-addresses', 'physical-interface', 'optional', 'CRUD',
+              'MAC addresses on this physical interface.') -->
+
+<xsd:element name="physical-interface-port-id" type="xsd:string"/>
+<!--#IFMAP-SEMANTICS-IDL
+          Property('physical-interface-port-id', 'physical-interface', 'optional', 'CRUD',
+              'port id of this physical interface. This port id is used in LLDP to identify a physical port on the peering device') -->
+
+<xsd:element name="physical-router-physical-interface"/>
+<!--#IFMAP-SEMANTICS-IDL
+          Link('physical-router-physical-interface',
+          'physical-router', 'physical-interface', ['has'], 'optional', 'CRUD',
+          'Physical interfaces on physical routers.') -->
+
+<!-- connection between two physical interfaces -->
+<xsd:element name="physical-interface-connection" />
+<!--#IFMAP-SEMANTICS-IDL
+          Link('physical-interface-connection',
+          'physical-interface', 'physical-interface', ['ref'], 'optional', 'CRUD',
+          'Reference to the other physical interface that is connected to this  physical interface.') -->
+
+<xsd:element name="logical-interface" type="ifmap:IdentityType"/>
+<xsd:element name="physical-router-logical-interface"/>
+<xsd:element name="physical-interface-logical-interface"/>
+<!--#IFMAP-SEMANTICS-IDL
+          Link('physical-router-logical-interface',
+          'physical-router', 'logical-interface', ['has'], 'optional', 'CRUD',
+          'Logical interfaces on physical routers.');
+     Link('physical-interface-logical-interface',
+          'physical-interface', 'logical-interface', ['has'], 'optional', 'CRUD',
+          'Logical interfaces on physical interface on physical routers.') -->
+
+<xsd:element name="logical-interface-vlan-tag" type="xsd:integer"/>
+<!--#IFMAP-SEMANTICS-IDL
+          Property('logical-interface-vlan-tag', 'logical-interface', 'optional', 'CRUD',
+              'VLAN tag (.1Q) classifier for this logical interface.') -->
+
+<xsd:element name="device-image" type="ifmap:IdentityType"/>
+
+<xsd:element name="global-system-config-device-image"/>
+<!--#IFMAP-SEMANTICS-IDL
+          Link('global-system-config-device-image',
+             'global-system-config', 'device-image', ['has'], 'optional', 'CRUD',
+             'list of device image info for the images that get uploaded to the system.') -->
+
+<xsd:element name="device-image-vendor-name" type="xsd:string"/>
+<!--#IFMAP-SEMANTICS-IDL
+          Property('device-image-vendor-name', 'device-image', 'required', 'CRUD',
+              'Vendor name for device image. It is used by device manager during device image upgrade to match the PRouters vendor name') -->
+
+<xsd:element name="device-image-device-family" type="xsd:string"/>
+<!--#IFMAP-SEMANTICS-IDL
+          Property('device-image-device-family', 'device-image', 'required', 'CRUD',
+              'Device family name for device image. It is used by device manager during device image upgrade to match the family name of the PRouter') -->
+
+<xsd:element name="device-image-supported-platforms" type="DevicePlatformListType"/>
+<!--#IFMAP-SEMANTICS-IDL
+          Property('device-image-supported-platforms', 'device-image', 'optional', 'CRUD',
+              'List of device platforms that this image can be installed on. It is used by device manager during device image upgrade validate the PRouters product_name property. If this property is not specified, then this image can be installed on all platforms of the device family') -->
+
+<xsd:element name="device-image-os-version" type="xsd:string"/>
+<!--#IFMAP-SEMANTICS-IDL
+          Property('device-image-os-version', 'device-image', 'required', 'CRUD',
+              'OS version string on the device where this image is installed. This version string should match the PRouters operational state PRouterUVE.os_version attribute if the image is successfully installed on the PRouter') -->
+
+<xsd:element name="device-image-file-uri" type="xsd:string"/>
+<!--#IFMAP-SEMANTICS-IDL
+          Property('device-image-file-uri', 'device-image', 'optional', 'CRUD',
+              'file uri for the device image uploaded to the image server.') -->
+
+<xsd:element name="device-image-size" type="xsd:integer"/>
+<!--#IFMAP-SEMANTICS-IDL
+          Property('device-image-size', 'device-image', 'optional', 'CRUD',
+              'file size of the device image that was uploaded to the image server.') -->
+
+<xsd:element name="device-image-md5" type="xsd:string"/>
+<!--#IFMAP-SEMANTICS-IDL
+          Property('device-image-md5', 'device-image', 'optional', 'CRUD',
+              'md5 checksum of the image file that was uploaded to the image server.') -->
+
+<xsd:element name="device-image-sha1" type="xsd:string"/>
+<!--#IFMAP-SEMANTICS-IDL
+          Property('device-image-sha1', 'device-image', 'optional', 'CRUD',
+              'sha1 checksum of the image file that was uploaded to the image server.') -->
+
+<xsd:element name="link-aggregation-group" type="ifmap:IdentityType"/>
+<xsd:element name="link-aggregation-group-lacp-enabled" type="xsd:boolean"/>
+<!--#IFMAP-SEMANTICS-IDL
+          Property('link-aggregation-group-lacp-enabled', 'link-aggregation-group', 'required', 'CRUD',
+              'Flag to turn on or off Link Aggregation Control Protocol (LACP) on this link aggregation group.') -->
+<xsd:element name="link-aggregation-group-physical-interface"/>
+<!--#IFMAP-SEMANTICS-IDL
+         Link('link-aggregation-group-physical-interface', 'link-aggregation-group', 'physical-interface', ['ref'], 'optional', 'CRUD',
+         'All the interfaces that belongs to the LAG. There should be exact one ref edge that points to the lag interface and two or more ref-edges points to the regular interfaces.') -->
+
+<xsd:element name="logical-interface-type" type="LogicalInterfaceType"/>
+<!--#IFMAP-SEMANTICS-IDL
+          Property('logical-interface-type', 'logical-interface', 'optional', 'CRUD',
+              ['Logical interface type can be L2 or L3.',
+               ' L2 - only L2 service is provided, MAC learning is supported.',
+               ' L3 - only L3 service is supported and MAC learning is not supported.']) -->
+
+<xsd:element name="physical-router-device-family" type="xsd:string"/>
+<!--#IFMAP-SEMANTICS-IDL
+          Property('physical-router-device-family', 'physical-router', 'required', 'CRUD',
+              'Device family that this physical router is part of. It is used by the device manager to choose the device family specific Ansible playbooks for device management') -->
+
+<xsd:element name="physical-router-management-ip" type="smi:IpAddress"/>
+<!--#IFMAP-SEMANTICS-IDL
+          Property('physical-router-management-ip', 'physical-router', 'required', 'CRUD',
+              'Management ip for this physical router. It is used by the device manager to perform netconf and by SNMP collector if enabled.') -->
+
+<xsd:element name="physical-router-dataplane-ip" type="smi:IpAddress"/>
+<!--#IFMAP-SEMANTICS-IDL
+          Property('physical-router-dataplane-ip', 'physical-router', 'optional', 'CRUD',
+              'This is ip address in the ip-fabric(underlay) network that can be used in data plane by physical router. Usually it is the VTEP address in VxLAN for the TOR switch.') -->
+
+<xsd:element name="physical-router-loopback-ip" type="smi:IpAddress"/>
+<!--#IFMAP-SEMANTICS-IDL
+          Property('physical-router-loopback-ip', 'physical-router', 'optional', 'CRUD',
+              'This is ip address of loopback interface of physical router. Used by the device manager to configure physical router loopback interface.') -->
+
+<xsd:element name="physical-router-vendor-name" type="xsd:string"/>
+<!--#IFMAP-SEMANTICS-IDL
+          Property('physical-router-vendor-name', 'physical-router', 'required', 'CRUD',
+              'Vendor name of the physical router (e.g juniper). Used by the device manager to select driver.') -->
+
+<xsd:element name="physical-router-product-name" type="xsd:string"/>
+<!--#IFMAP-SEMANTICS-IDL
+          Property('physical-router-product-name', 'physical-router', 'required', 'CRUD',
+              'Model name of the physical router (e.g juniper). Used by the device manager to select driver.') -->
+
+<xsd:element name="physical-router-serial-number" type="xsd:string"/>
+<!--#IFMAP-SEMANTICS-IDL
+          Property('physical-router-serial-number', 'physical-router', 'optional', 'CRUD',
+              'Serial number for the physical device that is used by device manager to identify the device during device discovery.') -->
+
+<xsd:element name="physical-router-vnc-managed" type="xsd:boolean"/>
+<!--#IFMAP-SEMANTICS-IDL
+          Property('physical-router-vnc-managed', 'physical-router', 'optional', 'CRUD',
+              'This physical router is enabled to be configured by device manager.') -->
+
+<xsd:element name="physical-router-role" type="PhysicalRouterRole"/>
+<!--#IFMAP-SEMANTICS-IDL
+          Property('physical-router-role', 'physical-router', 'optional', 'CRUD',
+              'Physical router role (e.g spine or leaf), used by the device manager to provision physical router, for e.g device manager may choose to configure physical router based on its role.') -->
+
+<xsd:element name="routing-bridging-roles" type="RoutingBridgingRolesType"/>
+<!--#IFMAP-SEMANTICS-IDL
+          Property('routing-bridging-roles', 'physical-router', 'optional', 'CRUD',
+              'Routing-bridging role (e.g. CRB, ERB, etc.), used by the device manager to provision physical router, for e.g device manager may choose to configure physical router based on its role.') -->
+
+<xsd:element name="physical-router-snmp" type="xsd:boolean"/>
+<!--#IFMAP-SEMANTICS-IDL
+          Property('physical-router-snmp', 'physical-router', 'optional', 'CRUD',
+              'SNMP support on this router') -->
+
+<xsd:element name="physical-router-lldp" type="xsd:boolean"/>
+<!--#IFMAP-SEMANTICS-IDL
+          Property('physical-router-lldp', 'physical-router', 'optional', 'CRUD',
+              'LLDP support on this router') -->
+
+<xsd:element name="physical-router-user-credentials" type="UserCredentials"/>
+<!--#IFMAP-SEMANTICS-IDL
+          Property('physical-router-user-credentials', 'physical-router', 'optional', 'CRUD',
+              'Username and password for netconf to the physical router by device manager.') -->
+
+<xsd:element name="physical-router-snmp-credentials" type='SNMPCredentials'/>
+<!--#IFMAP-SEMANTICS-IDL
+          Property('physical-router-snmp-credentials', 'physical-router', 'optional', 'CRUD',
+              'SNMP credentials for the physical router used by SNMP collector.') -->
+
+</xsd:schema>
