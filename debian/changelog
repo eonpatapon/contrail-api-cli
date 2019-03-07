@@ -1,3 +1,12 @@
+contrail-api-cli (0.3.0-1) trusty; urgency=medium
+
+  * New upstream release
+    - new --base-uri option
+    - new batch command
+    - added schemas for 4.1, 5.0
+
+ -- Jean-Philippe Braun <eon@patapon.info>  Thu, 07 Mar 2019 14:54:44 +0100
+
 contrail-api-cli (0.2.4-1) trusty; urgency=medium
 
   * New upstream release
