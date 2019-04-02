@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+import itertools
+
 from ..command import Command, Arg, Option, experimental, expand_paths
 from ..resource import Resource
 from ..utils import continue_prompt
@@ -20,7 +22,7 @@ class Rm(Command):
                 metavar='path', complete="resources::path")
     recursive = Option("-r", action="store_true",
                        default=False,
-                       help="Recursive delete of back_refs resources")
+                       help="Recursive delete of back_refs and children resources")
     force = Option("-f", action="store_true",
                    default=False,
                    help="Don't ask for confirmation")
@@ -31,7 +33,7 @@ class Rm(Command):
             if resource in back_refs:
                 back_refs.remove(resource)
             back_refs.append(resource)
-            for back_ref in resource.back_refs:
+            for back_ref in itertools.chain(resource.back_refs, resource.children):
                 back_refs = self._get_back_refs([back_ref], back_refs)
         return back_refs
 
