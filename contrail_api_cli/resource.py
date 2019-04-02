@@ -36,6 +36,11 @@ def http_error_handler(f):
             type, uuid = href.split('/')[-2:]
             yield Resource(type, uuid=uuid)
 
+    def hrefs_list_to_resources(hrefs_list):
+        for href in eval(hrefs_list):
+            type, uuid = href.split('/')[-2:]
+            yield Resource(type, uuid=uuid)
+
     @wraps(f)
     def wrapper(self, *args, **kwargs):
         try:
@@ -50,6 +55,16 @@ def http_error_handler(f):
                 elif isinstance(self, Collection):
                     raise CollectionNotFound(collection=self)
             elif e.http_status == 409:
+                # contrail 3.2
+                matches = re.match('^Delete when children still present: (\[[^]]*\])', e.message)
+                if matches:
+                    raise ChildrenExists(
+                        resources=list(hrefs_list_to_resources(matches.group(1))))
+                matches = re.match('^Delete when resource still referred: (\[[^]]*\])', e.message)
+                if matches:
+                    raise BackRefsExists(
+                        resources=list(hrefs_list_to_resources(matches.group(1))))
+                # contrail 2.21
                 matches = re.match('^Children (.*) still exist$', e.message)
                 if matches:
                     raise ChildrenExists(
