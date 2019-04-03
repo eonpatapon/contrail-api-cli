@@ -56,20 +56,20 @@ def http_error_handler(f):
                     raise CollectionNotFound(collection=self)
             elif e.http_status == 409:
                 # contrail 3.2
-                matches = re.match('^Delete when children still present: (\[[^]]*\])', e.message)
+                matches = re.match(r'^Delete when children still present: (\[[^]]*\])', e.message)
                 if matches:
                     raise ChildrenExists(
                         resources=list(hrefs_list_to_resources(matches.group(1))))
-                matches = re.match('^Delete when resource still referred: (\[[^]]*\])', e.message)
+                matches = re.match(r'^Delete when resource still referred: (\[[^]]*\])', e.message)
                 if matches:
                     raise BackRefsExists(
                         resources=list(hrefs_list_to_resources(matches.group(1))))
                 # contrail 2.21
-                matches = re.match('^Children (.*) still exist$', e.message)
+                matches = re.match(r'^Children (.*) still exist$', e.message)
                 if matches:
                     raise ChildrenExists(
                         resources=list(hrefs_to_resources(matches.group(1))))
-                matches = re.match('^Back-References from (.*) still exist$', e.message)
+                matches = re.match(r'^Back-References from (.*) still exist$', e.message)
                 if matches:
                     raise BackRefsExists(
                         resources=list(hrefs_to_resources(matches.group(1))))
