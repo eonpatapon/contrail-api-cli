@@ -179,13 +179,6 @@ class ResourceBase(Observable):
     def __repr__(self):
         return '%s(%s)' % (self.__class__.__name__, self.path)
 
-    def __hash__(self):
-        if self.uuid:
-            ident = (self.type, self.uuid)
-        else:
-            ident = (self.type,)
-        return hash(ident)
-
     @property
     def session(self):
         if self._session is not None:
@@ -281,6 +274,9 @@ class Collection(ResourceBase, UserList):
             except KeyError:
                 return 0
         return super(Collection, self).__len__()
+
+    def __hash__(self):
+        return hash(self.type)
 
     @property
     def _contrail_name(self):
@@ -472,6 +468,18 @@ class Resource(ResourceBase, UserDict):
     def __dir__(self):
         return sorted(set(dir(type(self)) + list(self.__dict__) +
                       self.properties.keys()))
+
+    def __eq__(self, other):
+        if not isinstance(other, Resource) or not self.type == other.type:
+            return False
+        if self.uuid != other.uuid:
+            return False
+        if self.fq_name != other.fq_name:
+            return False
+        return True
+
+    def __hash__(self):
+        return hash((self.type, self.uuid, str(self.fq_name)))
 
     @property
     def schema(self):
