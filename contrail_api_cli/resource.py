@@ -20,7 +20,7 @@ from prompt_toolkit.completion import Completion
 
 from .utils import FQName, Path, Observable, to_json
 from .exceptions import ResourceNotFound, ResourceMissing, \
-    CollectionNotFound, ChildrenExists, BackRefsExists
+    CollectionNotFound, ChildrenExists, BackRefsExists, SystemResource
 from .context import Context
 
 
@@ -73,6 +73,10 @@ def http_error_handler(f):
                 if matches:
                     raise BackRefsExists(
                         resources=list(hrefs_to_resources(matches.group(1))))
+            elif e.http_status == 400:
+                matches = re.match(r'^Routing instance .*\(([a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][a-f0-9]{3}-?[a-f0-9]{12})\) cannot modify as it the default routing instance of the .*\)$', e.message)
+                if matches:
+                    raise SystemResource(resource=Resource(type='routing-instance', uuid=matches.group(1)))
             raise
     return wrapper
 
