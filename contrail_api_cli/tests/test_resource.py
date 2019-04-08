@@ -528,6 +528,38 @@ class TestCollection(CLITest):
         Collection('foo', session=mock_session, fetch=True)
         mock_session.get_json.assert_called_with(self.BASE + '/foos')
 
+    @mock.patch('contrail_api_cli.resource.Context.session')
+    def test_resource_comparaison(self, mock_session):
+        resource_with_attr_foo = Resource('foo', uuid='x')
+        resource_with_attr_foo['attr'] = 'foo'
+        resource_with_attr_bar = Resource('foo', uuid='x')
+        resource_with_attr_bar['attr'] = 'bar'
+        test_suite = [
+            (Resource('foo', uuid='x'), Resource('foo', uuid='x'), True),
+            (Resource('foo', uuid='x'), Resource('foo', uuid='y'), False),
+            (Resource('foo', fq_name='x:y'), Resource('foo', fq_name='x:y'),
+             True),
+            (Resource('foo', fq_name='x:y'), Resource('foo', fq_name='x:y:z'),
+             False),
+            (Resource('foo', uuid='x', fq_name='x:y'),
+             Resource('foo', uuid='x', fq_name='x:y'),
+             True),
+            (Resource('foo', uuid='x', fq_name='x:y'),
+             Resource('foo', uuid='y', fq_name='x:y'),
+             False),
+            (Resource('foo', uuid='x', fq_name='x:y'),
+             Resource('foo', uuid='x', fq_name='x:y:z'),
+             False),
+            (resource_with_attr_foo, resource_with_attr_bar, True),
+        ]
+        for r1, r2, is_equal in test_suite:
+            self.assertEqual(
+                r1 == r2,
+                is_equal,
+                "r1: %s(%s), r2: %s(%s), expects equal '%s'" % (
+                    r1, r1.fq_name, r2, r2.fq_name, is_equal),
+            )
+
 
 if __name__ == "__main__":
     unittest.main()
