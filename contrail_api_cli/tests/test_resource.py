@@ -11,7 +11,7 @@ from keystoneauth1.exceptions.http import HttpError
 from contrail_api_cli.utils import Path, FQName
 from contrail_api_cli.resource import RootCollection, Collection, Resource, ResourceEncoder
 from contrail_api_cli.client import ContrailAPISession
-from contrail_api_cli.exceptions import ResourceNotFound, ResourceMissing, CollectionNotFound
+from contrail_api_cli.exceptions import ResourceNotFound, ResourceMissing, CollectionNotFound, ChildrenExists, BackRefsExists, IsSystemResource
 
 from .utils import CLITest
 
@@ -559,6 +559,22 @@ class TestCollection(CLITest):
                 "r1: %s(%s), r2: %s(%s), expects equal '%s'" % (
                     r1, r1.fq_name, r2, r2.fq_name, is_equal),
             )
+
+    @mock.patch('contrail_api_cli.resource.Context.session')
+    def test_exist_exception(self, mock_session):
+        r = Resource('foo', uuid='ec1afeaa-8930-43b0-a60a-939f23a50724')
+        test_suite = [
+            ("Delete when children still present: %s" % ['http://host%s' % r.path], ChildrenExists),
+            ("Children http://host%s still exist" % r.path, ChildrenExists),
+            ("Delete when resource still referred: %s" % ['http://host%s' % r.path], BackRefsExists),
+            ("Back-References from http://host%s still exist" % r.path, BackRefsExists),
+            ("Cannot modify system resource %s %s(%s)" % (r.type, r.fq_name, r.uuid), IsSystemResource),
+        ]
+        for msg, exception in test_suite:
+            mock_session.get_json.side_effect = HttpError(http_status=409, message=msg)
+            with self.assertRaises(exception) as e:
+                r.fetch()
+                self.assertListEqual([r], e.exception.resources)
 
 
 if __name__ == "__main__":

@@ -20,7 +20,7 @@ from prompt_toolkit.completion import Completion
 
 from .utils import FQName, Path, Observable, to_json
 from .exceptions import ResourceNotFound, ResourceMissing, \
-    CollectionNotFound, ChildrenExists, BackRefsExists, SystemResource
+    CollectionNotFound, ChildrenExists, BackRefsExists, IsSystemResource
 from .context import Context
 
 
@@ -56,27 +56,27 @@ def http_error_handler(f):
                     raise CollectionNotFound(collection=self)
             elif e.http_status == 409:
                 # contrail 3.2
-                matches = re.match(r'^Delete when children still present: (\[[^]]*\])', e.message)
+                matches = re.match(r'^Delete when children still present: (\[[^]]*\])($| \(HTTP 409\)$)', e.message)
                 if matches:
                     raise ChildrenExists(
                         resources=list(hrefs_list_to_resources(matches.group(1))))
-                matches = re.match(r'^Delete when resource still referred: (\[[^]]*\])', e.message)
+                matches = re.match(r'^Delete when resource still referred: (\[[^]]*\])($| \(HTTP 409\)$)', e.message)
                 if matches:
                     raise BackRefsExists(
                         resources=list(hrefs_list_to_resources(matches.group(1))))
                 # contrail 2.21
-                matches = re.match(r'^Children (.*) still exist$', e.message)
+                matches = re.match(r'^Children (.*) still exist($| \(HTTP 409\)$)', e.message)
                 if matches:
                     raise ChildrenExists(
                         resources=list(hrefs_to_resources(matches.group(1))))
-                matches = re.match(r'^Back-References from (.*) still exist$', e.message)
+                matches = re.match(r'^Back-References from (.*) still exist($| \(HTTP 409\)$)', e.message)
                 if matches:
                     raise BackRefsExists(
                         resources=list(hrefs_to_resources(matches.group(1))))
-            elif e.http_status == 400:
-                matches = re.match(r'^Routing instance .*\(([a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][a-f0-9]{3}-?[a-f0-9]{12})\) cannot modify as it the default routing instance of the .*\)$', e.message)
+                # contrail 5.1
+                matches = re.match(r'^Cannot modify system resource (.*) .*\(([a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][a-f0-9]{3}-?[a-f0-9]{12})\)($| \(HTTP 409\)$)', e.message)
                 if matches:
-                    raise SystemResource(resource=Resource(type='routing-instance', uuid=matches.group(1)))
+                    raise IsSystemResource(resources=[Resource(matches.group(1), uuid=matches.group(2))])
             raise
     return wrapper
 

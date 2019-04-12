@@ -83,10 +83,7 @@ class BackRefsExists(Exists):
         return "Back references from %s exists" % self._paths
 
 
-class SystemResource(GreenletExit):
-
-    def __init__(self, resource=None):
-        self._resource = resource
+class IsSystemResource(Exists):
 
     def __str__(self):
-        return "System resource %s cannot be changed" % self._resource
+        return "System resources %s cannot be changed" % self._paths
