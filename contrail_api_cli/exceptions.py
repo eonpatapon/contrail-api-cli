@@ -81,3 +81,9 @@ class BackRefsExists(Exists):
 
     def __str__(self):
         return "Back references from %s exists" % self._paths
+
+
+class IsSystemResource(Exists):
+
+    def __str__(self):
+        return "System resources %s cannot be changed" % self._paths
