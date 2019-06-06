@@ -130,7 +130,7 @@ def fill_schema_from_xsd_file(filename, schema):
             target = schema._get_or_add_resource(target_name)
             if "has" in v[3]:
                 src.children.append(target_name)
-                target.parent = src_name
+                target.parents.append(src_name)
             if "ref" in v[3]:
                 src.refs.append(target_name)
                 target.back_refs.append(src_name)
@@ -194,14 +194,14 @@ class ResourceSchema(object):
 
     def __init__(self):
         self.children = []
-        self.parent = None
+        self.parents = []
         self.refs = []
         self.back_refs = []
         self.properties = []
 
     def json(self):
         data = {'children': self.children,
-                'parent': self.parent,
+                'parents': self.parents,
                 'refs': self.refs,
                 'back_refs': self.back_refs,
                 'properties': self.properties}
