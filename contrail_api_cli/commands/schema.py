@@ -73,7 +73,13 @@ class Schema(Command):
             'node': resource_name,
             'childs': []
         }
-        for type in ('parent', 'children', 'refs', 'back_refs', 'properties'):
+        parents = getattr(resource, "parents")
+        if parents:
+            tree['childs'].append({
+                'node': "parent",
+                'childs': [{'node': " | ".join(parents)}]
+            })
+        for type in ('children', 'refs', 'back_refs', 'properties'):
             childs = getattr(resource, type)
             if not childs:
                 continue
