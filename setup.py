@@ -7,8 +7,10 @@ install_requires = [
     'keystoneauth1',
     'requests>=2.20.0',
     'gevent<1.3',
-    'datrie'
 ]
+extras_require = {
+    'resource_completion': ['datrie'],
+}
 
 test_requires = []
 
@@ -30,6 +32,7 @@ setup(
     packages=find_packages(),
     package_data={'contrail_api_cli': ['schemas/*/*']},
     install_requires=install_requires,
+    extras_require=extras_require,
     scripts=[],
     license="MIT",
     entry_points={
@@ -62,8 +65,8 @@ setup(
             'help = contrail_api_cli.commands.shell:Help',
         ],
         'contrail_api_cli.completer': [
-            'resources = contrail_api_cli.resource:ResourceCache',
-            'collections = contrail_api_cli.resource:ResourceCache',
+            'resources = contrail_api_cli.resource:ResourceCache [resource_completion]',
+            'collections = contrail_api_cli.resource:ResourceCache [resource_completion]',
             'commands = contrail_api_cli.manager:CommandManager',
         ]
     },

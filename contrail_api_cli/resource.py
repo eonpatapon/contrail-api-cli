@@ -14,7 +14,10 @@ try:
 except ImportError:
     from collections import UserDict, UserList
 
-import datrie
+try:
+    import datrie
+except ImportError:
+    datrie = False
 from keystoneauth1.exceptions.http import HttpError
 from prompt_toolkit.completion import Completion
 
@@ -759,6 +762,8 @@ class ResourceCache(object):
     """Resource cache of discovered resources.
     """
     def __init__(self):
+        if datrie is False:
+            raise RuntimeError("missing datrie package.")
         self.cache = {
             'resources': datrie.Trie(string.printable),
             'collections': datrie.Trie(string.printable)

@@ -13,6 +13,7 @@ install:
     - pip install coverage
     - pip install nose
     - pip install .
+    - pip install datrie
 before_script:
     - flake8 --ignore E501,W504 contrail_api_cli
 script:
