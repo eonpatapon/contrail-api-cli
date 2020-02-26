@@ -1,7 +1,11 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+
 import gevent
 import gevent.monkey
+gevent.monkey.patch_socket()
+gevent.monkey.patch_ssl()
+
 from gevent.pool import Group, Pool
 import sys
 import json
@@ -22,8 +26,6 @@ from prompt_toolkit.shortcuts import prompt, create_eventloop
 from .exceptions import AbsPathRequired
 
 
-gevent.monkey.patch_socket()
-gevent.monkey.patch_ssl()
 logger = logging.getLogger(__name__)
 CONFIG_DIR = os.path.expanduser('~/.config/contrail-api-cli')
 

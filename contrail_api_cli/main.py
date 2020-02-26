@@ -1,4 +1,7 @@
 from __future__ import unicode_literals
+
+from .utils import CONFIG_DIR, printo
+
 import os
 import sys
 import argparse
@@ -11,7 +14,6 @@ from keystoneauth1.exceptions.http import HttpError, HTTPClientError
 
 from .manager import CommandManager
 from .exceptions import CommandError, NotFound, Exists
-from .utils import CONFIG_DIR, printo
 from .schema import create_schema_from_version, list_available_schema_version, DummySchema, SchemaError
 from .context import Context
 from . import client
